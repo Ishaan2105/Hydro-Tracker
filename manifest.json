@@ -1,0 +1,36 @@
+{
+  "name": "HydroTrack",
+  "short_name": "Hydro",
+  "description": "Smart cloud-synced hydration tracking",
+  "start_url": "home.html",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#e3f2fd",
+  "theme_color": "#1565c0",
+  "icons": [
+    {
+      "src": "icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "View History",
+      "url": "history.html",
+      "icons": [{ "src": "icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Settings",
+      "url": "settings.html",
+      "icons": [{ "src": "icon-192x192.png", "sizes": "192x192" }]
+    }
+  ]
+}

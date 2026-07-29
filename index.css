@@ -1,0 +1,183 @@
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+
+body {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    transition: background 3s ease; /* Smooth transition when time changes */
+}
+
+/* Mist (Breath of Life) */
+#mist-container {
+    position: fixed;
+    width: 100%; height: 100%;
+    bottom: -150px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.mist-blob {
+    position: absolute;
+    width: 600px; height: 400px;
+    background: rgba(255, 255, 255, 0.15);
+    filter: blur(80px);
+    border-radius: 50%;
+    animation: drift 15s infinite alternate;
+}
+
+.mist-blob:nth-child(2) { left: 30%; animation-duration: 20s; opacity: 0.1; }
+.mist-blob:nth-child(3) { right: 0; animation-duration: 12s; }
+
+@keyframes drift {
+    from { transform: translate(-50px, 0) scale(1); }
+    to { transform: translate(100px, 50px) scale(1.2); }
+}
+
+#rain-container, #ripple-container {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none;
+}
+
+.drop {
+    position: absolute;
+    background: #001538;
+    width: 1.5px;
+    height: 12px;
+    z-index: 2;
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.splash {
+    position: absolute;
+    border: 1px solid #001538;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: splashAnim 0.3s ease-out forwards;
+    z-index: 3;
+}
+
+@keyframes splashAnim {
+    0% { width: 0; height: 0; opacity: 1; }
+    100% { width: 35px; height: 10px; opacity: 0; }
+}
+
+/* Bottle Design */
+.bottle-card {
+    position: relative;
+    width: 320px;
+    height: 540px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-radius: 40px 40px 80px 80px;
+    backdrop-filter: blur(12px);
+    overflow: hidden;
+    z-index: 10;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+}
+
+/* .bottle-cap {
+    width: 60px; height: 20px;
+    background: rgba(255,255,255,0.3);
+    margin: 0 auto;
+    border-radius: 5px 5px 0 0;
+} */
+
+.bottle-water {
+    position: absolute;
+    bottom: 0; width: 100%;
+    height: 15%;
+    background: linear-gradient(to top, #2f7bff, #76b1ff);
+    transition: height 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.2);
+}
+
+.toast {
+    background: rgba(0, 79, 182, 0.9);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+
+/* EFFECTS */
+
+
+.form-container { padding: 40px 25px; text-align: center; position: relative; z-index: 11; }
+.logo { font-size: 40px; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(47, 123, 255, 0.5)); }
+h1 { color: #333; margin-bottom: 20px; font-size: 24px; }
+
+input { 
+    width: 100%; padding: 12px; margin: 8px 0; 
+    border-radius: 10px; border: none; outline: none;
+    background: rgba(255, 255, 255, 0.85);
+    transition: 0.3s;
+}
+
+input:focus { background: #fff; box-shadow: 0 0 15px rgba(47, 123, 255, 0.2); }
+
+.btn-main { 
+    width: 100%; padding: 14px; background: #004fb6; color: white; 
+    border: none; border-radius: 10px; cursor: pointer; font-weight: bold;
+    margin-top: 10px; transition: 0.3s;
+}
+
+.btn-main:hover { background: #003a85; transform: translateY(-2px); }
+
+.switch { margin-top: 20px; font-size: 13px; color: #444; }
+.switch a { color: #004fb6; text-decoration: none; font-weight: bold; }
+.password-box { position: relative; }
+.toggle-eye { position: absolute; right: 12px; top: 18px; cursor: pointer; opacity: 0.5; }
+
+#liquid-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1; /* Keep it behind everything */
+    overflow: hidden;
+}
+
+#liquid-bg canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Ensure your page-content is visible over the chrome background */
+.page-content {
+    position: relative;
+    z-index: 10;
+}
+
+
+
+
+
+#balatro-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1; /* Always behind your login card */
+    overflow: hidden;
+}
+
+#balatro-bg canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    
+    
+    <meta name="theme-color" content="#1565c0">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <link rel="manifest" href="manifest.json">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>HydroTrack | History</title>
+    <link rel="stylesheet" href="home.css">
+    <link rel="stylesheet" href="history.css">
+</head>
+<body class="theme-day">
+    <div id="toast-container" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 10000;"></div>
+    <nav class="sidebar">
+        <div class="nav-links">
+            <div class="sidebar-brand">
+                <span class="sidebar-brand-icon">💧</span>
+                <span class="sidebar-brand-text">HydroTrack</span>
+            </div>
+            <a href="home.html" class="nav-item">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label">Home</span>
+            </a>
+            <a href="history.html" class="nav-item active">
+                <span class="nav-icon">📅</span>
+                <span class="nav-label">History</span>
+            </a>
+            <a href="insights.html" class="nav-item">
+                <span class="nav-icon">💡</span>
+                <span class="nav-label">Insights</span>
+            </a>
+            <a href="settings.html" class="nav-item">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-label">Settings</span>
+            </a>
+        </div>
+        <div class="user-profile" onclick="toggleLogout()">
+            <div class="user-avatar" id="user-initial">U</div>
+            <div class="user-info">
+                <span id="username-display">User</span>
+                <!-- <small>Active</small> -->
+            </div>
+            <div id="logout-menu" class="logout-dropdown">
+                <button onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="content">
+        <header>
+            <h1>Activity History</h1>
+        </header>
+
+        <section class="stats-overview">
+            <div class="stat-grid">
+                <div class="stat-card-wide">
+                    <small>🧜‍♂️ Hydration Rank</small> <h2 id="total-days">Puddle Jumper</h2>
+                </div>
+                <div class="stat-card-wide">
+                    <small>🎯 Goal Met</small>
+                    <h2 id="goals-met">0</h2>
+                </div>
+                <div class="stat-card-wide">
+                    <small>🏆 Success Rate</small>
+                    <h2 id="success-pct">0%</h2>
+                </div>
+                <div class="stat-card-wide">
+                    <small>🛡️ Anti-Wrinkle Shield</small> <h2 id="total-liters" style="font-size: 1.2rem;">Inactive</h2>
+                </div>
+            </div>
+        </section>
+
+        <div class="history-flex-container">
+            <section class="calendar-section">
+                <h3>Select Date 🗓️</h3>
+                <div class="calendar-card">
+                    <input type="date" id="calendar-picker" onchange="loadDateStats()">
+                </div>
+                
+            </section>
+
+            <!-- <section class="notes-section">
+                <h3>Daily Notes 📝</h3>
+                <p id="current-note-date" style="opacity:0.7; font-size: 0.9em; margin-bottom: 10px;"></p>
+                <div class="notepad-container">
+                    <textarea id="daily-note-area" placeholder="Write about your day..."></textarea>
+                    <div class="note-btns">
+                        <button class="save-btn" onclick="saveNote()">Save</button>
+                        <button class="delete-btn" onclick="deleteNote()">Delete</button>
+                    </div>
+                </div>
+            </section> -->
+
+            <section class="timeline-section">
+                <h3>Daily Log Timeline 🕒</h3>
+                <div class="timeline-container" id="daily-timeline">
+                    <p style="opacity:0.6; padding: 20px;">Select a date to see logs...</p>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- EFFECTS -->
+    <div id="waves-bg"></div>
+
+    <!-- <script src="home.js"></script> -->
+    <script src="history.js"></script>
+</body>
+</html>

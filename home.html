@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head> 
+
+    <meta name="theme-color" content="#1565c0">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <link rel="manifest" href="manifest.json">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>HydroTrack | Home</title>
+    <link rel="stylesheet" href="home.css">
+</head>
+<body class="theme-day">
+    <div id="toast-container" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999;"></div>
+    <nav class="sidebar">
+        <div class="nav-links">
+            <div class="sidebar-brand">
+                <span class="sidebar-brand-icon">💧</span>
+                <span class="sidebar-brand-text">HydroTrack</span>
+            </div>
+            <a href="home.html" class="nav-item active">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label">Home</span>
+            </a>
+            <a href="history.html" class="nav-item">
+                <span class="nav-icon">📅</span>
+                <span class="nav-label">History</span>
+            </a>
+            <a href="insights.html" class="nav-item">
+                <span class="nav-icon">💡</span>
+                <span class="nav-label">Insights</span>
+            </a>
+            <a href="settings.html" class="nav-item">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-label">Settings</span>
+            </a>
+        </div>
+
+        <div class="user-profile" onclick="toggleLogout()">
+            <div class="user-avatar" id="user-initial">U</div>
+            <div class="user-info">
+                <span id="username-display">Username</span>
+                <!-- <small>Active</small> -->
+            </div>
+            <div id="logout-menu" class="logout-dropdown">
+                <button onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="content">
+        <section class="hero-section">
+            <div class="progress-container">
+                <div class="circular-progress">
+                    <svg viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="45" class="bg-ring"></circle>
+                        <circle cx="50" cy="50" r="45" class="progress-ring" id="progress-bar"></circle>
+                    </svg>
+                    <div class="progress-text">
+                        <h2 id="percent-text">0%</h2>
+                        <p id="liters-text">0 / 2.5 L</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="quick-log">
+            <h3>Quick Log ⏱️</h3>
+            <div class="log-grid">
+                <button onclick="logWater(250)">250ml 🥛</button>
+                <button onclick="logWater(500)">500ml 🥤</button>
+                <button onclick="logWater(750)">750ml 🍶</button>
+                <button onclick="logWater(1000)">1L 💧</button>
+                <div class="custom-row">
+                    <input type="number" id="custom-val" placeholder="Custom ml">
+                    <button onclick="logCustom()">Add ➕</button>
+                </div>
+                <button class="undo-btn" onclick="undoLog()">Undo Last ↩️</button>
+            </div>
+        </section>
+
+        <section class="mini-stats">
+            <div class="stat-card">🔥 Streak: <span id="streak">0</span></div>
+            <div class="stat-card">🏆 Best: <span id="best">0</span></div>
+        </section>
+    </main>
+
+<!-- EFFECTS -->
+    <div id="waves-bg"></div>
+
+    <script src="home.js"></script>
+</body>
+</html>

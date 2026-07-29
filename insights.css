@@ -1,0 +1,461 @@
+body {
+    background: var(--bg-gradient) !important;
+    color: var(--text-primary) !important;
+    min-height: 100vh;
+}
+
+.insight-card {
+    background: var(--glass-bg, rgba(255, 255, 255, 0.6));
+    padding: 20px;
+    border-radius: 20px;
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.3));
+    margin-bottom: 25px;
+    color: var(--text-primary, #1a237e);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+.input-row { display: flex; gap: 10px; margin: 15px 0; }
+.input-row input { flex: 1; text-align: center; }
+
+.calc-btn, .save-meals-btn {
+    width: 100%; padding: 15px; border-radius: 12px;
+    border: none; background: #2f7bff; color: white;
+    font-weight: bold; cursor: pointer;
+}
+
+.result-box {
+    margin-top: 20px; padding: 15px; border-radius: 12px;
+    background: rgba(255, 255, 255, 0.9); color: #333; text-align: center;
+    animation: slideUp 0.3s ease;
+}
+
+.apply-btn {
+    margin-top: 10px; padding: 8px 15px; border-radius: 8px;
+    border: 2px solid #2f7bff; background: transparent; color: #2f7bff;
+    font-weight: bold;
+}
+
+/* Graph Styles */
+.graph-card {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 20px; border-radius: 20px; margin-bottom: 25px;
+}
+
+.bar {
+    flex: 1;
+    max-width: 35px;
+    position: relative;
+    /* 1. Persistent "Slot" Visibility */
+    /* This ensures users see the 7 bars even with 0ml recorded */
+    background: rgba(21, 101, 192, 0.08); 
+    border-radius: 8px 8px 2px 2px;
+    
+    /* 2. Mobile Touch Target */
+    /* Larger height ensures even 0% bars are easy to tap with a finger */
+    height: 100%; 
+    min-height: 10px; 
+    
+    /* 3. Smooth Animation */
+    transition: all 0.4s ease;
+    cursor: pointer;
+}
+
+/* The actual colored "Liquid" inside the bar */
+.bar::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    /* This height is controlled by the JS heightPct */
+    height: var(--bar-height, 0%); 
+    background: linear-gradient(to top, #1565c0, #42a5f5);
+    border-radius: inherit;
+    
+    /* 4. Visual Polish */
+    /* Ensures a tiny sliver is always visible if there is any data */
+    min-height: 2px; 
+    transition: height 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 1;
+}
+
+/* Tooltip for mobile tap */
+.bar::after {
+    content: attr(data-value);
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    font-weight: 800;
+    color: #1565c0;
+    opacity: 0.8;
+}
+
+/* Add a faint background to the bar container to show the "slots" */
+.bar-container {
+    background-image: linear-gradient(to top, #f0f0f0 1px, transparent 1px);
+    background-size: 100% 20%; /* Creates faint horizontal grid lines */
+}
+
+#trend-graph {
+    background: linear-gradient(to top, rgba(0,0,0,0.02) 1px, transparent 1px);
+    background-size: 100% 40px;
+}
+
+.graph-labels { display: flex; justify-content: space-around; margin-top: 10px; font-size: 12px; opacity: 0.7; }
+
+.meal-input {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 15px; background: rgba(255,255,255,0.05);
+    padding: 10px; border-radius: 10px;
+}
+
+.meal-input input { width: auto; margin-bottom: 0; }
+
+@keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.theme-morning { background: linear-gradient(to bottom, #ff9a9e, #fad0c4); }
+.theme-day     { background: linear-gradient(to bottom, #add8e6, #2f7bff); }
+.theme-evening { background: linear-gradient(to bottom, #4a306d, #ff8c00); }
+.theme-night   { background: linear-gradient(to bottom, #001f3f, #000814); }
+
+
+.insight-card {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    margin-bottom: 25px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    color: #333;
+}
+
+.insight-card h3 {
+    color: #1565c0;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+}
+
+.input-row { display: flex; gap: 12px; margin: 15px 0; }
+
+.input-row input { 
+    flex: 1; 
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    text-align: center;
+    font-size: 1rem;
+    outline: none;
+}
+
+.calc-btn, .save-meals-btn {
+    width: 100%; 
+    padding: 15px; 
+    border-radius: 12px;
+    border: none; 
+    background: #1565c0; 
+    color: white;
+    font-weight: bold; 
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.calc-btn:active { transform: scale(0.98); }
+
+.result-box {
+    margin-top: 20px; 
+    padding: 20px; 
+    border-radius: 15px;
+    background: #e3f2fd; 
+    color: #1565c0; 
+    text-align: center;
+    border: 1px dashed #1565c0;
+}
+
+/* Modern Graph Styles */
+.graph-section h3 { margin-bottom: 15px; padding-left: 5px; }
+
+.graph-card {
+    background: #ffffff;
+    padding: 25px; 
+    border-radius: 20px; 
+    margin-bottom: 25px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.bar-container {
+    height: 180px; 
+    display: flex; 
+    align-items: flex-end;
+    justify-content: space-around; 
+    gap: 12px; 
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 5px;
+}
+
+.bar {
+    width: 30px; 
+    background: linear-gradient(to top, #1565c0, #42a5f5); 
+    border-radius: 8px 8px 0 0;
+    transition: height 1s ease; 
+    position: relative;
+}
+
+/* Tooltip for bars */
+.bar::after {
+    content: attr(data-value);
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    font-weight: bold;
+    color: #1565c0;
+}
+
+.graph-labels { 
+    display: flex; 
+    justify-content: space-around; 
+    margin-top: 12px; 
+    font-size: 12px; 
+    font-weight: 700;
+    color: #888; 
+}
+
+.meal-input {
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f5f5f5;
+}
+
+.meal-input input {
+    border: none;
+    background: #f0f4f8;
+    padding: 8px;
+    border-radius: 8px;
+    color: #1565c0;
+    font-weight: bold;
+}
+
+/* Add to history.css or a global style file */
+
+.timeline-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px;
+    margin: 10px 0;
+    background: #f8fbff;
+    border-radius: 15px;
+    border-left: 5px solid #1565c0; /* Visual indicator line */
+}
+
+.timeline-time {
+    font-size: 0.85rem;
+    color: #666;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.timeline-amount {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #1565c0;
+}
+
+.timeline-type {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    background: #e3f2fd;
+    padding: 3px 8px;
+    border-radius: 5px;
+    margin-left: 10px;
+}
+
+/* insights.css */
+
+.graph-section {
+    transition: opacity 0.4s ease;
+}
+
+.graph-card {
+    background: #ffffff;
+    padding: 30px 20px 10px 20px;
+    border-radius: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.bar-container {
+    height: 200px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    gap: 10px;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 5px;
+}
+
+.bar {
+    flex: 1;
+    max-width: 35px;
+    background: linear-gradient(to top, #1565c0, #42a5f5);
+    border-radius: 8px 8px 2px 2px;
+    position: relative;
+    height: 0; /* Animated by JS */
+    transition: height 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Value Label on Hover */
+.bar::after {
+    content: attr(data-value);
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    font-weight: 800;
+    color: #1565c0;
+    white-space: nowrap;
+}
+
+.graph-labels {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 15px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #9e9e9e;
+    text-transform: uppercase;
+}
+
+.meal-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.time-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.time-label {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #1565c0;
+    margin-top: 4px;
+}
+
+input[type="time"] {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 5px;
+    font-family: inherit;
+}
+
+.review-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 20px;
+    margin-top: -10px; /* Connects slightly with the graph card above */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+.review-box {
+    padding: 15px;
+    border-radius: 15px;
+    background: #f0f7ff;
+    border-left: 5px solid #1565c0;
+}
+
+.review-status {
+    font-weight: 800;
+    font-size: 1.1rem;
+    display: block;
+    margin-bottom: 8px;
+    color: #1a237e;
+}
+
+.review-text {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: #444;
+}
+
+.review-tip {
+    margin-top: 12px;
+    font-size: 0.85rem;
+    font-style: italic;
+    color: #1565c0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.monthly-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr); /* 7 days a week */
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.grid-square {
+    aspect-ratio: 1 / 1;
+    border-radius: 6px;
+    transition: transform 0.2s;
+}
+
+.grid-square:active {
+    transform: scale(1.1);
+}
+
+/*LANDSCAPE  */
+/* Show a message if the user is in Portrait mode */
+@media screen and (orientation: portrait) {
+  body::before {
+    content: "🔄 Please rotate your device to Landscape mode for the best experience.";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #1565c0;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    z-index: 99999;
+    padding: 20px;
+    font-weight: bold;
+  }
+}
+
+/* EFFECTS */
+#waves-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1; /* Keep behind sidebar and cards */
+    pointer-events: none; /* Let mouse clicks pass through to buttons */
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.waves-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1565c0">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>HydroTrack | Insights</title>
+    <link rel="stylesheet" href="home.css">
+    <link rel="stylesheet" href="insights.css">
+</head>
+<body class="theme-day">
+    <nav class="sidebar">
+        <div class="nav-links">
+            <div class="sidebar-brand">
+                <span class="sidebar-brand-icon">💧</span>
+                <span class="sidebar-brand-text">HydroTrack</span>
+            </div>
+            <a href="home.html" class="nav-item">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label">Home</span>
+            </a>
+            <a href="history.html" class="nav-item">
+                <span class="nav-icon">📅</span>
+                <span class="nav-label">History</span>
+            </a>
+            <a href="insights.html" class="nav-item active">
+                <span class="nav-icon">💡</span>
+                <span class="nav-label">Insights</span>
+            </a>
+            <a href="settings.html" class="nav-item">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-label">Settings</span>
+            </a>
+        </div>
+        <div class="user-profile" onclick="toggleLogout()">
+            <div class="user-avatar" id="user-initial">U</div>
+            <div class="user-info">
+                <span id="username-display">User</span>
+                <!-- <small>Active</small> -->
+            </div>
+            <div id="logout-menu" class="logout-dropdown">
+                <button onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="content">
+        <header>
+            <h1>Health Insights</h1>
+        </header>
+
+        <section class="calculator-section">
+            <div class="insight-card">
+                <h3>⚖️ Personalized Goal </h3>
+                <p>Enter your details to calculate your ideal intake.</p>
+                <div class="input-row">
+                    <input type="number" id="weight" placeholder="Weight (kg)">
+                    <input type="number" id="height" placeholder="Height (cm)">
+                </div>
+                <button class="calc-btn" onclick="calculateHydration()">Calculate My Goal</button>
+                <div id="calc-result" class="result-box" style="display: none;">
+                    <p>Suggested Daily Intake:</p>
+                    <h2 id="suggested-liters">0.0 L</h2>
+                    <button class="apply-btn" onclick="applyGoal()">Set as My Goal</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="graph-section">
+            <h3>📈 7-Day Trend</h3>
+            <div class="graph-card">
+                <div class="bar-container" id="trend-graph">
+                    </div>
+                <div class="graph-labels">
+                    <span>6d ago</span>
+                    <span>5d ago</span>
+                    <span>4d ago</span>
+                    <span>3d ago</span>
+                    <span>2d ago</span>
+                    <span>Yesterday</span>
+                    <span>Today</span>
+                </div>
+            </div>
+
+            <div class="insight-card review-card">
+                <h3>📊 Weekly Performance Review</h3>
+                <div id="review-content" class="review-box">
+                    <p class="loading-text">Analyzing your hydration patterns...</p>
+                </div>
+            </div>
+
+        </section>
+
+        <section class="meals-section">
+            <div class="insight-card">
+                <h3>Meal Times</h3>
+                <p>Set times to receive post-meal reminders.</p>
+                
+                <div class="meal-input-group">
+                    <div class="meal-row">
+                        <label>🍳 Breakfast</label>
+                        <div class="time-container">
+                            <input type="time" id="bfast-time">
+                            <span class="time-label" id="bfast-display">--:-- --</span>
+                        </div>
+                    </div>
+                    <div class="meal-row">
+                        <label>🥗 Lunch</label>
+                        <div class="time-container">
+                            <input type="time" id="lunch-time">
+                            <span class="time-label" id="lunch-display">--:-- --</span>
+                        </div>
+                    </div>
+                    <div class="meal-row">
+                        <label>🍽️ Dinner</label>
+                        <div class="time-container">
+                            <input type="time" id="dinner-time">
+                            <span class="time-label" id="dinner-display">--:-- --</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="save-meals-btn" onclick="saveMealSchedule()">Save Schedule</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- EFFECTS -->
+    <div id="waves-bg"></div>
+
+    <script src="home.js"></script>
+    <script src="insights.js"></script>
+</body>
+</html>
