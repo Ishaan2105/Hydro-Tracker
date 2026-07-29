@@ -263,29 +263,6 @@ if (typeof window.showNotification !== 'function') {
     };
 }
 
-function testDesktopNotification() {
-    if (!("Notification" in window)) {
-        showToast("Desktop notifications are not supported by this browser.");
-        return;
-    }
-
-    if (Notification.permission === "granted") {
-        sendDesktopAlert("💧 HydroTrack Alert", "System notifications are active on your PC!");
-        showToast("Notification triggered! Check your system notification center.");
-    } else if (Notification.permission !== "denied") {
-        Notification.requestPermission().then(permission => {
-            if (permission === "granted") {
-                sendDesktopAlert("💧 HydroTrack Alert", "System notifications are now enabled!");
-                showToast("Permission granted! Test notification sent.");
-            } else {
-                showToast("Notification permission was denied.");
-            }
-        });
-    } else {
-        showToast("Notifications are blocked in your browser. Click the lock icon 🔒 in the address bar to Allow.");
-    }
-}
-
 function sendDesktopAlert(title, message) {
     if (!("Notification" in window) || Notification.permission !== "granted") return;
 
