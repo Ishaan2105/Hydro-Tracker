@@ -256,6 +256,52 @@ function getRandomReminder() {
     return hydrationTexts[Math.floor(Math.random() * hydrationTexts.length)];
 }
 
+function testDesktopNotification() {
+    if (!("Notification" in window)) {
+        showNotification("Desktop notifications are not supported by this browser.");
+        return;
+    }
+
+    if (Notification.permission === "granted") {
+        sendDesktopAlert("💧 HydroTrack Alert", "System notifications are active on your PC!");
+        showNotification("Notification triggered! Check your system notification center.");
+    } else if (Notification.permission !== "denied") {
+        Notification.requestPermission().then(permission => {
+            if (permission === "granted") {
+                sendDesktopAlert("💧 HydroTrack Alert", "System notifications are now enabled!");
+                showNotification("Permission granted! Test notification sent.");
+            } else {
+                showNotification("Notification permission was denied.");
+            }
+        });
+    } else {
+        showNotification("Notifications are blocked in your browser. Click the lock icon 🔒 in the address bar to Allow.");
+    }
+}
+
+function sendDesktopAlert(title, message) {
+    if ("Notification" in window && Notification.permission === "granted") {
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.ready.then(reg => {
+                reg.showNotification(title, {
+                    body: message,
+                    icon: 'icon-192x192.png',
+                    badge: 'icon-192x192.png',
+                    vibrate: [200, 100, 200]
+                });
+            }).catch(() => {
+                new Notification(title, { body: message, icon: 'icon-192x192.png' });
+            });
+        } else {
+            new Notification(title, {
+                body: message,
+                icon: 'icon-192x192.png',
+                vibrate: [200, 100, 200]
+            });
+        }
+    }
+}
+
 
 function setNotifMode(mode) {
     const btnSpecific = document.getElementById('btn-specific');
