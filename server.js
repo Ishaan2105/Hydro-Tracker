@@ -298,11 +298,17 @@ app.post('/api/auth/recover', async (req, res) => {
 
 const path = require('path');
 
-// 1. Serve static files (Assuming your HTML files are in the root or a 'public' folder)
-app.use(express.static(__dirname)); 
+// 1. Serve static files (HTML, CSS, JS, Images, Icons, Manifest, SW)
+app.use(express.static(path.join(__dirname)));
 
-// 2. Route all non-API requests to index.html
-app.get(/^\/(?!api(?:\/|$)).*/, (req, res) => {
+// 2. Route clean URLs without .html extension
+app.get('/home', (req, res) => res.sendFile(path.join(__dirname, 'home.html')));
+app.get('/history', (req, res) => res.sendFile(path.join(__dirname, 'history.html')));
+app.get('/insights', (req, res) => res.sendFile(path.join(__dirname, 'insights.html')));
+app.get('/settings', (req, res) => res.sendFile(path.join(__dirname, 'settings.html')));
+
+// 3. Fallback route for root
+app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
