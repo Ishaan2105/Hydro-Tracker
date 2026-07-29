@@ -307,8 +307,8 @@ app.get('/history', (req, res) => res.sendFile(path.join(__dirname, 'history.htm
 app.get('/insights', (req, res) => res.sendFile(path.join(__dirname, 'insights.html')));
 app.get('/settings', (req, res) => res.sendFile(path.join(__dirname, 'settings.html')));
 
-// Robust wildcard fallback handler
-app.get('*', (req, res) => {
+// Robust fallback handler for non-API routes (Express 4 & 5 compatible)
+app.use((req, res, next) => {
     if (req.path.startsWith('/api')) {
         return res.status(404).json({ error: "API endpoint not found" });
     }
