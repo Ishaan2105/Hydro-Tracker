@@ -513,26 +513,25 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 function sendSystemNotification(title, message) {
-    if ("Notification" in window && Notification.permission === "granted") {
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.ready.then(reg => {
-                reg.showNotification(title, {
-                    body: message,
-                    icon: 'icon-192x192.png',
-                    badge: 'icon-192x192.png',
-                    vibrate: [200, 100, 200]
-                });
-            }).catch(() => {
-                new Notification(title, { body: message, icon: 'icon-192x192.png' });
-            });
-        } else {
-            new Notification(title, {
+    if (!("Notification" in window)) return;
+
+    if (Notification.permission === "granted") {
+        try {
+            const notif = new Notification(title, {
                 body: message,
                 icon: 'icon-192x192.png',
-                vibrate: [200, 100, 200]
+                tag: 'hydrotrack-system',
+                renotify: true
             });
+            notif.onclick = () => { window.focus(); };
+        } catch (e) {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.ready.then(reg => {
+                    reg.showNotification(title, { body: message, icon: 'icon-192x192.png' });
+                }).catch(() => {});
+            }
         }
-    } else if ("Notification" in window && Notification.permission !== "denied") {
+    } else if (Notification.permission !== "denied") {
         Notification.requestPermission().then(permission => {
             if (permission === "granted") {
                 sendSystemNotification(title, message);

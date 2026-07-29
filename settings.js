@@ -280,24 +280,28 @@ function testDesktopNotification() {
 }
 
 function sendDesktopAlert(title, message) {
-    if ("Notification" in window && Notification.permission === "granted") {
-        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+
+    try {
+        // Direct Native Web Notification for instant desktop popups
+        const notif = new Notification(title, {
+            body: message,
+            icon: 'icon-192x192.png',
+            tag: 'hydrotrack-alert',
+            renotify: true
+        });
+        notif.onclick = () => {
+            window.focus();
+        };
+    } catch (e) {
+        // Fallback for Service Worker environments
+        if ('serviceWorker' in navigator) {
             navigator.serviceWorker.ready.then(reg => {
                 reg.showNotification(title, {
                     body: message,
-                    icon: 'icon-192x192.png',
-                    badge: 'icon-192x192.png',
-                    vibrate: [200, 100, 200]
+                    icon: 'icon-192x192.png'
                 });
-            }).catch(() => {
-                new Notification(title, { body: message, icon: 'icon-192x192.png' });
-            });
-        } else {
-            new Notification(title, {
-                body: message,
-                icon: 'icon-192x192.png',
-                vibrate: [200, 100, 200]
-            });
+            }).catch(() => {});
         }
     }
 }
