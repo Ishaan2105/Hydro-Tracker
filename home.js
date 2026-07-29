@@ -363,33 +363,31 @@ setInterval(() => {
                         now.getMinutes().toString().padStart(2, '0');
 
     /* ============================================================
-       1. SPECIFIC TIME REMINDERS
+       1. SPECIFIC TIME REMINDERS (Data-Driven - Works on All Pages)
     ============================================================ */
-    const timeRows = document.querySelectorAll('.time-toggle-row');
-    timeRows.forEach(row => {
-        const checkbox = row.querySelector('input[type="checkbox"]');
-        if (!checkbox) return;
-        const dailyToggle = row.querySelector('.daily-toggle');
-        const alarmTime = checkbox.value;
-        const reminderIndex = data.reminders ? data.reminders.findIndex(r => r.time === alarmTime) : -1;
+    if (data && Array.isArray(data.reminders)) {
+        data.reminders.forEach((r) => {
+            // Check if reminder is active and matches current time
+            if (r && r.active !== false && r.time === currentTime) {
+                // Prevent duplicate notification within the same minute
+                if (r.lastFiredMinute !== currentTime) {
+                    r.lastFiredMinute = currentTime;
+                    
+                    const randomMsg = typeof getRandomReminder === 'function' ? getRandomReminder() : "Time to stay hydrated!";
+                    if (typeof sendSystemNotification === 'function') {
+                        sendSystemNotification("Hydration Reminder 💧", `🔔 ${r.time}: ${randomMsg}`);
+                    }
 
-        if (checkbox.checked && alarmTime === currentTime && data.reminders?.[reminderIndex]?.active !== false) {
-            const randomMsg = typeof getRandomReminder === 'function' ? getRandomReminder() : "Time to hydrate!";
-            if (typeof sendSystemNotification === 'function') {
-                sendSystemNotification("Hydration Reminder", `🔔 ${alarmTime}: ${randomMsg}`);
-            }
-
-            // If it's a "Once" alarm, deactivate it in cloud and UI after firing
-            if (dailyToggle && !dailyToggle.checked) {
-                if (reminderIndex !== -1) {
-                    data.reminders[reminderIndex].active = false;
+                    // Deactivate single-use (non-daily) alarms after firing
+                    if (r.daily === false) {
+                        r.active = false;
+                        if (typeof loadReminders === 'function') loadReminders();
+                        if (typeof syncToCloud === 'function') syncToCloud();
+                    }
                 }
-                checkbox.checked = false;
-                if (typeof loadReminders === 'function') loadReminders();
-                if (typeof syncToCloud === 'function') syncToCloud();
             }
-        }
-    });
+        });
+    }
 
     /* ============================================================
        2. INTERVAL-BASED REMINDERS
