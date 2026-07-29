@@ -256,6 +256,13 @@ function getRandomReminder() {
     return hydrationTexts[Math.floor(Math.random() * hydrationTexts.length)];
 }
 
+// Safety alias so old browser caches calling showNotification don't throw ReferenceError
+if (typeof window.showNotification !== 'function') {
+    window.showNotification = function(msg) {
+        if (typeof showToast === 'function') showToast(msg);
+    };
+}
+
 function testDesktopNotification() {
     if (!("Notification" in window)) {
         showToast("Desktop notifications are not supported by this browser.");
