@@ -1,10 +1,10 @@
 {
   "name": "HydroTrack",
-  "short_name": "Hydro",
-  "description": "Smart cloud-synced hydration tracking",
-  "start_url": "home.html",
+  "short_name": "HydroTrack",
+  "description": "Smart cloud-synced hydration tracking app",
+  "start_url": "index.html",
   "display": "standalone",
-  "orientation": "landscape",
+  "orientation": "any",
   "background_color": "#e3f2fd",
   "theme_color": "#1565c0",
   "icons": [
@@ -22,6 +22,11 @@
     }
   ],
   "shortcuts": [
+    {
+      "name": "Hydration Tracker",
+      "url": "home.html",
+      "icons": [{ "src": "icon-192x192.png", "sizes": "192x192" }]
+    },
     {
       "name": "View History",
       "url": "history.html",
