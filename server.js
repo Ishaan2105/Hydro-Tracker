@@ -5,8 +5,11 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+const path = require('path');
+
 const app = express();
 app.use(express.json());
+app.use(express.static(path.join(__dirname)));
 
 const allowedOrigins = [
     "https://hydro-track.onrender.com",
@@ -298,17 +301,26 @@ app.post('/api/auth/recover', async (req, res) => {
 
 const path = require('path');
 
-// 1. Serve static files (HTML, CSS, JS, Images, Icons, Manifest, SW)
-app.use(express.static(path.join(__dirname)));
+const fs = require('fs');
 
-// 2. Route clean URLs without .html extension
+// Clean URL routes
 app.get('/home', (req, res) => res.sendFile(path.join(__dirname, 'home.html')));
 app.get('/history', (req, res) => res.sendFile(path.join(__dirname, 'history.html')));
 app.get('/insights', (req, res) => res.sendFile(path.join(__dirname, 'insights.html')));
 app.get('/settings', (req, res) => res.sendFile(path.join(__dirname, 'settings.html')));
 
-// 3. Fallback route for root
-app.get('/', (req, res) => {
+// Robust wildcard fallback handler
+app.get('*', (req, res) => {
+    if (req.path.startsWith('/api')) {
+        return res.status(404).json({ error: "API endpoint not found" });
+    }
+    const cleanPath = req.path.replace(/^\//, '');
+    if (cleanPath && fs.existsSync(path.join(__dirname, cleanPath))) {
+        return res.sendFile(path.join(__dirname, cleanPath));
+    }
+    if (cleanPath && fs.existsSync(path.join(__dirname, cleanPath + '.html'))) {
+        return res.sendFile(path.join(__dirname, cleanPath + '.html'));
+    }
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
