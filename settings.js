@@ -309,6 +309,9 @@ function requestNotifPermission() {
                     });
                 });
             }
+            if (typeof registerPushSubscription === 'function') {
+                registerPushSubscription();
+            }
             showToast("Notifications enabled! ✅");
         } else {
             showToast("Permission denied. Enable from browser settings.");
@@ -316,8 +319,13 @@ function requestNotifPermission() {
     });
 }
 
-// Run banner update on settings page load
-document.addEventListener('DOMContentLoaded', updateNotifPermissionBanner);
+// Run banner update and register push subscription on settings page load
+document.addEventListener('DOMContentLoaded', () => {
+    updateNotifPermissionBanner();
+    if (typeof registerPushSubscription === 'function') {
+        registerPushSubscription();
+    }
+});
 
 function sendDesktopAlert(title, message) {
     if (!("Notification" in window) || Notification.permission !== "granted") return;

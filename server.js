@@ -6,10 +6,23 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const path = require('path');
+const webpush = require('web-push');
+const cron = require('node-cron');
 
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
+
+// --- WEB PUSH SETUP ---
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || "BILMZlX8RS9yaLYuRAtiwicVmPYi6nYTMpWqPh3Iai_UTI0gOXhnb-f02HlL7iFtGzRk_EbHVP4skvWAX1QWyzc";
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "zI6V9-IMqLqU3H2jPX-co-4MlqbGWd6jhvrTQKGJqto";
+const EMAIL_USER = process.env.EMAIL_USER || "ishaanhingway@gmail.com";
+
+webpush.setVapidDetails(
+    `mailto:${EMAIL_USER}`,
+    VAPID_PUBLIC_KEY,
+    VAPID_PRIVATE_KEY
+);
 
 const allowedOrigins = [
     "https://hydro-track.onrender.com",
@@ -68,7 +81,8 @@ const UserSchema = new mongoose.Schema({
     },
     badges: { type: Array, default: [] },
     postMealEnabled: { type: Boolean, default: false },
-    notes: { type: Map, of: String, default: {} }
+    notes: { type: Map, of: String, default: {} },
+    pushSubscriptions: { type: Array, default: [] }
 });
 
 const User = mongoose.model('User', UserSchema);
@@ -133,6 +147,36 @@ app.post('/api/user/sync', async (req, res) => {
         res.json({ message: "Cloud Sync Successful!" });
     } catch (err) {
         res.status(401).json({ error: "Unauthorized Session" });
+    }
+});
+
+// --- PUSH NOTIFICATION API ENDPOINTS ---
+
+// Get Public VAPID Key
+app.get('/api/push/vapid-public-key', (req, res) => {
+    res.json({ publicKey: VAPID_PUBLIC_KEY });
+});
+
+// Save Push Subscription
+app.post('/api/push/subscribe', async (req, res) => {
+    const { token, subscription } = req.body;
+    if (!subscription || !subscription.endpoint) {
+        return res.status(400).json({ error: "Invalid subscription" });
+    }
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id);
+        if (!user) return res.status(404).json({ error: "User not found" });
+
+        // Add subscription if not already present
+        const exists = user.pushSubscriptions.some(sub => sub.endpoint === subscription.endpoint);
+        if (!exists) {
+            user.pushSubscriptions.push(subscription);
+            await user.save();
+        }
+        res.json({ message: "Push Subscription Saved Successfully!" });
+    } catch (err) {
+        res.status(401).json({ error: "Unauthorized" });
     }
 });
 
@@ -324,4 +368,111 @@ app.use((req, res, next) => {
 
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 HydroTrack Server live on port ${PORT}`));
+app.listen(PORT, () => {
+    console.log(`🚀 HydroTrack Server live on port ${PORT}`);
+    startServerPushCron();
+});
+
+// --- SERVER-SIDE PUSH ALARM CRON JOB ---
+// Runs every minute to send Push Notifications to users' devices (PC / Android)
+// even when the browser or app is completely closed!
+function startServerPushCron() {
+    console.log("⏰ Server-side Web Push Cron Job Initialized");
+    
+    const hydrationMessages = [
+        "Time to drink water! 💧",
+        "Stay hydrated — your body needs it!",
+        "Quick reminder: drink some water!",
+        "Hydration check — have you had water recently?",
+        "Keep that streak going — drink up! 🔥"
+    ];
+
+    cron.schedule('* * * * *', async () => {
+        try {
+            // Get current time in Indian Standard Time (IST - Asia/Kolkata)
+            const now = new Date();
+            const currentTime = now.toLocaleTimeString('en-GB', { 
+                timeZone: 'Asia/Kolkata', 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+
+            // Find all users who have active push subscriptions
+            const users = await User.find({ "pushSubscriptions.0": { $exists: true } });
+
+            for (const user of users) {
+                if (!user.pushSubscriptions || user.pushSubscriptions.length === 0) continue;
+
+                let shouldNotify = false;
+                let notifTitle = "💧 HydroTrack Reminder";
+                let notifBody = "Time to stay hydrated!";
+
+                // 1. Check Specific-Time Reminders
+                if (Array.isArray(user.reminders)) {
+                    for (const r of user.reminders) {
+                        if (r && r.active !== false && r.time === currentTime) {
+                            shouldNotify = true;
+                            const randomMsg = hydrationMessages[Math.floor(Math.random() * hydrationMessages.length)];
+                            notifTitle = "💧 Hydration Reminder";
+                            notifBody = `🔔 ${r.time} — ${randomMsg}`;
+                            break;
+                        }
+                    }
+                }
+
+                // 2. Check Post-Meal Reminders (+30m after meals)
+                if (!shouldNotify && user.postMealEnabled && user.mealTimes) {
+                    const mealKeys = ['bfast', 'lunch', 'dinner'];
+                    const mealNames = { bfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };
+
+                    for (const key of mealKeys) {
+                        const mealTime = user.mealTimes[key];
+                        if (mealTime) {
+                            let [hours, minutes] = mealTime.split(':').map(Number);
+                            minutes += 30;
+                            if (minutes >= 60) { hours = (hours + 1) % 24; minutes -= 60; }
+                            const triggerTime = hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0');
+
+                            if (triggerTime === currentTime) {
+                                shouldNotify = true;
+                                notifTitle = "🥗 Post-Meal Reminder";
+                                notifBody = `30 mins since ${mealNames[key]} — time to hydrate!`;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // If an alarm triggered, send web-push notification to all stored device subscriptions
+                if (shouldNotify) {
+                    const payload = JSON.stringify({
+                        title: notifTitle,
+                        body: notifBody,
+                        icon: 'icon-192x192.png',
+                        badge: 'icon-192x192.png'
+                    });
+
+                    const validSubs = [];
+                    for (const sub of user.pushSubscriptions) {
+                        try {
+                            await webpush.sendNotification(sub, payload);
+                            validSubs.push(sub);
+                        } catch (pushErr) {
+                            // If status is 410 (Gone) or 404 (Not Found), subscription expired/unregistered
+                            if (pushErr.statusCode !== 410 && pushErr.statusCode !== 404) {
+                                validSubs.push(sub);
+                            }
+                        }
+                    }
+
+                    // Update subscriptions array to remove expired endpoints
+                    if (validSubs.length !== user.pushSubscriptions.length) {
+                        await User.findByIdAndUpdate(user._id, { pushSubscriptions: validSubs });
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("Cron Push Error:", err.message);
+        }
+    });
+}
