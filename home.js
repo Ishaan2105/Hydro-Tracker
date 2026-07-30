@@ -505,36 +505,42 @@ async function registerPushSubscription() {
 
     try {
         const reg = await navigator.serviceWorker.ready;
-        const res = await fetch(`${API_URL}/api/push/vapid-public-key`);
-        const { publicKey } = await res.json();
+
+        // Fetch current VAPID public key from server
+        const keyRes = await fetch(`${API_URL}/api/push/vapid-public-key`);
+        const { publicKey } = await keyRes.json();
         if (!publicKey) return;
 
-        let sub = await reg.pushManager.getSubscription();
-        if (sub) {
-            // Clean up existing stale subscription to guarantee fresh VAPID key binding
-            try { await sub.unsubscribe(); } catch(e) {}
+        // Always unsubscribe existing and create a fresh subscription
+        // This ensures the subscription is always tied to the current VAPID key
+        const existingSub = await reg.pushManager.getSubscription();
+        if (existingSub) {
+            try { await existingSub.unsubscribe(); } catch(e) {}
         }
 
-        sub = await reg.pushManager.subscribe({
+        const newSub = await reg.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(publicKey)
         });
 
-        await fetch(`${API_URL}/api/push/subscribe`, {
+        const saveRes = await fetch(`${API_URL}/api/push/subscribe`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token, subscription: sub })
+            body: JSON.stringify({ token, subscription: newSub })
         });
-        console.log("✅ Web Push subscription active with server!");
+        const saveData = await saveRes.json();
+        console.log('✅ Web Push subscription registered:', saveData.message);
     } catch (err) {
-        console.error("Push registration error:", err);
+        console.warn('Push registration error (non-fatal):', err.message || err);
     }
 }
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').then(reg => {
-            console.log('✅ ServiceWorker registered for Mobile Notifications');
+            console.log('✅ ServiceWorker registered');
+            // Register push subscription silently on every page load
+            // Ensures subscription is always fresh and server has latest endpoint
             registerPushSubscription();
         }).catch(err => console.log('SW Registration error:', err));
     });

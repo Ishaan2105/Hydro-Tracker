@@ -1,8 +1,8 @@
 // ============================================================
 // HydroTrack Service Worker — PWA Caching + Push Notifications
-// Version: hydrotrack-v8
+// Version: hydrotrack-v9
 // ============================================================
-const CACHE_NAME = 'hydrotrack-v8';
+const CACHE_NAME = 'hydrotrack-v9';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',

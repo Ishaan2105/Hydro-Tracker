@@ -168,18 +168,25 @@ app.post('/api/push/subscribe', async (req, res) => {
         const user = await User.findById(decoded.id);
         if (!user) return res.status(404).json({ error: "User not found" });
 
-        // Keep existing valid subscriptions except matching endpoint or clean stale
-        let updatedSubs = (user.pushSubscriptions || []).filter(sub => sub.endpoint !== subscription.endpoint);
-        updatedSubs.push(subscription);
-        
-        user.pushSubscriptions = updatedSubs;
+        // Tag subscription with current VAPID public key fingerprint
+        subscription._vapidKey = VAPID_PUBLIC_KEY;
+
+        // Purge ALL subscriptions from a different (old) VAPID key — they are permanently invalid
+        // Keep only subscriptions matching current VAPID key (excluding same endpoint which we'll replace)
+        let validSubs = (user.pushSubscriptions || []).filter(sub =>
+            sub._vapidKey === VAPID_PUBLIC_KEY && sub.endpoint !== subscription.endpoint
+        );
+        validSubs.push(subscription);
+
+        user.pushSubscriptions = validSubs;
         await user.save();
 
-        res.json({ message: "Push Subscription Saved Successfully!" });
+        res.json({ message: `Push Subscription Saved! ${validSubs.length} active device(s).` });
     } catch (err) {
         res.status(401).json({ error: "Unauthorized" });
     }
 });
+
 
 // Test Web Push endpoint (Sends immediate push notification to user's registered devices)
 app.post('/api/push/test', async (req, res) => {
