@@ -501,40 +501,30 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-    // Ask the user for notification permission as soon as they land on the page
-    if ("Notification" in window) {
-        if (Notification.permission !== "granted" && Notification.permission !== "denied") {
-            Notification.requestPermission();
-        }
-    }
-});
+// Note: Notification permission is requested via the "Enable Notifications" button in Settings
+// (auto-prompting on page load is blocked by browsers — must be triggered by user gesture)
 
 function sendSystemNotification(title, message) {
     if (!("Notification" in window)) return;
+    if (Notification.permission !== "granted") return;
 
-    if (Notification.permission === "granted") {
-        try {
-            const notif = new Notification(title, {
+    // Always use Service Worker showNotification — works in both browser and installed PWA
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then(reg => {
+            reg.showNotification(title, {
                 body: message,
                 icon: 'icon-192x192.png',
-                tag: 'hydrotrack-system',
-                renotify: true
+                badge: 'icon-192x192.png',
+                tag: 'hydrotrack-reminder',
+                renotify: true,
+                vibrate: [200, 100, 200]
             });
-            notif.onclick = () => { window.focus(); };
-        } catch (e) {
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.ready.then(reg => {
-                    reg.showNotification(title, { body: message, icon: 'icon-192x192.png' });
-                }).catch(() => {});
-            }
-        }
-    } else if (Notification.permission !== "denied") {
-        Notification.requestPermission().then(permission => {
-            if (permission === "granted") {
-                sendSystemNotification(title, message);
-            }
+        }).catch(() => {
+            // Fallback for non-SW browsers
+            try { new Notification(title, { body: message, icon: 'icon-192x192.png' }); } catch (e) {}
         });
+    } else {
+        try { new Notification(title, { body: message, icon: 'icon-192x192.png' }); } catch (e) {}
     }
 }
 

@@ -263,30 +263,81 @@ if (typeof window.showNotification !== 'function') {
     };
 }
 
+// Show the current notification permission status in the banner
+function updateNotifPermissionBanner() {
+    const statusEl = document.getElementById('notif-permission-status');
+    const btn = document.getElementById('notif-enable-btn');
+    if (!statusEl || !("Notification" in window)) return;
+
+    const perm = Notification.permission;
+    if (perm === 'granted') {
+        statusEl.textContent = '✅ Notifications are enabled';
+        statusEl.style.color = '#2e7d32';
+        if (btn) { btn.textContent = '✔ Enabled'; btn.disabled = true; btn.style.opacity = '0.6'; }
+    } else if (perm === 'denied') {
+        statusEl.textContent = '🚫 Blocked — Click the 🔒 icon in your browser address bar to Allow';
+        statusEl.style.color = '#c62828';
+        if (btn) { btn.textContent = 'Blocked'; btn.disabled = true; btn.style.opacity = '0.6'; }
+    } else {
+        statusEl.textContent = '⚠️ Tap "Enable" to receive hydration reminders';
+        statusEl.style.color = '#e65100';
+    }
+}
+
+// Must be called from a direct user click — browsers block auto-prompts
+function requestNotifPermission() {
+    if (!("Notification" in window)) {
+        showToast("Your browser doesn't support notifications.");
+        return;
+    }
+    if (Notification.permission === 'granted') {
+        showToast("Notifications are already enabled!");
+        return;
+    }
+    Notification.requestPermission().then(permission => {
+        updateNotifPermissionBanner();
+        if (permission === 'granted') {
+            // Fire a test notification via Service Worker so the user sees it immediately
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.ready.then(reg => {
+                    reg.showNotification('💧 HydroTrack', {
+                        body: 'Notifications enabled! You will get hydration reminders.',
+                        icon: 'icon-192x192.png',
+                        badge: 'icon-192x192.png',
+                        tag: 'hydrotrack-test',
+                        vibrate: [200, 100, 200]
+                    });
+                });
+            }
+            showToast("Notifications enabled! ✅");
+        } else {
+            showToast("Permission denied. Enable from browser settings.");
+        }
+    });
+}
+
+// Run banner update on settings page load
+document.addEventListener('DOMContentLoaded', updateNotifPermissionBanner);
+
 function sendDesktopAlert(title, message) {
     if (!("Notification" in window) || Notification.permission !== "granted") return;
 
-    try {
-        // Direct Native Web Notification for instant desktop popups
-        const notif = new Notification(title, {
-            body: message,
-            icon: 'icon-192x192.png',
-            tag: 'hydrotrack-alert',
-            renotify: true
+    // Always use Service Worker showNotification — works in both browser and installed PWA
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then(reg => {
+            reg.showNotification(title, {
+                body: message,
+                icon: 'icon-192x192.png',
+                badge: 'icon-192x192.png',
+                tag: 'hydrotrack-alert',
+                renotify: true,
+                vibrate: [200, 100, 200]
+            });
+        }).catch(() => {
+            try { new Notification(title, { body: message, icon: 'icon-192x192.png' }); } catch (e) {}
         });
-        notif.onclick = () => {
-            window.focus();
-        };
-    } catch (e) {
-        // Fallback for Service Worker environments
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.ready.then(reg => {
-                reg.showNotification(title, {
-                    body: message,
-                    icon: 'icon-192x192.png'
-                });
-            }).catch(() => {});
-        }
+    } else {
+        try { new Notification(title, { body: message, icon: 'icon-192x192.png' }); } catch (e) {}
     }
 }
 

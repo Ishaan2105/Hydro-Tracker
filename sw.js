@@ -1,5 +1,5 @@
 // Service Worker for HydroTrack Mobile & PWA Caching & Notifications
-const CACHE_NAME = 'hydrotrack-v1';
+const CACHE_NAME = 'hydrotrack-v3';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
