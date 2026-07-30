@@ -511,9 +511,23 @@ async function registerPushSubscription() {
         const { publicKey } = await keyRes.json();
         if (!publicKey) return;
 
-        // Always unsubscribe existing and create a fresh subscription
-        // This ensures the subscription is always tied to the current VAPID key
         const existingSub = await reg.pushManager.getSubscription();
+        const storedVapidKey = localStorage.getItem('ht_vapid_key');
+
+        if (existingSub && storedVapidKey === publicKey) {
+            // ✅ Stable existing subscription with same VAPID key — just re-save to server
+            // DO NOT unsubscribe — this keeps the endpoint stable for FCM delivery
+            // even when browser is closed
+            await fetch(`${API_URL}/api/push/subscribe`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token, subscription: existingSub })
+            });
+            console.log('✅ Push subscription confirmed (stable endpoint preserved)');
+            return;
+        }
+
+        // VAPID key changed or no existing subscription — create fresh one
         if (existingSub) {
             try { await existingSub.unsubscribe(); } catch(e) {}
         }
@@ -523,13 +537,16 @@ async function registerPushSubscription() {
             applicationServerKey: urlBase64ToUint8Array(publicKey)
         });
 
+        // Store the VAPID key used so we can detect key changes later
+        localStorage.setItem('ht_vapid_key', publicKey);
+
         const saveRes = await fetch(`${API_URL}/api/push/subscribe`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token, subscription: newSub })
         });
         const saveData = await saveRes.json();
-        console.log('✅ Web Push subscription registered:', saveData.message);
+        console.log('✅ New Web Push subscription registered:', saveData.message);
     } catch (err) {
         console.warn('Push registration error (non-fatal):', err.message || err);
     }
@@ -539,8 +556,6 @@ if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').then(reg => {
             console.log('✅ ServiceWorker registered');
-            // Register push subscription silently on every page load
-            // Ensures subscription is always fresh and server has latest endpoint
             registerPushSubscription();
         }).catch(err => console.log('SW Registration error:', err));
     });
