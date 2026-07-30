@@ -510,12 +510,15 @@ async function registerPushSubscription() {
         if (!publicKey) return;
 
         let sub = await reg.pushManager.getSubscription();
-        if (!sub) {
-            sub = await reg.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(publicKey)
-            });
+        if (sub) {
+            // Clean up existing stale subscription to guarantee fresh VAPID key binding
+            try { await sub.unsubscribe(); } catch(e) {}
         }
+
+        sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(publicKey)
+        });
 
         await fetch(`${API_URL}/api/push/subscribe`, {
             method: 'POST',

@@ -180,6 +180,40 @@ app.post('/api/push/subscribe', async (req, res) => {
     }
 });
 
+// Test Web Push endpoint (Sends immediate push notification to user's registered devices)
+app.post('/api/push/test', async (req, res) => {
+    const { token } = req.body;
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id);
+        if (!user || !user.pushSubscriptions || user.pushSubscriptions.length === 0) {
+            return res.status(400).json({ error: "No active push subscription found for your account." });
+        }
+
+        const payload = JSON.stringify({
+            title: "🧪 Web Push Test | HydroTrack",
+            body: "Server-side Web Push is working! Alarms will ring even when app is closed.",
+            icon: "icon-192x192.png",
+            badge: "icon-192x192.png"
+        });
+
+        let successCount = 0;
+        for (const sub of user.pushSubscriptions) {
+            try {
+                await webpush.sendNotification(sub, payload);
+                successCount++;
+            } catch (e) {
+                console.error("Test Push Error:", e.message);
+            }
+        }
+
+        res.json({ message: `Test push sent to ${successCount} device(s)!` });
+    } catch (err) {
+        res.status(401).json({ error: "Unauthorized" });
+    }
+});
+
+
 app.post('/api/auth/update-password', async (req, res) => {
     const { token, currentPassword, newPassword } = req.body;
     try {
@@ -389,16 +423,22 @@ function startServerPushCron() {
 
     cron.schedule('* * * * *', async () => {
         try {
-            // Get current time in Indian Standard Time (IST - Asia/Kolkata)
+            // Get current time in Indian Standard Time (IST - Asia/Kolkata) using robust Intl formatter
             const now = new Date();
-            const currentTime = now.toLocaleTimeString('en-GB', { 
-                timeZone: 'Asia/Kolkata', 
-                hour: '2-digit', 
-                minute: '2-digit' 
-            });
+            const parts = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'Asia/Kolkata',
+                hour: '2-digit',
+                minute: '2-digit',
+                hourCycle: 'h23'
+            }).formatToParts(now);
+
+            const hh = (parts.find(p => p.type === 'hour')?.value || '00').padStart(2, '0');
+            const mm = (parts.find(p => p.type === 'minute')?.value || '00').padStart(2, '0');
+            const currentTime = `${hh}:${mm}`;
 
             // Find all users who have active push subscriptions
             const users = await User.find({ "pushSubscriptions.0": { $exists: true } });
+
 
             for (const user of users) {
                 if (!user.pushSubscriptions || user.pushSubscriptions.length === 0) continue;

@@ -327,6 +327,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+async function testPushNotification() {
+    const token = localStorage.getItem('token');
+    if (!token) return showToast("Please log in first.");
+
+    if (Notification.permission !== 'granted') {
+        return showToast("Please click 'Enable Notifications' first!");
+    }
+
+    if (typeof registerPushSubscription === 'function') {
+        await registerPushSubscription();
+    }
+
+    try {
+        showToast("Sending test push from server...");
+        const res = await fetch(`${API_URL}/api/push/test`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            showToast(data.message || "Test push sent! Check your device notifications.");
+        } else {
+            showToast("Push error: " + (data.error || "Unknown error"));
+        }
+    } catch (err) {
+        showToast("Push test error: " + err.message);
+    }
+}
+
 function sendDesktopAlert(title, message) {
     if (!("Notification" in window) || Notification.permission !== "granted") return;
 
