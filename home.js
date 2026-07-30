@@ -287,29 +287,9 @@ async function loadUserData() {
     }
 }
 
-// Send reminder schedule to the Service Worker so alarms fire in the background
-function syncRemindersToSW() {
-    if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.ready.then(reg => {
-        if (!reg.active) return;
-        const reminders = (data && Array.isArray(data.reminders)) ? data.reminders : [];
-        const hydrationMessages = typeof hydrationTexts !== 'undefined' ? hydrationTexts : [
-            "Time to drink water! 💧",
-            "Stay hydrated — your body needs it!",
-            "Quick reminder: drink some water!",
-            "Hydration check — have you had water recently?",
-            "Keep that streak going — drink up! 🔥"
-        ];
-        reg.active.postMessage({
-            type: 'SYNC_REMINDERS',
-            reminders: reminders,
-            goal: data.goal || 2500,
-            messages: hydrationMessages,
-            mealTimes: data.mealTimes || {},
-            postMealEnabled: data.postMealEnabled || false
-        });
-    });
-}
+// No longer needed — alarm timing is handled in the page setInterval
+// SW is used only to actually SHOW the notification popup
+function syncRemindersToSW() { /* intentionally empty */ }
 
 async function syncToCloud() {
     // ✅ NEW: If data isn't ready or still loading, STOP the sync.
@@ -385,18 +365,23 @@ setInterval(() => {
 
     /* ============================================================
        1. SPECIFIC TIME REMINDERS
-       NOTE: These are now handled by the Service Worker background alarm clock.
-       The SW receives the reminder schedule via postMessage on page load and
-       fires showNotification() independently — even when the tab is closed.
-       The in-page check below is a BACKUP for browsers without SW support.
+       The page setInterval drives timing; sendSystemNotification
+       routes through SW controller for the actual popup.
     ============================================================ */
-    if (!('serviceWorker' in navigator) && data && Array.isArray(data.reminders)) {
+    if (data && Array.isArray(data.reminders)) {
         data.reminders.forEach((r) => {
             if (r && r.active !== false && r.time === currentTime) {
                 if (r.lastFiredMinute !== currentTime) {
                     r.lastFiredMinute = currentTime;
                     const randomMsg = typeof getRandomReminder === 'function' ? getRandomReminder() : "Time to stay hydrated!";
-                    sendSystemNotification("Hydration Reminder 💧", `🔔 ${r.time}: ${randomMsg}`);
+                    sendSystemNotification("💧 Hydration Reminder", `🔔 ${r.time} — ${randomMsg}`);
+
+                    // Deactivate one-time alarms after firing
+                    if (r.daily === false) {
+                        r.active = false;
+                        if (typeof loadReminders === 'function') loadReminders();
+                        if (typeof syncToCloud === 'function') syncToCloud();
+                    }
                 }
             }
         });
@@ -418,11 +403,9 @@ setInterval(() => {
 
     /* ============================================================
        3. POST-MEAL REMINDERS
-       NOTE: These are also handled by the SW background alarm clock.
-       This block is a fallback-only for browsers without Service Worker.
     ============================================================ */
-    if (!('serviceWorker' in navigator) && data.postMealEnabled && data.mealTimes) {
-        const mealKeys = ['bfast', 'lunch', 'dinner'];
+    if (data.postMealEnabled && data.mealTimes) {
+        const mealKeys  = ['bfast', 'lunch', 'dinner'];
         const mealNames = { bfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };
 
         mealKeys.forEach(key => {
@@ -433,7 +416,7 @@ setInterval(() => {
                 if (minutes >= 60) { hours = (hours + 1) % 24; minutes -= 60; }
                 const triggerTime = hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0');
                 if (triggerTime === currentTime) {
-                    sendSystemNotification('Post-Meal Reminder', `🥗 30 mins since ${mealNames[key]}: Time to hydrate!`);
+                    sendSystemNotification('🥗 Post-Meal Reminder', `30 mins since ${mealNames[key]} — time to hydrate!`);
                 }
             }
         });
@@ -516,9 +499,35 @@ if ('serviceWorker' in navigator) {
 
 function sendSystemNotification(title, message) {
     if (!("Notification" in window)) return;
-    if (Notification.permission !== "granted") return;
+    if (Notification.permission !== "granted") {
+        console.warn('[HydroTrack] Notification permission not granted.');
+        return;
+    }
 
-    // Always use Service Worker showNotification — works in both browser and installed PWA
+    // Tier 1: Send via SW controller.postMessage (instant, works in PWA)
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+            type: 'SHOW_NOTIFICATION',
+            title: title,
+            body: message,
+            tag: 'hydrotrack-reminder-' + Date.now()
+        });
+        return;
+    }
+
+    // Tier 2: Try direct new Notification() (works in browser tab)
+    try {
+        const notif = new Notification(title, {
+            body: message,
+            icon: 'icon-192x192.png',
+            tag: 'hydrotrack-reminder',
+            renotify: true
+        });
+        notif.onclick = () => window.focus();
+        return;
+    } catch (e) { /* fall through */ }
+
+    // Tier 3: Wait for SW ready (slowest but reliable)
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.ready.then(reg => {
             reg.showNotification(title, {
@@ -529,12 +538,7 @@ function sendSystemNotification(title, message) {
                 renotify: true,
                 vibrate: [200, 100, 200]
             });
-        }).catch(() => {
-            // Fallback for non-SW browsers
-            try { new Notification(title, { body: message, icon: 'icon-192x192.png' }); } catch (e) {}
-        });
-    } else {
-        try { new Notification(title, { body: message, icon: 'icon-192x192.png' }); } catch (e) {}
+        }).catch(() => {});
     }
 }
 
