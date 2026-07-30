@@ -540,53 +540,73 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// Note: Notification permission is requested via the "Enable Notifications" button in Settings
-// (auto-prompting on page load is blocked by browsers — must be triggered by user gesture)
+// Web Audio API Chime for Alarms (pleasant 2-tone water chime)
+function playAlarmSound() {
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+
+        // Note 1 (C5 - 523.25 Hz)
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(523.25, ctx.currentTime);
+        gain1.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.start(ctx.currentTime);
+        osc1.stop(ctx.currentTime + 0.4);
+
+        // Note 2 (G5 - 783.99 Hz)
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(783.99, ctx.currentTime + 0.15);
+        gain2.gain.setValueAtTime(0.4, ctx.currentTime + 0.15);
+        gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        osc2.start(ctx.currentTime + 0.15);
+        osc2.stop(ctx.currentTime + 0.6);
+    } catch(e) {}
+}
 
 function sendSystemNotification(title, message) {
-    if (!("Notification" in window)) return;
-    if (Notification.permission !== "granted") {
-        console.warn('[HydroTrack] Notification permission not granted.');
+    // 1. Play audio chime
+    playAlarmSound();
+
+    // 2. Show in-app visual toast
+    if (typeof showToast === 'function') {
+        showToast(`🔔 ${title}: ${message}`);
+    }
+
+    if (!("Notification" in window) || Notification.permission !== "granted") {
+        console.warn('[HydroTrack] System notification permission not granted.');
         return;
     }
 
-    // Tier 1: Send via SW controller.postMessage (instant, works in PWA)
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({
-            type: 'SHOW_NOTIFICATION',
-            title: title,
-            body: message,
-            tag: 'hydrotrack-reminder-' + Date.now()
-        });
-        return;
-    }
-
-    // Tier 2: Try direct new Notification() (works in browser tab)
-    try {
-        const notif = new Notification(title, {
-            body: message,
-            icon: 'icon-192x192.png',
-            tag: 'hydrotrack-reminder',
-            renotify: true
-        });
-        notif.onclick = () => window.focus();
-        return;
-    } catch (e) { /* fall through */ }
-
-    // Tier 3: Wait for SW ready (slowest but reliable)
+    // 3. Trigger OS Notification via SW registration
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.ready.then(reg => {
             reg.showNotification(title, {
                 body: message,
-                icon: 'icon-192x192.png',
-                badge: 'icon-192x192.png',
-                tag: 'hydrotrack-reminder',
+                icon: './icon-192x192.png',
+                badge: './icon-192x192.png',
+                tag: 'hydrotrack-' + Date.now(),
                 renotify: true,
+                requireInteraction: true,
                 vibrate: [200, 100, 200]
             });
-        }).catch(() => {});
+        }).catch(() => {
+            try { new Notification(title, { body: message, icon: './icon-192x192.png' }); } catch (e) {}
+        });
+    } else {
+        try { new Notification(title, { body: message, icon: './icon-192x192.png' }); } catch (e) {}
     }
 }
+
 
 // EFFECTS
 class Noise {
