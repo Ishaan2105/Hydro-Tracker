@@ -14,8 +14,8 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
 // --- WEB PUSH SETUP ---
-const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || "BILMZlX8RS9yaLYuRAtiwicVmPYi6nYTMpWqPh3Iai_UTI0gOXhnb-f02HlL7iFtGzRk_EbHVP4skvWAX1QWyzc";
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "zI6V9-IMqLqU3H2jPX-co-4MlqbGWd6jhvrTQKGJqto";
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || "BG7CQF2LD7Iw16k9JEbGhNn0wwd02wVRDfn7-jMnU6B1c_Psv1cbhqL6-AfzKWS0Aa34k1BkIowguxqFnjbIMy8";
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "C1YzP94Hs_GnXKEeB-3w0QZ2yDHwYZYvtRJLnwBC5tc";
 const EMAIL_USER = process.env.EMAIL_USER || "ishaanhingway@gmail.com";
 
 webpush.setVapidDetails(
@@ -168,12 +168,13 @@ app.post('/api/push/subscribe', async (req, res) => {
         const user = await User.findById(decoded.id);
         if (!user) return res.status(404).json({ error: "User not found" });
 
-        // Add subscription if not already present
-        const exists = user.pushSubscriptions.some(sub => sub.endpoint === subscription.endpoint);
-        if (!exists) {
-            user.pushSubscriptions.push(subscription);
-            await user.save();
-        }
+        // Keep existing valid subscriptions except matching endpoint or clean stale
+        let updatedSubs = (user.pushSubscriptions || []).filter(sub => sub.endpoint !== subscription.endpoint);
+        updatedSubs.push(subscription);
+        
+        user.pushSubscriptions = updatedSubs;
+        await user.save();
+
         res.json({ message: "Push Subscription Saved Successfully!" });
     } catch (err) {
         res.status(401).json({ error: "Unauthorized" });
@@ -187,27 +188,41 @@ app.post('/api/push/test', async (req, res) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findById(decoded.id);
         if (!user || !user.pushSubscriptions || user.pushSubscriptions.length === 0) {
-            return res.status(400).json({ error: "No active push subscription found for your account." });
+            return res.status(400).json({ error: "No active push subscription found for your account. Please click 'Enable Notifications'." });
         }
 
         const payload = JSON.stringify({
             title: "🧪 Web Push Test | HydroTrack",
             body: "Server-side Web Push is working! Alarms will ring even when app is closed.",
-            icon: "icon-192x192.png",
-            badge: "icon-192x192.png"
+            icon: "./icon-192x192.png",
+            badge: "./icon-192x192.png"
         });
 
         let successCount = 0;
+        const validSubs = [];
+
         for (const sub of user.pushSubscriptions) {
             try {
                 await webpush.sendNotification(sub, payload);
                 successCount++;
+                validSubs.push(sub);
             } catch (e) {
-                console.error("Test Push Error:", e.message);
+                console.log(`Pruning stale subscription endpoint: ${e.statusCode || e.message}`);
+                // Automatically prune expired/invalid subscription endpoints
             }
         }
 
-        res.json({ message: `Test push sent to ${successCount} device(s)!` });
+        // Save pruned subscriptions list
+        if (validSubs.length !== user.pushSubscriptions.length) {
+            user.pushSubscriptions = validSubs;
+            await user.save();
+        }
+
+        if (successCount > 0) {
+            res.json({ message: `Test push sent to ${successCount} device(s)!` });
+        } else {
+            res.status(400).json({ error: "Push delivery failed for saved endpoints. Re-subscribing device..." });
+        }
     } catch (err) {
         res.status(401).json({ error: "Unauthorized" });
     }
