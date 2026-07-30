@@ -100,6 +100,99 @@
 
         </section>
 
+        <!-- 🔥 Streak Tracker + Daily Ring Row -->
+        <section class="dual-section">
+            <!-- 🔥 Streak Tracker -->
+            <div class="insight-card streak-card">
+                <h3>🔥 Streak Tracker</h3>
+                <div class="streak-body">
+                    <div class="streak-flame-wrap">
+                        <span class="streak-flame" id="streak-flame">🔥</span>
+                    </div>
+                    <div class="streak-numbers">
+                        <div class="streak-stat">
+                            <span class="streak-num" id="current-streak">—</span>
+                            <span class="streak-label">Current Streak</span>
+                        </div>
+                        <div class="streak-divider"></div>
+                        <div class="streak-stat">
+                            <span class="streak-num best" id="best-streak">—</span>
+                            <span class="streak-label">Best Ever</span>
+                        </div>
+                    </div>
+                </div>
+                <p class="streak-caption" id="streak-caption">Loading streak data...</p>
+            </div>
+
+            <!-- 💧 Daily Progress Ring -->
+            <div class="insight-card ring-card">
+                <h3>💧 Today's Progress</h3>
+                <div class="ring-wrap">
+                    <svg class="progress-ring" viewBox="0 0 120 120">
+                        <circle class="ring-bg" cx="60" cy="60" r="50"/>
+                        <circle class="ring-fill" id="ring-fill" cx="60" cy="60" r="50"
+                            stroke-dasharray="314"
+                            stroke-dashoffset="314"/>
+                    </svg>
+                    <div class="ring-center">
+                        <span class="ring-pct" id="ring-pct">0%</span>
+                        <span class="ring-sub" id="ring-sub">0 / 0 L</span>
+                    </div>
+                </div>
+                <p class="ring-caption" id="ring-caption">Loading...</p>
+            </div>
+        </section>
+
+        <!-- 📅 Best & Worst Day + Goal Hit Rate -->
+        <section class="dual-section">
+            <!-- 📅 Best & Worst Day -->
+            <div class="insight-card bw-card">
+                <h3>📅 Best & Worst Day</h3>
+                <div class="bw-body">
+                    <div class="bw-row best-row">
+                        <span class="bw-icon">🏆</span>
+                        <div class="bw-info">
+                            <span class="bw-day" id="best-day-label">—</span>
+                            <span class="bw-val" id="best-day-val">—</span>
+                        </div>
+                    </div>
+                    <div class="bw-separator"></div>
+                    <div class="bw-row worst-row">
+                        <span class="bw-icon">📉</span>
+                        <div class="bw-info">
+                            <span class="bw-day" id="worst-day-label">—</span>
+                            <span class="bw-val" id="worst-day-val">—</span>
+                        </div>
+                    </div>
+                </div>
+                <p class="bw-note" id="bw-note">Based on this week's data</p>
+            </div>
+
+            <!-- 🎯 Goal Hit Rate -->
+            <div class="insight-card hit-card">
+                <h3>🎯 Goal Hit Rate</h3>
+                <div class="hit-body">
+                    <div class="hit-pie-wrap">
+                        <svg class="hit-pie" viewBox="0 0 80 80">
+                            <circle class="hit-bg" cx="40" cy="40" r="32"/>
+                            <circle class="hit-arc" id="hit-arc" cx="40" cy="40" r="32"
+                                stroke-dasharray="201"
+                                stroke-dashoffset="201"/>
+                        </svg>
+                        <div class="hit-center">
+                            <span class="hit-fraction" id="hit-fraction">0/7</span>
+                        </div>
+                    </div>
+                    <div class="hit-info">
+                        <span class="hit-pct" id="hit-pct">0%</span>
+                        <span class="hit-label">this week</span>
+                        <div class="hit-dots" id="hit-dots"></div>
+                    </div>
+                </div>
+                <p class="hit-caption" id="hit-caption">Loading weekly stats...</p>
+            </div>
+        </section>
+
         <section class="meals-section">
             <div class="insight-card">
                 <h3>Meal Times</h3>

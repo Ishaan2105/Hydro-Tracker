@@ -145,6 +145,10 @@ async function loadCloudData() {
         loadMealTimes();
         renderRealTimeTrend();
         renderMonthlyGrid();
+        renderStreakCard();
+        renderProgressRing();
+        renderBestWorstDay();
+        renderGoalHitRate();
         
         // Update Sidebar
         document.getElementById('username-display').innerText = data.username;
@@ -451,7 +455,216 @@ if (avgPercent >= 90) {
     `;
 }
 
+/* ============================================================
+   NEW INSIGHT CARDS
+   ============================================================ */
 
+// Helper: get a day's intake from data.history or today's data.intake
+function getDayIntake(dateStr) {
+    const todayISO = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
+    if (dateStr === todayISO) return Number(data.intake) || 0;
+    const entry = (data.history || {})[dateStr];
+    return (entry && typeof entry === 'object') ? (entry.total || 0) : (Number(entry) || 0);
+}
 
+// Helper: format YYYY-MM-DD -> "Mon, Jul 28"
+function formatDateFriendly(dateStr) {
+    const d = new Date(dateStr + 'T12:00:00');
+    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
 
+// 🔥 Streak Tracker Card
+function renderStreakCard() {
+    const goal = data.goal || 2500;
+    const history = data.history || {};
+    const todayISO = new Date().toLocaleDateString('en-CA');
+
+    // Build sorted list of dates that met goal
+    const allDates = [];
+    for (let i = 365; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const ds = d.toLocaleDateString('en-CA');
+        allDates.push(ds);
+    }
+
+    // Current streak (working backwards from today)
+    let currentStreak = 0;
+    for (let i = 0; i < allDates.length; i++) {
+        const ds = allDates[allDates.length - 1 - i];
+        const val = getDayIntake(ds);
+        if (val >= goal) currentStreak++;
+        else break;
+    }
+
+    // Best ever streak
+    let bestStreak = 0, tempStreak = 0;
+    for (const ds of allDates) {
+        const val = getDayIntake(ds);
+        if (val >= goal) {
+            tempStreak++;
+            if (tempStreak > bestStreak) bestStreak = tempStreak;
+        } else {
+            tempStreak = 0;
+        }
+    }
+
+    // Update DOM
+    const curEl = document.getElementById('current-streak');
+    const bestEl = document.getElementById('best-streak');
+    const captionEl = document.getElementById('streak-caption');
+    const flameEl = document.getElementById('streak-flame');
+    if (!curEl) return;
+
+    curEl.textContent = currentStreak + ' day' + (currentStreak !== 1 ? 's' : '');
+    bestEl.textContent = bestStreak + ' day' + (bestStreak !== 1 ? 's' : '');
+
+    if (currentStreak === 0) {
+        captionEl.textContent = 'Log water today to start your streak!';
+        flameEl.style.filter = 'grayscale(1)';
+        flameEl.style.opacity = '0.4';
+    } else if (currentStreak >= 7) {
+        captionEl.textContent = '🌟 Outstanding! You are on fire!';
+        flameEl.style.filter = 'drop-shadow(0 0 8px orange)';
+    } else if (currentStreak >= 3) {
+        captionEl.textContent = "Keep it up! Don't break the chain!";
+    } else {
+        captionEl.textContent = 'Good start — build that streak!';
+    }
+}
+
+// 💧 Daily Progress Ring
+function renderProgressRing() {
+    const intake = Number(data.intake) || 0;
+    const goal   = Number(data.goal) || 2500;
+    const pct    = Math.min(100, Math.round((intake / goal) * 100));
+    const circumference = 314; // 2 * π * 50
+    const offset = circumference - (pct / 100) * circumference;
+
+    const ring    = document.getElementById('ring-fill');
+    const pctEl   = document.getElementById('ring-pct');
+    const subEl   = document.getElementById('ring-sub');
+    const caption = document.getElementById('ring-caption');
+    if (!ring) return;
+
+    // Animate after paint
+    requestAnimationFrame(() => {
+        ring.style.strokeDashoffset = offset;
+    });
+
+    if (pct >= 100) ring.classList.add('complete');
+
+    pctEl.textContent = pct + '%';
+    subEl.textContent = (intake / 1000).toFixed(1) + ' / ' + (goal / 1000).toFixed(1) + ' L';
+
+    if (pct >= 100)      caption.textContent = '🎉 Goal reached! Amazing work today!';
+    else if (pct >= 75)  caption.textContent = 'Almost there — just a bit more!';
+    else if (pct >= 50)  caption.textContent = 'Halfway through — keep going!';
+    else if (pct >= 25)  caption.textContent = 'Good start — stay consistent!';
+    else if (pct > 0)    caption.textContent = 'Just getting started — keep drinking!';
+    else                 caption.textContent = 'No intake logged yet today.';
+}
+
+// 📅 Best & Worst Day (this week)
+function renderBestWorstDay() {
+    const goal = data.goal || 2500;
+    const days = [];
+    const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const ds = d.toLocaleDateString('en-CA');
+        const val = getDayIntake(ds);
+        days.push({ ds, val, label: formatDateFriendly(ds) });
+    }
+
+    // Only consider days that have any intake logged
+    const logged = days.filter(d => d.val > 0);
+
+    const bestDayLabelEl = document.getElementById('best-day-label');
+    const bestDayValEl   = document.getElementById('best-day-val');
+    const worstDayLabelEl = document.getElementById('worst-day-label');
+    const worstDayValEl   = document.getElementById('worst-day-val');
+    const noteEl = document.getElementById('bw-note');
+    if (!bestDayLabelEl) return;
+
+    if (logged.length === 0) {
+        bestDayLabelEl.textContent  = 'No data yet';
+        worstDayLabelEl.textContent = 'No data yet';
+        bestDayValEl.textContent    = '—';
+        worstDayValEl.textContent   = '—';
+        return;
+    }
+
+    const sorted = [...logged].sort((a, b) => b.val - a.val);
+    const best   = sorted[0];
+    const worst  = sorted[sorted.length - 1];
+
+    bestDayLabelEl.textContent  = best.label;
+    bestDayValEl.textContent    = (best.val / 1000).toFixed(2) + ' L';
+    worstDayLabelEl.textContent = worst.label;
+    worstDayValEl.textContent   = (worst.val / 1000).toFixed(2) + ' L';
+
+    if (best.ds === worst.ds) noteEl.textContent = 'Only one day logged this week';
+    else noteEl.textContent = 'Based on this week\'s data';
+}
+
+// 🎯 Goal Hit Rate
+function renderGoalHitRate() {
+    const goal = data.goal || 2500;
+    const todayISO = new Date().toLocaleDateString('en-CA');
+    const circumference = 201; // 2 * π * 32
+
+    let hitCount = 0;
+    const dotStates = [];
+
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const ds = d.toLocaleDateString('en-CA');
+        const val = getDayIntake(ds);
+        const isToday = ds === todayISO;
+        const hit = val >= goal;
+        if (hit) hitCount++;
+        dotStates.push({ hit, isToday, val });
+    }
+
+    const pct = Math.round((hitCount / 7) * 100);
+    const offset = circumference - (hitCount / 7) * circumference;
+
+    const arc      = document.getElementById('hit-arc');
+    const fracEl   = document.getElementById('hit-fraction');
+    const pctEl    = document.getElementById('hit-pct');
+    const dotsEl   = document.getElementById('hit-dots');
+    const caption  = document.getElementById('hit-caption');
+    if (!arc) return;
+
+    requestAnimationFrame(() => {
+        arc.style.strokeDashoffset = offset;
+    });
+
+    // Color the arc based on hit rate
+    if (pct >= 80) arc.style.stroke = '#2e7d32';
+    else if (pct >= 50) arc.style.stroke = 'var(--accent, #1565c0)';
+    else arc.style.stroke = '#e65100';
+
+    fracEl.textContent = hitCount + '/7';
+    pctEl.textContent  = pct + '%';
+
+    // Day dots
+    dotsEl.innerHTML = '';
+    dotStates.forEach(s => {
+        const dot = document.createElement('span');
+        dot.className = 'hit-dot ' + (s.isToday ? 'today' : (s.hit ? 'success' : 'fail'));
+        dot.title = (s.val / 1000).toFixed(1) + 'L';
+        dotsEl.appendChild(dot);
+    });
+
+    if (pct === 100)      caption.textContent = '🏆 Perfect week — every single goal hit!';
+    else if (pct >= 70)  caption.textContent = '💪 Strong week! A few days shy of perfect.';
+    else if (pct >= 50)  caption.textContent = 'Halfway there — push for more hits!';
+    else if (pct > 0)    caption.textContent = 'Room to grow — set reminders to help!';
+    else                 caption.textContent = 'No goals hit yet this week.';
+}
 

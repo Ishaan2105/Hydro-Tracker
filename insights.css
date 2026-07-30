@@ -459,3 +459,208 @@ input[type="time"] {
     width: 100%;
     height: 100%;
 }
+
+/* ── Dual-Column Layout ── */
+.dual-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-bottom: 0;
+}
+@media (max-width: 600px) {
+    .dual-section { grid-template-columns: 1fr; }
+}
+
+/* ── Streak Card ── */
+.streak-card { display: flex; flex-direction: column; }
+.streak-body {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 10px 0;
+}
+.streak-flame-wrap { flex-shrink: 0; }
+.streak-flame {
+    font-size: 3.2rem;
+    display: block;
+    animation: flamePulse 1.4s ease-in-out infinite;
+    transform-origin: bottom center;
+}
+@keyframes flamePulse {
+    0%, 100% { transform: scale(1) rotate(-3deg); }
+    50%       { transform: scale(1.15) rotate(3deg); }
+}
+.streak-numbers { display: flex; align-items: center; gap: 12px; flex: 1; }
+.streak-stat { display: flex; flex-direction: column; align-items: center; flex: 1; }
+.streak-num {
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--accent, #1565c0);
+    line-height: 1;
+}
+.streak-num.best { color: #ff8c00; }
+.streak-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #888;
+    text-transform: uppercase;
+    margin-top: 4px;
+    text-align: center;
+}
+.streak-divider { width: 1px; height: 40px; background: rgba(0,0,0,0.1); }
+.streak-caption {
+    font-size: 0.8rem;
+    color: #888;
+    margin: 0;
+    text-align: center;
+    font-style: italic;
+}
+
+/* ── Progress Ring ── */
+.ring-card { display: flex; flex-direction: column; align-items: center; }
+.ring-wrap {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 8px auto;
+}
+.progress-ring { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring-bg {
+    fill: none;
+    stroke: rgba(21,101,192,0.1);
+    stroke-width: 12;
+}
+.ring-fill {
+    fill: none;
+    stroke: url(#ringGradient);
+    stroke-width: 12;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    stroke: var(--accent, #1565c0);
+}
+.ring-fill.complete { stroke: #2e7d32; }
+.ring-center {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+}
+.ring-pct {
+    display: block;
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: var(--accent, #1565c0);
+    line-height: 1;
+}
+.ring-sub {
+    display: block;
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: #888;
+    margin-top: 3px;
+    white-space: nowrap;
+}
+.ring-caption {
+    font-size: 0.78rem;
+    color: #888;
+    text-align: center;
+    margin: 4px 0 0;
+    font-style: italic;
+}
+
+/* ── Best & Worst Day ── */
+.bw-card { display: flex; flex-direction: column; }
+.bw-body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 4px; margin: 8px 0; }
+.bw-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+}
+.best-row { background: rgba(46,125,50,0.08); }
+.worst-row { background: rgba(198,40,40,0.07); }
+.bw-icon { font-size: 1.5rem; flex-shrink: 0; }
+.bw-info { display: flex; flex-direction: column; }
+.bw-day {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #333;
+}
+.bw-val {
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: var(--accent, #1565c0);
+    margin-top: 1px;
+}
+.best-row .bw-val { color: #2e7d32; }
+.worst-row .bw-val { color: #c62828; }
+.bw-separator { height: 1px; background: rgba(0,0,0,0.06); margin: 4px 0; }
+.bw-note { font-size: 0.75rem; color: #aaa; margin: 4px 0 0; text-align: center; font-style: italic; }
+
+/* ── Goal Hit Rate ── */
+.hit-card { display: flex; flex-direction: column; }
+.hit-body { display: flex; align-items: center; gap: 16px; margin: 10px 0; }
+.hit-pie-wrap { position: relative; width: 80px; height: 80px; flex-shrink: 0; }
+.hit-pie { width: 100%; height: 100%; transform: rotate(-90deg); }
+.hit-bg {
+    fill: none;
+    stroke: rgba(21,101,192,0.1);
+    stroke-width: 10;
+}
+.hit-arc {
+    fill: none;
+    stroke: var(--accent, #1565c0);
+    stroke-width: 10;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hit-center {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+.hit-fraction {
+    font-size: 0.85rem;
+    font-weight: 900;
+    color: var(--accent, #1565c0);
+    line-height: 1;
+}
+.hit-info { display: flex; flex-direction: column; gap: 4px; }
+.hit-pct {
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--accent, #1565c0);
+    line-height: 1;
+}
+.hit-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #888;
+    text-transform: uppercase;
+}
+.hit-dots {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+.hit-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    transition: transform 0.2s;
+}
+.hit-dot.success { background: var(--accent, #1565c0); }
+.hit-dot.fail    { background: rgba(0,0,0,0.12); }
+.hit-dot.today   { background: #ff8c00; }
+.hit-caption {
+    font-size: 0.78rem;
+    color: #888;
+    text-align: center;
+    margin: 4px 0 0;
+    font-style: italic;
+}
+
