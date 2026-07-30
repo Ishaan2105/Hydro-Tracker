@@ -304,7 +304,9 @@ function syncRemindersToSW() {
             type: 'SYNC_REMINDERS',
             reminders: reminders,
             goal: data.goal || 2500,
-            messages: hydrationMessages
+            messages: hydrationMessages,
+            mealTimes: data.mealTimes || {},
+            postMealEnabled: data.postMealEnabled || false
         });
     });
 }
@@ -415,9 +417,11 @@ setInterval(() => {
     }
 
     /* ============================================================
-       3. POST-MEAL REMINDERS (Calculated 30m Delay)
+       3. POST-MEAL REMINDERS
+       NOTE: These are also handled by the SW background alarm clock.
+       This block is a fallback-only for browsers without Service Worker.
     ============================================================ */
-    if (data.postMealEnabled && data.mealTimes) {
+    if (!('serviceWorker' in navigator) && data.postMealEnabled && data.mealTimes) {
         const mealKeys = ['bfast', 'lunch', 'dinner'];
         const mealNames = { bfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };
 
@@ -426,15 +430,10 @@ setInterval(() => {
             if (mealTime) {
                 let [hours, minutes] = mealTime.split(':').map(Number);
                 minutes += 30;
-                if (minutes >= 60) {
-                    hours = (hours + 1) % 24;
-                    minutes -= 60;
-                }
-                const triggerTime = hours.toString().padStart(2, '0') + ":" + 
-                                minutes.toString().padStart(2, '0');
-
+                if (minutes >= 60) { hours = (hours + 1) % 24; minutes -= 60; }
+                const triggerTime = hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0');
                 if (triggerTime === currentTime) {
-                    sendSystemNotification("Post-Meal Reminder", `🥗 30 mins since ${mealNames[key]}: Time to hydrate!`);
+                    sendSystemNotification('Post-Meal Reminder', `🥗 30 mins since ${mealNames[key]}: Time to hydrate!`);
                 }
             }
         });
