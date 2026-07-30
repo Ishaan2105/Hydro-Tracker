@@ -540,70 +540,120 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// Web Audio API Chime for Alarms (pleasant 2-tone water chime)
+// Web Audio API Chime for Alarms — plays even from background tabs
 function playAlarmSound() {
     try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         if (!AudioCtx) return;
         const ctx = new AudioCtx();
 
-        // Note 1 (C5 - 523.25 Hz)
-        const osc1 = ctx.createOscillator();
-        const gain1 = ctx.createGain();
-        osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(523.25, ctx.currentTime);
-        gain1.gain.setValueAtTime(0.3, ctx.currentTime);
-        gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-        osc1.connect(gain1);
-        gain1.connect(ctx.destination);
-        osc1.start(ctx.currentTime);
-        osc1.stop(ctx.currentTime + 0.4);
+        // Resume suspended context (browsers suspend AudioContext for background tabs)
+        const doPlay = () => {
+            const osc1 = ctx.createOscillator();
+            const gain1 = ctx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(523.25, ctx.currentTime);
+            gain1.gain.setValueAtTime(0.4, ctx.currentTime);
+            gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+            osc1.connect(gain1); gain1.connect(ctx.destination);
+            osc1.start(); osc1.stop(ctx.currentTime + 0.5);
 
-        // Note 2 (G5 - 783.99 Hz)
-        const osc2 = ctx.createOscillator();
-        const gain2 = ctx.createGain();
-        osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(783.99, ctx.currentTime + 0.15);
-        gain2.gain.setValueAtTime(0.4, ctx.currentTime + 0.15);
-        gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
-        osc2.connect(gain2);
-        gain2.connect(ctx.destination);
-        osc2.start(ctx.currentTime + 0.15);
-        osc2.stop(ctx.currentTime + 0.6);
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2);
+            gain2.gain.setValueAtTime(0.5, ctx.currentTime + 0.2);
+            gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.7);
+            osc2.connect(gain2); gain2.connect(ctx.destination);
+            osc2.start(ctx.currentTime + 0.2); osc2.stop(ctx.currentTime + 0.7);
+        };
+
+        if (ctx.state === 'suspended') {
+            ctx.resume().then(doPlay).catch(() => {});
+        } else {
+            doPlay();
+        }
     } catch(e) {}
 }
 
+// Full-screen alarm modal that cannot be missed
+function showAlarmModal(title, message) {
+    // Remove existing modal if present
+    const existing = document.getElementById('hydrotrack-alarm-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'hydrotrack-alarm-modal';
+    modal.innerHTML = `
+        <div style="
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 999999;
+            background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center;
+            animation: fadeInModal 0.3s ease;
+        ">
+            <div style="
+                background: linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #1976d2 100%);
+                border-radius: 24px; padding: 40px 36px; text-align: center; max-width: 360px;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.5); color: white;
+                animation: bounceIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+            ">
+                <div style="font-size: 64px; margin-bottom: 12px;">💧</div>
+                <h2 style="margin: 0 0 8px; font-size: 22px; font-weight: 800;">${title}</h2>
+                <p style="margin: 0 0 28px; font-size: 15px; opacity: 0.9; line-height: 1.5;">${message}</p>
+                <button onclick="document.getElementById('hydrotrack-alarm-modal').remove()" style="
+                    background: white; color: #1565c0; border: none; border-radius: 12px;
+                    padding: 12px 32px; font-size: 15px; font-weight: 700; cursor: pointer;
+                ">Dismiss ✓</button>
+            </div>
+        </div>
+        <style>
+            @keyframes fadeInModal { from { opacity: 0 } to { opacity: 1 } }
+            @keyframes bounceIn { from { transform: scale(0.5); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+        </style>
+    `;
+    document.body.appendChild(modal);
+
+    // Auto-dismiss after 60 seconds
+    setTimeout(() => { if (document.getElementById('hydrotrack-alarm-modal')) modal.remove(); }, 60000);
+}
+
 function sendSystemNotification(title, message) {
-    // 1. Play audio chime
+    // 1. Play alarm chime
     playAlarmSound();
 
-    // 2. Show in-app visual toast
-    if (typeof showToast === 'function') {
-        showToast(`🔔 ${title}: ${message}`);
-    }
+    // 2. Show in-app toast (always)
+    if (typeof showToast === 'function') showToast(`🔔 ${title}`);
 
-    if (!("Notification" in window) || Notification.permission !== "granted") {
-        console.warn('[HydroTrack] System notification permission not granted.');
-        return;
-    }
+    // 3. Show full-screen alarm modal (cannot be missed)
+    showAlarmModal(title, message);
 
-    // 3. Trigger OS Notification via SW registration
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.ready.then(reg => {
-            reg.showNotification(title, {
-                body: message,
-                icon: './icon-192x192.png',
-                badge: './icon-192x192.png',
-                tag: 'hydrotrack-' + Date.now(),
-                renotify: true,
-                requireInteraction: true,
-                vibrate: [200, 100, 200]
-            });
-        }).catch(() => {
-            try { new Notification(title, { body: message, icon: './icon-192x192.png' }); } catch (e) {}
+    // 4. OS-level notification (for when app is NOT visible)
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+
+    // Try new Notification() directly first (most reliable for open browser tabs)
+    try {
+        const n = new Notification(title, {
+            body: message,
+            icon: './icon-192x192.png',
+            tag: 'hydrotrack-' + Date.now(),
+            renotify: true,
+            requireInteraction: true
         });
-    } else {
-        try { new Notification(title, { body: message, icon: './icon-192x192.png' }); } catch (e) {}
+        n.onclick = () => { window.focus(); n.close(); };
+    } catch (e) {
+        // Fallback to SW showNotification (required in some browsers for PWA context)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(reg => {
+                reg.showNotification(title, {
+                    body: message,
+                    icon: './icon-192x192.png',
+                    badge: './icon-192x192.png',
+                    tag: 'hydrotrack-' + Date.now(),
+                    renotify: true,
+                    requireInteraction: true,
+                    vibrate: [200, 100, 200]
+                });
+            }).catch(() => {});
+        }
     }
 }
 
