@@ -335,12 +335,19 @@ async function testPushNotification() {
         return showToast("Please click 'Enable Notifications' first!");
     }
 
+    // 1. Immediately trigger a local native OS notification banner to test OS display
+    if (typeof sendSystemNotification === 'function') {
+        sendSystemNotification("💧 HydroTrack Test", "Local test notification! OS banner pipeline is active.");
+    }
+
+    // 2. Refresh push subscription token with server
     if (typeof registerPushSubscription === 'function') {
         await registerPushSubscription();
     }
 
+    // 3. Send Web Push request to Render server
     try {
-        showToast("Sending test push from server...");
+        showToast("Requesting server Web Push...");
         const res = await fetch(`${API_URL}/api/push/test`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

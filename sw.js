@@ -1,8 +1,8 @@
 // ============================================================
 // HydroTrack Service Worker — PWA Caching + Push Notifications
-// Version: hydrotrack-v7
+// Version: hydrotrack-v8
 // ============================================================
-const CACHE_NAME = 'hydrotrack-v7';
+const CACHE_NAME = 'hydrotrack-v8';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -52,15 +52,31 @@ self.addEventListener('fetch', (event) => {
 
 // ── Push: handle server-sent push notifications ────────────
 self.addEventListener('push', (event) => {
-    const payload = event.data ? event.data.json() : {};
+    let payload = {};
+    if (event.data) {
+        try {
+            payload = event.data.json();
+        } catch (e) {
+            payload = { title: '💧 HydroTrack', body: event.data.text() };
+        }
+    }
+
     const title = payload.title || '💧 HydroTrack Reminder';
     const options = {
         body: payload.body || 'Time to stay hydrated!',
-        icon: 'icon-192x192.png',
-        badge: 'icon-192x192.png',
+        icon: './icon-192x192.png',
+        badge: './icon-192x192.png',
+        tag: payload.tag || ('hydrotrack-push-' + Date.now()),
+        renotify: true,
+        requireInteraction: true,
         vibrate: [200, 100, 200]
     };
-    event.waitUntil(self.registration.showNotification(title, options));
+
+    event.waitUntil(
+        self.registration.showNotification(title, options).catch(err => {
+            console.error('showNotification error in SW:', err);
+        })
+    );
 });
 
 // ── Notification click: focus/open app ─────────────────────
