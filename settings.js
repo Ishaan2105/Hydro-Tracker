@@ -509,6 +509,7 @@ async function addManualTime() {
     data.reminders.sort((a, b) => a.time.localeCompare(b.time));
 
     await syncToCloud(); // Save to MongoDB
+    if (typeof syncRemindersToSW === 'function') syncRemindersToSW();
     renderCloudReminders(); // Re-render the list
     timeInput.value = "";
     showToast(`✅ Added ${timeValue}`);

@@ -268,26 +268,45 @@ async function loadUserData() {
         data = cloudData;       
         isDataReady = true;     
         
-        // ✅ FIX: Update Sidebar UI directly from the Cloud response
+        // Update Sidebar UI from Cloud response
         const displayElement = document.getElementById('username-display');
         const initialElement = document.getElementById('user-initial');
-
-        if (displayElement && data.username) {
-            displayElement.innerText = data.username;
-        }
-        
-        if (initialElement && data.username) {
-            initialElement.innerText = data.username[0].toUpperCase();
-        }
+        if (displayElement && data.username) displayElement.innerText = data.username;
+        if (initialElement && data.username) initialElement.innerText = data.username[0].toUpperCase();
         
         // Refresh the progress ring and stats
         refreshHome();
-        checkBadges(); 
+        checkBadges();
+
+        // 🔔 Push reminders into the Service Worker background alarm clock
+        syncRemindersToSW();
 
     } catch (err) {
         console.error("Cloud connection failed:", err);
         showToast("Error loading profile from Cloud.");
     }
+}
+
+// Send reminder schedule to the Service Worker so alarms fire in the background
+function syncRemindersToSW() {
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.ready.then(reg => {
+        if (!reg.active) return;
+        const reminders = (data && Array.isArray(data.reminders)) ? data.reminders : [];
+        const hydrationMessages = typeof hydrationTexts !== 'undefined' ? hydrationTexts : [
+            "Time to drink water! 💧",
+            "Stay hydrated — your body needs it!",
+            "Quick reminder: drink some water!",
+            "Hydration check — have you had water recently?",
+            "Keep that streak going — drink up! 🔥"
+        ];
+        reg.active.postMessage({
+            type: 'SYNC_REMINDERS',
+            reminders: reminders,
+            goal: data.goal || 2500,
+            messages: hydrationMessages
+        });
+    });
 }
 
 async function syncToCloud() {
@@ -363,27 +382,19 @@ setInterval(() => {
                         now.getMinutes().toString().padStart(2, '0');
 
     /* ============================================================
-       1. SPECIFIC TIME REMINDERS (Data-Driven - Works on All Pages)
+       1. SPECIFIC TIME REMINDERS
+       NOTE: These are now handled by the Service Worker background alarm clock.
+       The SW receives the reminder schedule via postMessage on page load and
+       fires showNotification() independently — even when the tab is closed.
+       The in-page check below is a BACKUP for browsers without SW support.
     ============================================================ */
-    if (data && Array.isArray(data.reminders)) {
+    if (!('serviceWorker' in navigator) && data && Array.isArray(data.reminders)) {
         data.reminders.forEach((r) => {
-            // Check if reminder is active and matches current time
             if (r && r.active !== false && r.time === currentTime) {
-                // Prevent duplicate notification within the same minute
                 if (r.lastFiredMinute !== currentTime) {
                     r.lastFiredMinute = currentTime;
-                    
                     const randomMsg = typeof getRandomReminder === 'function' ? getRandomReminder() : "Time to stay hydrated!";
-                    if (typeof sendSystemNotification === 'function') {
-                        sendSystemNotification("Hydration Reminder 💧", `🔔 ${r.time}: ${randomMsg}`);
-                    }
-
-                    // Deactivate single-use (non-daily) alarms after firing
-                    if (r.daily === false) {
-                        r.active = false;
-                        if (typeof loadReminders === 'function') loadReminders();
-                        if (typeof syncToCloud === 'function') syncToCloud();
-                    }
+                    sendSystemNotification("Hydration Reminder 💧", `🔔 ${r.time}: ${randomMsg}`);
                 }
             }
         });
