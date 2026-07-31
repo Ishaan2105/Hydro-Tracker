@@ -117,6 +117,35 @@ window.addEventListener('DOMContentLoaded', () => {
         picker.max = todayISO;    // Disable selection of future dates
     }
 
+    // ── Instant username from cache or JWT token (avoids flashing "User") ──
+    const userDisplay = document.getElementById('username-display');
+    const avatar = document.getElementById('user-initial');
+
+    // Try cache first
+    const cachedRaw = localStorage.getItem('hydro_data_cache');
+    let cachedName = null;
+    try {
+        const cachedObj = JSON.parse(cachedRaw);
+        if (cachedObj && cachedObj.username && cachedObj.username !== 'Loading...') {
+            cachedName = cachedObj.username;
+        }
+    } catch(e) {}
+
+    // Fallback: decode JWT payload for the username
+    if (!cachedName && token) {
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            if (payload && (payload.username || payload.name)) {
+                cachedName = payload.username || payload.name;
+            }
+        } catch(e) {}
+    }
+
+    if (cachedName) {
+        if (userDisplay) userDisplay.innerText = cachedName;
+        if (avatar) avatar.innerText = cachedName[0].toUpperCase();
+    }
+
     loadHistoryData(); 
 });
 
