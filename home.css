@@ -128,27 +128,14 @@ body {
     background: var(--accent-subtle);
 }
 
-/* Install App Button */
-.install-app-btn {
-    width: 100%;
+/* Button nav-items (e.g. Install App) match standard nav-items exactly */
+button.nav-item {
     border: none;
-    background: linear-gradient(135deg, #0284c7, #0369a1);
-    color: #ffffff !important;
+    background: transparent;
     cursor: pointer;
-    margin-top: 12px;
-    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
-    transition: all 0.25s ease;
-}
-
-.install-app-btn:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45) !important;
-    background: linear-gradient(135deg, #0369a1, #075985) !important;
-}
-
-.install-app-btn .nav-icon {
-    background: rgba(255, 255, 255, 0.25);
-    color: white;
+    font-family: inherit;
+    width: 100%;
+    text-align: left;
 }
 
 /* Main Content & Circular Progress */
