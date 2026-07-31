@@ -80,66 +80,62 @@
     </script>
 
     <main class="content">
-        <div class="leaderboard-container">
-            <header class="leaderboard-header">
-                <div>
-                    <h1>Global Leaderboard 🏆</h1>
-                    <p class="subtitle">Rankings based on daily goal completion, streaks, and hydration consistency!</p>
-                </div>
-            </header>
+        <header>
+            <h1>Global Leaderboard 🏆</h1>
+            <p class="subtitle">Rankings based on daily goal completion, streaks, and hydration consistency!</p>
+        </header>
 
-            <!-- MY RANK BANNER -->
-            <section class="my-rank-banner" id="my-rank-banner" style="display:none;">
-                <div class="my-rank-badge" id="my-rank-num">#--</div>
-                <div class="my-rank-info">
-                    <h3 id="my-rank-username">YOUR NAME</h3>
-                    <span id="my-rank-title" class="rank-tag">🌵 Desert Dweller</span>
+        <!-- MY RANK BANNER -->
+        <section class="my-rank-banner" id="my-rank-banner" style="display:none;">
+            <div class="my-rank-badge" id="my-rank-num">#--</div>
+            <div class="my-rank-info">
+                <h3 id="my-rank-username">YOUR NAME</h3>
+                <span id="my-rank-title" class="rank-tag">🌵 Desert Dweller</span>
+            </div>
+            <div class="my-rank-stats">
+                <div class="stat-pill">
+                    <span class="pill-label">Completion</span>
+                    <strong id="my-rank-pct">0%</strong>
                 </div>
-                <div class="my-rank-stats">
-                    <div class="stat-pill">
-                        <span class="pill-label">Completion</span>
-                        <strong id="my-rank-pct">0%</strong>
-                    </div>
-                    <div class="stat-pill">
-                        <span class="pill-label">Streak</span>
-                        <strong id="my-rank-streak">🔥 0 Days</strong>
-                    </div>
+                <div class="stat-pill">
+                    <span class="pill-label">Streak</span>
+                    <strong id="my-rank-streak">🔥 0 Days</strong>
                 </div>
-            </section>
+            </div>
+        </section>
 
-            <!-- TOP 3 PODIUM -->
-            <section class="podium-section" id="podium-section">
-                <div class="podium-card silver" id="podium-2">
-                    <div class="crown">🥈</div>
-                    <div class="podium-avatar">2</div>
-                    <h4 class="podium-name">Loading...</h4>
-                    <div class="podium-pct">0%</div>
-                    <div class="podium-title">--</div>
-                </div>
-                <div class="podium-card gold" id="podium-1">
-                    <div class="crown">🥇</div>
-                    <div class="podium-avatar">1</div>
-                    <h4 class="podium-name">Loading...</h4>
-                    <div class="podium-pct">0%</div>
-                    <div class="podium-title">--</div>
-                </div>
-                <div class="podium-card bronze" id="podium-3">
-                    <div class="crown">🥉</div>
-                    <div class="podium-avatar">3</div>
-                    <h4 class="podium-name">Loading...</h4>
-                    <div class="podium-pct">0%</div>
-                    <div class="podium-title">--</div>
-                </div>
-            </section>
+        <!-- TOP 3 PODIUM -->
+        <section class="podium-section" id="podium-section">
+            <div class="podium-card silver" id="podium-2">
+                <div class="crown">🥈</div>
+                <div class="podium-avatar">2</div>
+                <h4 class="podium-name">Loading...</h4>
+                <div class="podium-pct">0%</div>
+                <div class="podium-title">--</div>
+            </div>
+            <div class="podium-card gold" id="podium-1">
+                <div class="crown">🥇</div>
+                <div class="podium-avatar">1</div>
+                <h4 class="podium-name">Loading...</h4>
+                <div class="podium-pct">0%</div>
+                <div class="podium-title">--</div>
+            </div>
+            <div class="podium-card bronze" id="podium-3">
+                <div class="crown">🥉</div>
+                <div class="podium-avatar">3</div>
+                <h4 class="podium-name">Loading...</h4>
+                <div class="podium-pct">0%</div>
+                <div class="podium-title">--</div>
+            </div>
+        </section>
 
-            <!-- FULL RANK TABLE -->
-            <section class="leaderboard-table-section">
-                <h3>Community Standings</h3>
-                <div class="leaderboard-list" id="leaderboard-list">
-                    <div class="loading-state">Loading global rankings...</div>
-                </div>
-            </section>
-        </div>
+        <!-- FULL RANK TABLE -->
+        <section class="leaderboard-table-section">
+            <h3>Community Standings</h3>
+            <div class="leaderboard-list" id="leaderboard-list">
+                <div class="loading-state">Loading global rankings...</div>
+            </div>
+        </section>
     </main>
 
     <!-- EFFECTS -->
