@@ -181,14 +181,14 @@ function generateMockGraph() {
     if (!container || !graphSection) return;
 
     const history = data.history || {};
-    const todayISO = new Date().toISOString().split('T')[0];
+    const todayISO = typeof getLocalDateString === 'function' ? getLocalDateString() : new Date().toISOString().split('T')[0];
     let last7DaysData = [];
 
     // 1. Collect data for the last 7 days (including today)
     for (let i = 6; i >= 0; i--) {
         let d = new Date();
         d.setDate(d.getDate() - i);
-        let dateStr = d.toISOString().split('T')[0];
+        let dateStr = typeof getLocalDateString === 'function' ? getLocalDateString(d) : d.toISOString().split('T')[0];
         
         let val = 0;
         if (dateStr === todayISO) {
@@ -265,7 +265,7 @@ async function renderRealTimeTrend() {
     if (graphSection) graphSection.style.display = 'block';
 
     const history = data.history || {};
-    const todayISO = new Date().toISOString().split('T')[0];
+    const todayISO = typeof getLocalDateString === 'function' ? getLocalDateString() : new Date().toISOString().split('T')[0];
     const dailyGoal = data.goal || 2500;
     
     let last7DaysData = [];
@@ -276,8 +276,7 @@ async function renderRealTimeTrend() {
         let d = new Date();
         d.setDate(d.getDate() - i);
         
-        // Manual construction ensures it matches your server's lastLogDate format
-        let dateStr = d.getFullYear() + '-' + 
+        let dateStr = typeof getLocalDateString === 'function' ? getLocalDateString(d) : d.toISOString().split('T')[0];
                       String(d.getMonth() + 1).padStart(2, '0') + '-' + 
                       String(d.getDate()).padStart(2, '0');
         

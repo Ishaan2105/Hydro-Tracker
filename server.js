@@ -96,11 +96,13 @@ app.post('/api/auth/register', async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
+        const todayISO = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+
         const newUser = new User({ 
             username, 
             email, 
             password: hashedPassword,
-            lastLogDate: new Date().toISOString().split('T')[0],
+            lastLogDate: todayISO,
             goal: 2500,
             reminders: [
                 { time: "08:00", daily: true, active: true },
@@ -263,7 +265,7 @@ app.get('/api/user/data', async (req, res) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         let user = await User.findById(decoded.id).select('-password');
         
-        const todayISO = new Date().toISOString().split('T')[0];
+        const todayISO = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
 
         // --- SERVER-SIDE DAILY RESET LOGIC ---
         if (user.lastLogDate !== todayISO) {
@@ -273,14 +275,18 @@ app.get('/api/user/data', async (req, res) => {
                 logs: user.currentLogs || []
             };
 
-            // 2. Perform the update in MongoDB
+            // 2. Perform the update in MongoDB (only archive if user actually had lastLogDate set)
+            const updateFields = {
+                intake: 0,
+                currentLogs: [],
+                lastLogDate: todayISO
+            };
+            if (user.lastLogDate) {
+                updateFields[`history.${user.lastLogDate}`] = historyEntry;
+            }
+
             user = await User.findByIdAndUpdate(decoded.id, {
-                $set: { 
-                    [`history.${user.lastLogDate}`]: historyEntry,
-                    intake: 0,
-                    currentLogs: [],
-                    lastLogDate: todayISO
-                }
+                $set: updateFields
             }, { new: true }).select('-password');
         }
 

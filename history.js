@@ -32,11 +32,15 @@ var data = typeof data !== 'undefined' ? data : {
 };
 
 // 3. Date Logic (Local time for accurate calendar display)
-const today = new Date();
-const todayISO = today.getFullYear() + '-' + 
-                 String(today.getMonth() + 1).padStart(2, '0') + '-' + 
-                 String(today.getDate()).padStart(2, '0');
+// Helper for YYYY-MM-DD in local time
+function getLocalDateString(d = new Date()) {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
 
+const todayISO = getLocalDateString();
 var selectedDate = todayISO;
 
 async function syncToCloud() {
@@ -53,13 +57,7 @@ async function syncToCloud() {
     }
 }
 
-
 window.addEventListener('DOMContentLoaded', () => {
-
-    /* ============================================================
-       1. THEME & PICKER SETUP
-    ============================================================ */
-    // Apply time-of-day theme immediately
     if (typeof updateTheme === 'function') updateTheme(); 
 
     const picker = document.getElementById('calendar-picker');
@@ -68,48 +66,29 @@ window.addEventListener('DOMContentLoaded', () => {
         picker.max = todayISO;    // Disable selection of future dates
     }
 
-    /* ============================================================
-       2. CLOUD DATA FETCH (Handles Profile & Stats)
-    ============================================================ */
-    // Instead of showing "Guest", we trigger the cloud fetch.
-    // This function will update the sidebar and stats once the data arrives.
     loadHistoryData(); 
 });
 
 function toggleLogout() {
     const menu = document.getElementById('logout-menu');
     if (menu) {
-        // Toggle between 'block' and 'none'
         menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
     }
 }
 
 function logout() {
-    // This wipes the token and any other local traces 
-    // to ensure the next session starts 100% from the Cloud.
     localStorage.clear(); 
-    
-    // Redirect to the entry page
     window.location.href = 'index.html';
 }
 
-
-// Call on load
-window.addEventListener('DOMContentLoaded', loadHistoryData);
-
-
 function loadDateStats() {
     const picker = document.getElementById('calendar-picker');
-    if (picker) {
+    if (picker && picker.value) {
         selectedDate = picker.value; 
     }
 
-    // Keep overall stats updated
-    updateOverallStats(); 
+    const todayLocal = getLocalDateString();
 
-    const todayISO = new Date().toISOString().split('T')[0];
-
-    // Update label
     const dateLabel = document.getElementById('current-note-date');
     if (dateLabel) {
         dateLabel.innerText = "Viewing: " + selectedDate;
@@ -119,9 +98,9 @@ function loadDateStats() {
     let dailyLogs = [];
 
     /* ============================================================
-       1. DATA RETRIEVAL
+       1. DATA RETRIEVAL (Supports Today's live data & Past history)
     ============================================================ */
-    if (selectedDate === todayISO) {
+    if (selectedDate === todayLocal) {
         displayVolume = Number(data.intake) || 0;
         dailyLogs = data.currentLogs || [];
     } else {
@@ -129,8 +108,8 @@ function loadDateStats() {
 
         if (historyEntry) {
             if (typeof historyEntry === "object") {
-                displayVolume = historyEntry.total || 0;
-                dailyLogs = historyEntry.logs || [];
+                displayVolume = Number(historyEntry.total) || 0;
+                dailyLogs = Array.isArray(historyEntry.logs) ? historyEntry.logs : [];
             } else {
                 displayVolume = Number(historyEntry) || 0;
                 dailyLogs = [];
@@ -142,61 +121,39 @@ function loadDateStats() {
     const dailyPct = Math.round((displayVolume / dailyGoal) * 100);
 
     /* ============================================================
-       2. HYDRATION RANK (Gamification Feature)
+       2. HYDRATION RANK
     ============================================================ */
-    const rankEl = document.getElementById('total-days');
+    const rankEl = document.getElementById('rank-display') || document.getElementById('total-days');
     if (rankEl) {
-        let rank = "🌵 Desert Dweller"; // Default for 0-9%
+        let rank = "🌵 Desert Dweller";
 
-        if (dailyPct >= 90) {
-            rank = "🔱 Ocean Master"; // The Ultimate Goal
-        } else if (dailyPct >= 80) {
-            rank = "🛡️ Shield Guardian"; // Where your Anti-Wrinkle Shield activates
-        } else if (dailyPct >= 70) {
-            rank = "🏄 Wave Rider";
-        } else if (dailyPct >= 60) {
-            rank = "🌊 Current Commander"; 
-        } else if (dailyPct >= 50) {
-            rank = "🚣 River Guide";
-        } else if (dailyPct >= 40) {
-            rank = "🛶 Stream Sailor";
-        } else if (dailyPct >= 30) {
-            rank = "💧 Puddle Jumper";
-        } else if (dailyPct >= 20) {
-            rank = "🧊 Dew Dropper";
-        } else if (dailyPct >= 10) {
-            rank = "🌫️ Mist Seeker";
-        }
+        if (dailyPct >= 90) rank = "🔱 Ocean Master";
+        else if (dailyPct >= 80) rank = "🛡️ Shield Guardian";
+        else if (dailyPct >= 70) rank = "🏄 Wave Rider";
+        else if (dailyPct >= 60) rank = "🌊 Current Commander"; 
+        else if (dailyPct >= 50) rank = "🚣 River Guide";
+        else if (dailyPct >= 40) rank = "🛶 Stream Sailor";
+        else if (dailyPct >= 30) rank = "💧 Puddle Jumper";
+        else if (dailyPct >= 20) rank = "🧊 Dew Dropper";
+        else if (dailyPct >= 10) rank = "🌫️ Mist Seeker";
 
         rankEl.innerText = rank;
     }
 
     /* ============================================================
-       3. ANTI-WRINKLE SHIELD (Fun Feature)
-    ============================================================ */
-    const shieldEl = document.getElementById('total-liters');
-    if (shieldEl) {
-        if (dailyPct >= 80) {
-            shieldEl.innerHTML = `<span style="color: #2e7d32;">ACTIVE ✨</span>`;
-        } else {
-            shieldEl.innerHTML = `<span style="color: #666;">INACTIVE</span>`;
-        }
-    }
-
-    /* ============================================================
-       4. GOAL MET (YES / NO)
+       3. GOAL STATUS
     ============================================================ */
     const goalMetEl = document.getElementById('goals-met');
     if (goalMetEl) {
         if (displayVolume >= dailyGoal) {
-            goalMetEl.innerHTML = `✅ <span style="font-size: 0.8rem; color: #2e7d32;"></span>`;
+            goalMetEl.innerHTML = `<span style="color: #2e7d32; font-weight:700;">✅ Met</span>`;
         } else {
-            goalMetEl.innerHTML = `❌ <span style="font-size: 0.8rem; color: #d32f2f;"></span>`;
+            goalMetEl.innerHTML = `<span style="color: #d32f2f; font-weight:700;">❌ Incomplete</span>`;
         }
     }
 
     /* ============================================================
-       5. DAILY SUCCESS %
+       4. DAILY SUCCESS %
     ============================================================ */
     const successEl = document.getElementById('success-pct');
     if (successEl) {
@@ -204,15 +161,15 @@ function loadDateStats() {
     }
 
     /* ============================================================
-       6. UPDATE SUMMARY (ML)
+       5. VOLUME CONSUMED
     ============================================================ */
-    const consumedEl = document.getElementById('day-consumed');
-    if (consumedEl) {
-        consumedEl.innerText = displayVolume + " ml";
+    const litersEl = document.getElementById('total-liters');
+    if (litersEl) {
+        litersEl.innerText = (displayVolume / 1000).toFixed(1) + " L (" + displayVolume + " ml)";
     }
 
     /* ============================================================
-       7. TIMELINE
+       6. TIMELINE
     ============================================================ */
     const timelineContainer = document.getElementById('daily-timeline');
 
@@ -222,7 +179,7 @@ function loadDateStats() {
         if (dailyLogs.length === 0) {
             timelineContainer.innerHTML = `
                 <p style="opacity:0.5; padding:20px; text-align:center;">
-                    No logs for this day.
+                    No logs recorded for ${selectedDate}.
                 </p>`;
         } else {
             [...dailyLogs].reverse().forEach(log => {
@@ -232,7 +189,7 @@ function loadDateStats() {
                 const val = log.ml || log.amount || 0;
 
                 item.innerHTML = `
-                    <span>🕒 ${log.time}</span>
+                    <span>🕒 ${log.time || '--:--'}</span>
                     <strong>${val} ml</strong>
                 `;
 
@@ -242,14 +199,11 @@ function loadDateStats() {
     }
 
     /* ============================================================
-           8. LOAD NOTES (Cloud-Synced)
+       7. LOAD NOTES
     ============================================================ */
-    // Pull notes from the 'data' object fetched from the cloud
     const savedNotes = data.notes || {}; 
     const noteArea = document.getElementById('daily-note-area');
-    
     if (noteArea) {
-        // Access the note using the selected date as the key
         noteArea.value = savedNotes[selectedDate] || "";
     }
 }
@@ -268,7 +222,6 @@ async function loadHistoryData() {
         data = cloudData; 
         isDataReady = true; 
         
-        // ✅ FIX: Manually update Sidebar UI
         const userDisplay = document.getElementById('username-display');
         const avatar = document.getElementById('user-initial');
         
@@ -279,8 +232,6 @@ async function loadHistoryData() {
             avatar.innerText = data.username[0].toUpperCase();
         }
 
-        // Run UI updates for the history stats
-        updateOverallStats();
         loadDateStats();
     } catch (err) {
         console.error(err);
@@ -293,98 +244,29 @@ function saveNote() {
     if (!noteArea || !isDataReady) return;
 
     const noteText = noteArea.value;
-    
-    // 1. Initialize the notes object if it doesn't exist in our cloud data
     if (!data.notes) data.notes = {};
-
-    // 2. Assign text to the currently selected date in the global object
     data.notes[selectedDate] = noteText; 
 
-    // 3. Push the entire updated data object to MongoDB
     syncToCloud();
-    
-    showToast("Note saved to Cloud for " + selectedDate + "!");
+    showToast("Note saved for " + selectedDate + "!");
 }
 
 function deleteNote() {
     if (!isDataReady) return;
     
-    if (confirm("Clear Cloud notes for " + selectedDate + "?")) {
-        // 1. Remove the note from the global data object
+    if (confirm("Clear notes for " + selectedDate + "?")) {
         if (data.notes && data.notes[selectedDate]) {
             delete data.notes[selectedDate];
         }
         
-        // 2. Clear the UI
-        document.getElementById('daily-note-area').value = "";
+        const noteArea = document.getElementById('daily-note-area');
+        if (noteArea) noteArea.value = "";
         
-        // 3. Sync the deletion to the Cloud
         syncToCloud();
-        
-        showToast("Note deleted from Cloud!");
+        showToast("Note deleted!");
     }
 }
 
-function updateOverallStats() {
-    const history = data.history || {};
-    const todayISO = new Date().toISOString().split('T')[0];
-    
-    // 1. Merge Today's live data with History
-    const fullHistory = { ...history };
-    
-    // We handle Today's data specially to ensure it's always current
-    fullHistory[todayISO] = {
-        total: Number(data.intake) || 0,
-        logs: data.currentLogs || []
-    };
-
-    const dates = Object.keys(fullHistory);
-    const totalDaysCount = dates.length;
-    let goalMetCount = 0;
-    let totalVolume = 0;
-
-    // 2. Calculate Totals
-    dates.forEach(date => {
-        const entry = fullHistory[date];
-        const dayTotal = (typeof entry === 'object') ? (entry.total || 0) : (Number(entry) || 0);
-        
-        totalVolume += dayTotal;
-        if (dayTotal >= data.goal) goalMetCount++;
-    });
-
-    const successRate = totalDaysCount > 0 ? Math.round((goalMetCount / totalDaysCount) * 100) : 0;
-
-    // 3. Update UI (Using correct IDs from history.html)
-    const daysEl = document.getElementById('total-days');
-    const goalsEl = document.getElementById('goals-met');
-    const successEl = document.getElementById('success-pct');
-    const litersEl = document.getElementById('total-liters');
-
-    if (daysEl) daysEl.innerText = totalDaysCount;
-    if (goalsEl) goalsEl.innerText = goalMetCount;
-    if (successEl) successEl.innerText = successRate + "%";
-    if (litersEl) litersEl.innerText = (totalVolume / 1000).toFixed(1) + " L";
-}
-
-// Add this logic to your home.js logWater function
-function logWater(ml) {
-    data.intake += ml;
-    
-    // Initialize logs if they don't exist
-    if(!data.currentLogs) data.currentLogs = [];
-    
-    // Add the new entry with a timestamp
-    const now = new Date();
-    const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    
-    data.currentLogs.push({
-        time: timeString,
-        ml: ml
-    });
-    
-    syncToCloud();
-    refreshHome();
-}
 
 
 // EFFECTS
