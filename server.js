@@ -268,25 +268,26 @@ app.get('/api/user/data', async (req, res) => {
         const todayISO = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
 
         // --- SERVER-SIDE DAILY RESET LOGIC ---
-        if (user.lastLogDate !== todayISO) {
-            // 1. Archive previous day's data into the History Map
+        // Only trigger a reset if lastLogDate exists AND is strictly earlier than today (e.g. YYYY-MM-DD < todayISO)
+        if (user.lastLogDate && user.lastLogDate < todayISO) {
+            const cleanOldDate = user.lastLogDate.substring(0, 10);
             const historyEntry = {
                 total: user.intake || 0,
                 logs: user.currentLogs || []
             };
 
-            // 2. Perform the update in MongoDB (only archive if user actually had lastLogDate set)
-            const updateFields = {
-                intake: 0,
-                currentLogs: [],
-                lastLogDate: todayISO
-            };
-            if (user.lastLogDate) {
-                updateFields[`history.${user.lastLogDate}`] = historyEntry;
-            }
-
             user = await User.findByIdAndUpdate(decoded.id, {
-                $set: updateFields
+                $set: {
+                    [`history.${cleanOldDate}`]: historyEntry,
+                    intake: 0,
+                    currentLogs: [],
+                    lastLogDate: todayISO
+                }
+            }, { new: true }).select('-password');
+        } else if (user.lastLogDate !== todayISO) {
+            // Ensure lastLogDate matches todayISO without wiping current intake or logs
+            user = await User.findByIdAndUpdate(decoded.id, {
+                $set: { lastLogDate: todayISO }
             }, { new: true }).select('-password');
         }
 

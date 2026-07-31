@@ -182,7 +182,7 @@ function loadDateStats() {
     }
 
     /* ============================================================
-       3. GOAL STATUS
+       3. GOAL MET
     ============================================================ */
     const goalMetEl = document.getElementById('goals-met');
     if (goalMetEl) {
@@ -194,7 +194,7 @@ function loadDateStats() {
     }
 
     /* ============================================================
-       4. DAILY SUCCESS %
+       4. SUCCESS RATE %
     ============================================================ */
     const successEl = document.getElementById('success-pct');
     if (successEl) {
@@ -202,11 +202,15 @@ function loadDateStats() {
     }
 
     /* ============================================================
-       5. VOLUME CONSUMED
+       5. ANTI-WRINKLE SHIELD
     ============================================================ */
-    const litersEl = document.getElementById('total-liters');
-    if (litersEl) {
-        litersEl.innerText = (displayVolume / 1000).toFixed(1) + " L (" + displayVolume + " ml)";
+    const shieldEl = document.getElementById('shield-status') || document.getElementById('total-liters');
+    if (shieldEl) {
+        if (dailyPct >= 80) {
+            shieldEl.innerHTML = `<span style="color: #2e7d32; font-weight:700;">ACTIVE ✨</span>`;
+        } else {
+            shieldEl.innerHTML = `<span style="color: #888; font-weight:700;">INACTIVE</span>`;
+        }
     }
 
     /* ============================================================
@@ -219,19 +223,23 @@ function loadDateStats() {
 
         if (dailyLogs.length === 0) {
             timelineContainer.innerHTML = `
-                <p style="opacity:0.5; padding:20px; text-align:center;">
-                    No logs recorded for ${selectedDate}.
-                </p>`;
+                <div style="text-align:center; padding: 30px; opacity:0.6;">
+                    <div style="font-size: 32px; margin-bottom: 8px;">💧</div>
+                    <p style="margin:0; font-size:14px;">No intake logged for ${selectedDate}.</p>
+                </div>`;
         } else {
             [...dailyLogs].reverse().forEach(log => {
                 const item = document.createElement('div');
                 item.className = 'timeline-item';
 
                 const val = log.ml || log.amount || 0;
+                const timeStr = log.time || '--:--';
 
                 item.innerHTML = `
-                    <span>🕒 ${log.time || '--:--'}</span>
-                    <strong>${val} ml</strong>
+                    <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                        <span>🕒 ${timeStr}</span>
+                        <strong style="color:var(--accent); font-size:1.1rem;">+${val} ml</strong>
+                    </div>
                 `;
 
                 timelineContainer.appendChild(item);
