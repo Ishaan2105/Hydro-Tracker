@@ -1,4 +1,4 @@
-/* ── Theme Boot ── */
+/* ── Theme Boot (runs immediately on parse, before DOM) ── */
 (function(){
     const K=['--accent','--accent-light','--accent-dark','--accent-rgb','--accent-glow','--accent-subtle','--bg-gradient','--glass-bg','--glass-border','--text-primary','--text-secondary'];
     const T={
@@ -13,99 +13,101 @@
     K.forEach((k,i)=>r.setProperty(k,v[i]));
 })();
 
-var API_URL = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http'))
-    ? window.location.origin
-    : "http://localhost:5000";
+/* ── Standalone config ── */
+var API_URL = (window.location.origin.startsWith('http')) ? window.location.origin : 'http://localhost:5000';
+var token   = localStorage.getItem('token');
 
-// 1. The ONLY thing we keep in the browser is the Token (The Key to the Cloud)
-var token = localStorage.getItem('token'); 
-
-// 2. Initial "Waiting" State
-var isDataReady = typeof isDataReady !== 'undefined' ? isDataReady : false; 
-var data = typeof data !== 'undefined' ? data : {
-    username: "Loading...",
+/* ── App state ── */
+var isDataReady = false;
+var data = {
+    username: 'Loading...',
     goal: 2500,
     intake: 0,
     history: {},
     currentLogs: [],
-    notes: {} 
+    notes: {}
 };
 
-// 3. Date Logic (Local time for accurate calendar display)
-// Helper for YYYY-MM-DD in local time
-function getLocalDateString(d = new Date()) {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+/* ── Date helpers ── */
+function getLocalDateString(d) {
+    d = d || new Date();
+    const y  = d.getFullYear();
+    const mo = String(d.getMonth() + 1).padStart(2, '0');
+    const dy = String(d.getDate()).padStart(2, '0');
+    return y + '-' + mo + '-' + dy;
+}
+const todayISO    = getLocalDateString();
+var   selectedDate = todayISO;
+
+/* ── Time-of-day theme helper ── */
+function updateTheme() {
+    const hr = new Date().getHours();
+    const b  = document.body;
+    b.classList.remove('theme-morning','theme-day','theme-evening','theme-night');
+    if      (hr >= 6  && hr < 10) b.classList.add('theme-morning');
+    else if (hr >= 10 && hr < 16) b.classList.add('theme-day');
+    else if (hr >= 16 && hr < 18) b.classList.add('theme-evening');
+    else                           b.classList.add('theme-night');
 }
 
-const todayISO = getLocalDateString();
-var selectedDate = todayISO;
-
+/* ── localStorage cache ── */
 function saveLocalCache(userData) {
     try {
-        const json = JSON.stringify(userData);
-        localStorage.setItem('hydro_data_cache', json);
-        localStorage.setItem('hydro_update_ts', Date.now().toString());
-        if (typeof _hydroBC !== 'undefined' && _hydroBC) {
-            _hydroBC.postMessage({ type: 'DATA_UPDATED', userData });
-        }
+        localStorage.setItem('hydro_data_cache', JSON.stringify(userData));
+        localStorage.setItem('hydro_update_ts',  Date.now().toString());
+        if (_hydroBC) _hydroBC.postMessage({ type: 'DATA_UPDATED', userData });
     } catch(e) {}
 }
 
 function loadLocalCache() {
     try {
-        const cached = localStorage.getItem('hydro_data_cache');
-        if (cached) {
-            const parsed = JSON.parse(cached);
-            if (parsed && typeof parsed === 'object' && parsed.username && parsed.username !== "Loading...") {
-                data = parsed;
-                isDataReady = true;
-                return true;
-            }
+        const raw = localStorage.getItem('hydro_data_cache');
+        if (!raw) return false;
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.username && parsed.username !== 'Loading...') {
+            data        = parsed;
+            isDataReady = true;
+            return true;
         }
     } catch(e) {}
     return false;
 }
 
-// Initial instant load from cache
-loadLocalCache();
+/* ── BroadcastChannel (for live two-tab updates when Home is open) ── */
+var _hydroBC = null;
+try { _hydroBC = new BroadcastChannel('hydrotrack_channel'); } catch(e) {}
 
-// PRIMARY: BroadcastChannel live update (same-origin cross-tab)
-if (typeof _hydroBC !== 'undefined' && _hydroBC) {
-    _hydroBC.onmessage = (event) => {
+if (_hydroBC) {
+    _hydroBC.onmessage = function(event) {
         if (event.data && event.data.type === 'DATA_UPDATED') {
-            data = event.data.userData;
-            isDataReady = true;
-            if (typeof loadDateStats === 'function') loadDateStats();
+            // Home page just logged water — merge and re-render
+            const incoming = event.data.userData;
+            if (incoming) {
+                data        = incoming;
+                isDataReady = true;
+                loadDateStats();
+            }
         }
     };
 }
 
-// FALLBACK: storage event fires reliably across tabs when localStorage changes
-window.addEventListener('storage', (event) => {
+/* ── storage event: fires when Home page writes to localStorage in another tab ── */
+window.addEventListener('storage', function(event) {
     if (event.key === 'hydro_update_ts') {
-        // Another tab updated the cache — reload it
-        if (loadLocalCache()) {
-            if (typeof loadDateStats === 'function') loadDateStats();
-        }
+        if (loadLocalCache()) loadDateStats();
     }
 });
 
+/* ── Cloud sync (for notes save) ── */
 async function syncToCloud() {
-    if (!isDataReady) return; 
-    saveLocalCache(data);
-
+    if (!isDataReady) return;
     try {
-        await fetch(`${API_URL}/api/user/sync`, {
-            method: 'POST',
+        await fetch(API_URL + '/api/user/sync', {
+            method:  'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token, userData: data })
+            body:    JSON.stringify({ token, userData: data })
         });
-    } catch (err) {
-        console.error("Cloud sync failed", err);
-    }
+    } catch(e) { console.error('Cloud sync failed', e); }
 }
 
 window.addEventListener('DOMContentLoaded', () => {
