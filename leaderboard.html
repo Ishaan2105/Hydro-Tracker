@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Leaderboard | HydroTrack</title>
+
+    <meta name="theme-color" content="#1565c0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="HydroTrack">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="home.css">
+    <link rel="stylesheet" href="leaderboard.css">
+</head>
+<body>
+
+    <nav class="sidebar">
+        <div class="sidebar-brand">
+            <span class="sidebar-brand-icon">💧</span>
+            <span class="sidebar-brand-text">HydroTrack</span>
+        </div>
+
+        <div class="nav-links">
+            <a href="home.html" class="nav-item">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label">Home</span>
+            </a>
+            <a href="history.html" class="nav-item">
+                <span class="nav-icon">📅</span>
+                <span class="nav-label">History</span>
+            </a>
+            <a href="insights.html" class="nav-item">
+                <span class="nav-icon">💡</span>
+                <span class="nav-label">Insights</span>
+            </a>
+            <a href="settings.html" class="nav-item">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-label">Settings</span>
+            </a>
+            <a href="leaderboard.html" class="nav-item active">
+                <span class="nav-icon">🏆</span>
+                <span class="nav-label">Leaderboard</span>
+            </a>
+            <button id="pwa-install-btn" class="nav-item install-app-btn" style="display:none;" onclick="triggerPWAInstall()">
+                <span class="nav-icon">📲</span>
+                <span class="nav-label">Install App</span>
+            </button>
+        </div>
+
+        <div class="user-profile" onclick="toggleLogout()">
+            <div class="user-avatar" id="user-initial">U</div>
+            <div class="user-info">
+                <span id="username-display">Username</span>
+            </div>
+            <div id="logout-menu" class="logout-dropdown">
+                <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+                <button class="delete-btn" onclick="openDeleteAccountModal()">🗑️ Delete Account</button>
+            </div>
+        </div>
+    </nav>
+    <script>
+        (function() {
+            var name = null;
+            try { var c = JSON.parse(localStorage.getItem('hydro_data_cache')); if (c && c.username && c.username !== 'Loading...') name = c.username; } catch(e){}
+            if (!name) { try { var t = localStorage.getItem('token'); if (t) { var p = JSON.parse(atob(t.split('.')[1])); name = p.username || p.name || null; } } catch(e){} }
+            if (name) {
+                var d = document.getElementById('username-display'); if (d) d.innerText = name.toUpperCase();
+                var a = document.getElementById('user-initial'); if (a) a.innerText = name[0].toUpperCase();
+            }
+        })();
+    </script>
+
+    <main class="content leaderboard-content">
+        <header class="leaderboard-header">
+            <div>
+                <h1>Global Leaderboard 🏆</h1>
+                <p class="subtitle">Rankings based on daily goal completion, streaks, and hydration consistency!</p>
+            </div>
+        </header>
+
+        <!-- MY RANK BANNER -->
+        <section class="my-rank-banner" id="my-rank-banner" style="display:none;">
+            <div class="my-rank-badge" id="my-rank-num">#--</div>
+            <div class="my-rank-info">
+                <h3 id="my-rank-username">YOUR NAME</h3>
+                <span id="my-rank-title" class="rank-tag">🌵 Desert Dweller</span>
+            </div>
+            <div class="my-rank-stats">
+                <div class="stat-pill">
+                    <span class="pill-label">Completion</span>
+                    <strong id="my-rank-pct">0%</strong>
+                </div>
+                <div class="stat-pill">
+                    <span class="pill-label">Streak</span>
+                    <strong id="my-rank-streak">🔥 0 Days</strong>
+                </div>
+            </div>
+        </section>
+
+        <!-- TOP 3 PODIUM -->
+        <section class="podium-section" id="podium-section">
+            <div class="podium-card silver" id="podium-2">
+                <div class="crown">🥈</div>
+                <div class="podium-avatar">2</div>
+                <h4 class="podium-name">Loading...</h4>
+                <div class="podium-pct">0%</div>
+                <div class="podium-title">--</div>
+            </div>
+            <div class="podium-card gold" id="podium-1">
+                <div class="crown">🥇</div>
+                <div class="podium-avatar">1</div>
+                <h4 class="podium-name">Loading...</h4>
+                <div class="podium-pct">0%</div>
+                <div class="podium-title">--</div>
+            </div>
+            <div class="podium-card bronze" id="podium-3">
+                <div class="crown">🥉</div>
+                <div class="podium-avatar">3</div>
+                <h4 class="podium-name">Loading...</h4>
+                <div class="podium-pct">0%</div>
+                <div class="podium-title">--</div>
+            </div>
+        </section>
+
+        <!-- FULL RANK TABLE -->
+        <section class="leaderboard-table-section">
+            <h3>Community Standings</h3>
+            <div class="leaderboard-list" id="leaderboard-list">
+                <div class="loading-state">Loading global rankings...</div>
+            </div>
+        </section>
+    </main>
+
+    <!-- EFFECTS -->
+    <div id="waves-bg"></div>
+
+    <script src="leaderboard.js"></script>
+</body>
+</html>

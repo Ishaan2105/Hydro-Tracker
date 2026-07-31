@@ -82,7 +82,8 @@ const UserSchema = new mongoose.Schema({
     badges: { type: Array, default: [] },
     postMealEnabled: { type: Boolean, default: false },
     notes: { type: Map, of: String, default: {} },
-    pushSubscriptions: { type: Array, default: [] }
+    pushSubscriptions: { type: Array, default: [] },
+    leaderboardOptIn: { type: Boolean, default: true }
 });
 
 const User = mongoose.model('User', UserSchema);
@@ -111,7 +112,8 @@ app.post('/api/auth/register', async (req, res) => {
                 { time: "21:00", daily: true, active: true }
             ],
             mealTimes: { bfast: "08:30", lunch: "13:30", dinner: "20:30" },
-            postMealEnabled: false
+            postMealEnabled: false,
+            leaderboardOptIn: true
         });
 
         await newUser.save();
@@ -132,6 +134,68 @@ app.post('/api/auth/login', async (req, res) => {
 
     const token = jwt.sign({ id: user._id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user });
+});
+
+// Get Public Leaderboard
+app.get('/api/leaderboard', async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+        let currentUserId = null;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            try {
+                const token = authHeader.split(' ')[1];
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                currentUserId = decoded.id;
+            } catch(e) {}
+        }
+
+        // Fetch users who have opted into the leaderboard (default: true)
+        const users = await User.find({ leaderboardOptIn: { $ne: false } }).select('username goal intake streak lastLogDate');
+
+        const rankedList = users.map(u => {
+            const goal = u.goal || 2500;
+            const intake = u.intake || 0;
+            const pct = Math.round((intake / goal) * 100);
+
+            let rankTitle = "🌵 Desert Dweller";
+            if (pct >= 90) rankTitle = "🔱 Ocean Master";
+            else if (pct >= 80) rankTitle = "🛡️ Shield Guardian";
+            else if (pct >= 70) rankTitle = "🏄 Wave Rider";
+            else if (pct >= 60) rankTitle = "🌊 Current Commander";
+            else if (pct >= 50) rankTitle = "🚣 River Guide";
+            else if (pct >= 40) rankTitle = "🛶 Stream Sailor";
+            else if (pct >= 20) rankTitle = "🧊 Dew Dropper";
+            else if (pct >= 10) rankTitle = "🌫️ Mist Seeker";
+
+            return {
+                id: u._id.toString(),
+                username: u.username,
+                intake: intake,
+                goal: goal,
+                streak: u.streak || 0,
+                pct: pct,
+                rankTitle: rankTitle,
+                isCurrent: currentUserId ? (u._id.toString() === currentUserId.toString()) : false
+            };
+        });
+
+        // Sort by Completion Rate % descending, then Streak descending, then Intake descending
+        rankedList.sort((a, b) => {
+            if (b.pct !== a.pct) return b.pct - a.pct;
+            if (b.streak !== a.streak) return b.streak - a.streak;
+            return b.intake - a.intake;
+        });
+
+        // Add numerical rank (1-indexed)
+        const finalLeaderboard = rankedList.map((item, index) => ({
+            rank: index + 1,
+            ...item
+        }));
+
+        res.json({ leaderboard: finalLeaderboard });
+    } catch (err) {
+        res.status(500).json({ error: "Failed to load leaderboard." });
+    }
 });
 
 // Delete Account Permanently

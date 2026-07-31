@@ -722,6 +722,17 @@ async function togglePostMeal() {
     showToast(data.postMealEnabled ? "🥗 Post-Meal Reminders Active!" : "Post-Meal Reminders Disabled");
 }
 
+async function toggleLeaderboardOptIn() {
+    const toggle = document.getElementById('leaderboard-toggle');
+    if (!toggle) return;
+
+    data.leaderboardOptIn = toggle.checked;
+    saveLocalCache(data);
+    await syncToCloud();
+
+    showToast(data.leaderboardOptIn ? "🏆 Joined Community Leaderboard!" : "Hidden from Leaderboard");
+}
+
 function renderCloudReminders() {
     const container = document.querySelector('.dummy-times');
     if (!container || !data.reminders) return;
@@ -786,6 +797,12 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (postMealToggle) {
         // Use a direct boolean check from the cloud data
         postMealToggle.checked = (data.postMealEnabled === true);
+    }
+
+    // ✅ FIX 3: Sync Leaderboard Participation Toggle (ON by default)
+    const leaderboardToggle = document.getElementById('leaderboard-toggle');
+    if (leaderboardToggle) {
+        leaderboardToggle.checked = (data.leaderboardOptIn !== false);
     }
 
     // 3. Goal Input Initialization

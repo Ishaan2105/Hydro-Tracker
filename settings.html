@@ -40,6 +40,10 @@
                 <span class="nav-icon">⚙️</span>
                 <span class="nav-label">Settings</span>
             </a>
+            <a href="leaderboard.html" class="nav-item">
+                <span class="nav-icon">🏆</span>
+                <span class="nav-label">Leaderboard</span>
+            </a>
             <button id="pwa-install-btn" class="nav-item install-app-btn" style="display:none;" onclick="triggerPWAInstall()">
                 <span class="nav-icon">📲</span>
                 <span class="nav-label">Install App</span>
@@ -158,6 +162,20 @@
                 <span>Post-Meal Reminder (30 minutes)</span>
                 <label class="switch">
                     <input type="checkbox" id="post-meal-toggle" onchange="togglePostMeal()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </section>
+
+        <section class="settings-card">
+            <h3>🏆 Community Leaderboard</h3>
+            <div class="post-meal-row">
+                <div>
+                    <strong>Participate in Global Leaderboard</strong>
+                    <p style="font-size: 0.82rem; color: #64748b; margin: 4px 0 0 0;">Show your rank, streak, and completion rate on the community leaderboard (On by default).</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="leaderboard-toggle" checked onchange="toggleLeaderboardOptIn()">
                     <span class="slider"></span>
                 </label>
             </div>
