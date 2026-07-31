@@ -154,6 +154,61 @@ async function saveMealSchedule() {
     showToast("🥗 Meal schedule synced to cloud!");
 }
 
+const RANKS_TIERS = [
+    { min: 0,  max: 9,   name: "Desert Dweller",   icon: "🌵", nextReqPct: 10 },
+    { min: 10, max: 19,  name: "Mist Seeker",      icon: "🌫️", nextReqPct: 20 },
+    { min: 20, max: 39,  name: "Dew Dropper",      icon: "🧊", nextReqPct: 40 },
+    { min: 40, max: 49,  name: "Stream Sailor",    icon: "🛶", nextReqPct: 50 },
+    { min: 50, max: 59,  name: "River Guide",      icon: "🚣", nextReqPct: 60 },
+    { min: 60, max: 69,  name: "Current Commander",icon: "🌊", nextReqPct: 70 },
+    { min: 70, max: 79,  name: "Wave Rider",       icon: "🏄", nextReqPct: 80 },
+    { min: 80, max: 89,  name: "Shield Guardian",  icon: "🛡️", nextReqPct: 90 },
+    { min: 90, max: 100, name: "Ocean Master",     icon: "🔱", nextReqPct: 100 }
+];
+
+function renderRankRoadmap() {
+    const iconEl = document.getElementById('current-rank-icon');
+    const nameEl = document.getElementById('current-rank-name');
+    const nextNameEl = document.getElementById('next-rank-name');
+    const neededEl = document.getElementById('next-rank-needed');
+    const fillEl = document.getElementById('roadmap-bar-fill');
+
+    if (!iconEl || !nameEl || !data) return;
+
+    const goal = data.goal || 2500;
+    const intake = data.intake || 0;
+    const pct = Math.round((intake / goal) * 100);
+
+    let currIdx = 0;
+    for (let i = 0; i < RANKS_TIERS.length; i++) {
+        if (pct >= RANKS_TIERS[i].min) {
+            currIdx = i;
+        }
+    }
+
+    const currRank = RANKS_TIERS[currIdx];
+    iconEl.innerText = currRank.icon;
+    nameEl.innerText = currRank.name;
+
+    if (currIdx < RANKS_TIERS.length - 1) {
+        const nextRank = RANKS_TIERS[currIdx + 1];
+        const reqTargetMl = Math.ceil((nextRank.nextReqPct / 100) * goal);
+        const neededMl = Math.max(0, reqTargetMl - intake);
+        const currTierStartMl = Math.ceil((currRank.min / 100) * goal);
+        const tierSpanMl = Math.max(1, reqTargetMl - currTierStartMl);
+        const progressInTierMl = Math.max(0, intake - currTierStartMl);
+        const barPct = Math.min(100, Math.max(0, Math.round((progressInTierMl / tierSpanMl) * 100)));
+
+        if (nextNameEl) nextNameEl.innerText = `${nextRank.icon} ${nextRank.name}`;
+        if (neededEl) neededEl.innerText = `${neededMl}ml away`;
+        if (fillEl) fillEl.style.width = `${barPct}%`;
+    } else {
+        if (nextNameEl) nextNameEl.innerText = `🔱 Max Tier Unlocked!`;
+        if (neededEl) neededEl.innerText = `Ocean Master 🏆`;
+        if (fillEl) fillEl.style.width = `100%`;
+    }
+}
+
 async function loadCloudData() {
     if (!token) return window.location.href = 'index.html';
     try {
@@ -175,6 +230,7 @@ async function loadCloudData() {
         renderProgressRing();
         renderBestWorstDay();
         renderGoalHitRate();
+        renderRankRoadmap();
         
         // Update Sidebar
         const uDisp = document.getElementById('username-display');

@@ -304,6 +304,93 @@ header h1 {
     font-weight: 600;
 }
 
+/* ── HYDRATION RANKS & TIER GUIDE ── */
+.ranks-guide-section {
+    margin-bottom: 32px;
+}
+
+.ranks-guide-card {
+    background: var(--glass-bg, rgba(255, 255, 255, 0.65));
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 20px;
+    padding: 22px 24px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.3));
+}
+
+.ranks-guide-header h3 {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--text-primary, #0c4a6e);
+    margin-bottom: 4px;
+}
+
+.ranks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px;
+}
+
+.rank-tier-card {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 14px;
+    padding: 12px 10px;
+    text-align: center;
+    transition: all 0.25s ease;
+    position: relative;
+}
+
+.rank-tier-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.rank-tier-card.active-rank {
+    background: linear-gradient(135deg, #ffffff 0%, var(--sidebar-bg, #f0f9ff) 100%);
+    border: 2px solid var(--accent, #0284c7);
+    box-shadow: 0 6px 18px var(--accent-glow, rgba(2, 132, 199, 0.25));
+    transform: scale(1.03);
+}
+
+.rank-tier-card.active-rank::after {
+    content: "YOUR RANK";
+    position: absolute;
+    top: -8px;
+    right: 50%;
+    transform: translateX(50%);
+    background: var(--accent, #0284c7);
+    color: white;
+    font-size: 0.62rem;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 8px;
+    letter-spacing: 0.03em;
+    box-shadow: 0 2px 6px var(--accent-glow);
+}
+
+.tier-icon {
+    font-size: 1.6rem;
+    margin-bottom: 4px;
+}
+
+.tier-name {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: var(--text-primary, #0c4a6e);
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tier-range {
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--accent, #0284c7);
+}
+
 @media (max-width: 640px) {
     .my-rank-banner {
         flex-direction: column;

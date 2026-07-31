@@ -193,6 +193,19 @@ function updatePodiumCard(cardId, item) {
     }
 }
 
+function highlightMyRankCard(pct) {
+    const cards = document.querySelectorAll('.rank-tier-card');
+    if (!cards || cards.length === 0) return;
+    cards.forEach(card => {
+        const min = parseInt(card.dataset.min, 10);
+        const max = parseInt(card.dataset.max, 10);
+        card.classList.remove('active-rank');
+        if (pct >= min && (pct <= max || (max === 100 && pct >= 90))) {
+            card.classList.add('active-rank');
+        }
+    });
+}
+
 function renderMyRankBanner(list) {
     const myItem = list.find(item => item.isCurrent);
     const banner = document.getElementById('my-rank-banner');
@@ -205,8 +218,13 @@ function renderMyRankBanner(list) {
         document.getElementById('my-rank-title').innerText = myItem.rankTitle;
         document.getElementById('my-rank-pct').innerText = `${myItem.pct}%`;
         document.getElementById('my-rank-streak').innerText = `🔥 ${myItem.streak} Days`;
+        highlightMyRankCard(myItem.pct);
     } else {
         banner.style.display = 'none';
+        if (data && data.goal) {
+            const userPct = Math.round(((data.intake || 0) / data.goal) * 100);
+            highlightMyRankCard(userPct);
+        }
     }
 }
 
