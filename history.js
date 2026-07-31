@@ -43,8 +43,49 @@ function getLocalDateString(d = new Date()) {
 const todayISO = getLocalDateString();
 var selectedDate = todayISO;
 
+function saveLocalCache(userData) {
+    try {
+        localStorage.setItem('hydro_data_cache', JSON.stringify(userData));
+        if (typeof window !== 'undefined' && window.BroadcastChannel) {
+            const bc = new BroadcastChannel('hydrotrack_channel');
+            bc.postMessage({ type: 'DATA_UPDATED', userData });
+        }
+    } catch(e) {}
+}
+
+function loadLocalCache() {
+    try {
+        const cached = localStorage.getItem('hydro_data_cache');
+        if (cached) {
+            const parsed = JSON.parse(cached);
+            if (parsed && typeof parsed === 'object' && parsed.username && parsed.username !== "Loading...") {
+                data = parsed;
+                isDataReady = true;
+                return true;
+            }
+        }
+    } catch(e) {}
+    return false;
+}
+
+// Initial instant load from cache
+loadLocalCache();
+
+// Listen for live updates from other tabs (e.g. Home tab logging water)
+if (typeof window !== 'undefined' && window.BroadcastChannel) {
+    const bc = new BroadcastChannel('hydrotrack_channel');
+    bc.onmessage = (event) => {
+        if (event.data && event.data.type === 'DATA_UPDATED') {
+            data = event.data.userData;
+            isDataReady = true;
+            if (typeof loadDateStats === 'function') loadDateStats();
+        }
+    };
+}
+
 async function syncToCloud() {
     if (!isDataReady) return; 
+    saveLocalCache(data);
 
     try {
         await fetch(`${API_URL}/api/user/sync`, {
@@ -211,6 +252,16 @@ function loadDateStats() {
 async function loadHistoryData() {
     if (!token) return window.location.href = 'index.html';
 
+    // Phase 1: Render instantly from local cache if available (0ms delay)
+    if (loadLocalCache()) {
+        const userDisplay = document.getElementById('username-display');
+        const avatar = document.getElementById('user-initial');
+        if (userDisplay && data.username) userDisplay.innerText = data.username;
+        if (avatar && data.username) avatar.innerText = data.username[0].toUpperCase();
+        loadDateStats();
+    }
+
+    // Phase 2: Fetch fresh cloud data from MongoDB
     try {
         const response = await fetch(`${API_URL}/api/user/data`, {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -221,6 +272,7 @@ async function loadHistoryData() {
         const cloudData = await response.json();
         data = cloudData; 
         isDataReady = true; 
+        saveLocalCache(data);
         
         const userDisplay = document.getElementById('username-display');
         const avatar = document.getElementById('user-initial');
@@ -235,7 +287,6 @@ async function loadHistoryData() {
         loadDateStats();
     } catch (err) {
         console.error(err);
-        showToast("Failed to fetch history from cloud.");
     }
 }
 

@@ -38,6 +38,46 @@ var data = {
     history: {}
 };
 
+function saveLocalCache(userData) {
+    try {
+        localStorage.setItem('hydro_data_cache', JSON.stringify(userData));
+        if (typeof window !== 'undefined' && window.BroadcastChannel) {
+            const bc = new BroadcastChannel('hydrotrack_channel');
+            bc.postMessage({ type: 'DATA_UPDATED', userData });
+        }
+    } catch(e) {}
+}
+
+function loadLocalCache() {
+    try {
+        const cached = localStorage.getItem('hydro_data_cache');
+        if (cached) {
+            const parsed = JSON.parse(cached);
+            if (parsed && typeof parsed === 'object' && parsed.username && parsed.username !== "Loading...") {
+                data = parsed;
+                isDataReady = true;
+                return true;
+            }
+        }
+    } catch(e) {}
+    return false;
+}
+
+// Attempt instant local render from cache
+loadLocalCache();
+
+// Live broadcast listener from other tabs
+if (typeof window !== 'undefined' && window.BroadcastChannel) {
+    const bc = new BroadcastChannel('hydrotrack_channel');
+    bc.onmessage = (event) => {
+        if (event.data && event.data.type === 'DATA_UPDATED') {
+            data = event.data.userData;
+            isDataReady = true;
+            if (typeof refreshHome === 'function') refreshHome();
+        }
+    };
+}
+
 // 3. Initial & Profile Logic
 // window.addEventListener('DOMContentLoaded', () => {
 
@@ -132,9 +172,10 @@ function logWater(ml) {
         ml: ml
     });
     
+    saveLocalCache(data); // Immediate local cache & cross-tab sync
     refreshHome();
-    syncToCloud(); // Immediate push to MongoDB
-    showToast(`Logged ${ml}ml to Cloud!`);
+    syncToCloud(); // Push to MongoDB
+    showToast(`Logged ${ml}ml!`);
 }
 
 function undoLog() {
@@ -144,6 +185,7 @@ function undoLog() {
     const amountToSubtract = removedEntry.ml || 0;
     data.intake = Math.max(0, data.intake - amountToSubtract);
 
+    saveLocalCache(data); // Immediate local cache & cross-tab sync
     refreshHome();
     syncToCloud(); // Update the cloud after undo
 }
@@ -267,6 +309,7 @@ async function loadUserData() {
         
         data = cloudData;       
         isDataReady = true;     
+        saveLocalCache(data); // Sync cloud response to local cache
         
         // Update Sidebar UI from Cloud response
         const displayElement = document.getElementById('username-display');

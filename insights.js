@@ -276,9 +276,7 @@ async function renderRealTimeTrend() {
         let d = new Date();
         d.setDate(d.getDate() - i);
         
-        let dateStr = typeof getLocalDateString === 'function' ? getLocalDateString(d) : d.toISOString().split('T')[0];
-                      String(d.getMonth() + 1).padStart(2, '0') + '-' + 
-                      String(d.getDate()).padStart(2, '0');
+        let dateStr = typeof getLocalDateString === 'function' ? getLocalDateString(d) : (d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'));
         
         let val = 0;
         if (dateStr === todayISO) {
