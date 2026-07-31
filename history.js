@@ -149,6 +149,21 @@ window.addEventListener('DOMContentLoaded', () => {
     loadHistoryData(); 
 });
 
+// ── Re-read cache when user navigates back to this page (back button / bfcache) ──
+window.addEventListener('pageshow', (event) => {
+    // event.persisted = true means page was served from bfcache (back-forward cache)
+    if (event.persisted) {
+        if (loadLocalCache()) loadDateStats();
+    }
+});
+
+// ── Re-read cache when tab becomes visible again (user switches back to this tab) ──
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        if (loadLocalCache()) loadDateStats();
+    }
+});
+
 function toggleLogout() {
     const menu = document.getElementById('logout-menu');
     if (menu) {
@@ -299,41 +314,65 @@ function loadDateStats() {
 async function loadHistoryData() {
     if (!token) return window.location.href = 'index.html';
 
-    // Phase 1: Render instantly from local cache if available (0ms delay)
-    if (loadLocalCache()) {
-        const userDisplay = document.getElementById('username-display');
-        const avatar = document.getElementById('user-initial');
+    // ── Phase 1: Render INSTANTLY from local cache (0ms delay) ──
+    const cachedLoaded = loadLocalCache();
+    const userDisplay = document.getElementById('username-display');
+    const avatar = document.getElementById('user-initial');
+
+    if (cachedLoaded) {
         if (userDisplay && data.username) userDisplay.innerText = data.username;
         if (avatar && data.username) avatar.innerText = data.username[0].toUpperCase();
-        loadDateStats();
+        loadDateStats(); // Show whatever we have immediately
     }
 
-    // Phase 2: Fetch fresh cloud data from MongoDB
+    // ── Phase 2: Fetch fresh data from cloud ──
     try {
         const response = await fetch(`${API_URL}/api/user/data`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        
+
         if (!response.ok) throw new Error("Unauthorized");
-        
+
         const cloudData = await response.json();
-        data = cloudData; 
-        isDataReady = true; 
-        saveLocalCache(data);
-        
-        const userDisplay = document.getElementById('username-display');
-        const avatar = document.getElementById('user-initial');
-        
-        if (userDisplay && data.username) {
-            userDisplay.innerText = data.username;
+
+        // ── SMART MERGE: Never let stale cloud overwrite fresh local data ──
+        // The localStorage cache is written synchronously the moment user logs water.
+        // The cloud sync is async and may lag behind. So for TODAY's intake & logs,
+        // always keep whichever value is larger (local wins if it has more logs).
+        const todayLocal = getLocalDateString();
+        const cachedIntake = (data && data.intake) || 0;
+        const cloudIntake  = (cloudData && cloudData.intake) || 0;
+        const cachedLogs   = (data && data.currentLogs) || [];
+        const cloudLogs    = (cloudData && cloudData.currentLogs) || [];
+
+        // Use cloud as the base (has full history map, settings, etc.)
+        data = cloudData;
+        isDataReady = true;
+
+        // But preserve local today-data if it's richer than the cloud response
+        if (cachedIntake > cloudIntake) {
+            data.intake = cachedIntake;
         }
-        if (avatar && data.username) {
-            avatar.innerText = data.username[0].toUpperCase();
+        if (cachedLogs.length > cloudLogs.length) {
+            data.currentLogs = cachedLogs;
         }
 
-        loadDateStats();
+        // Merge history: local cache may have today already archived; don't lose it
+        if (cloudData.history) {
+            data.history = cloudData.history;
+        }
+
+        saveLocalCache(data); // Write merged result back to cache
+
+        if (userDisplay && data.username) userDisplay.innerText = data.username;
+        if (avatar && data.username) avatar.innerText = data.username[0].toUpperCase();
+
+        loadDateStats(); // Re-render with merged authoritative data
+
     } catch (err) {
-        console.error(err);
+        console.error("Cloud fetch failed:", err);
+        // Cloud unavailable — still show whatever we have from cache
+        if (cachedLoaded) loadDateStats();
     }
 }
 
