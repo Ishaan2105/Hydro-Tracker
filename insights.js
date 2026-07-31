@@ -151,10 +151,105 @@ async function loadCloudData() {
         renderGoalHitRate();
         
         // Update Sidebar
-        document.getElementById('username-display').innerText = data.username;
-        document.getElementById('user-initial').innerText = data.username[0].toUpperCase();
+        const uDisp = document.getElementById('username-display');
+        const uInit = document.getElementById('user-initial');
+        if (uDisp && data.username) uDisp.innerText = data.username.toUpperCase();
+        if (uInit && data.username) uInit.innerText = data.username[0].toUpperCase();
     } catch (err) {
         showToast("Cloud fetch failed. Check connection.");
+    }
+}
+
+// ── DELETE ACCOUNT MODAL LOGIC ──
+function openDeleteAccountModal() {
+    let modal = document.getElementById('delete-account-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'delete-account-modal';
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-card">
+                <div class="modal-header">
+                    <span style="font-size: 1.8rem;">⚠️</span>
+                    <h2>Delete Account</h2>
+                </div>
+                <p class="modal-warning">
+                    This action is <strong>permanent</strong> and cannot be undone. All your water intake records, history, streaks, and settings will be permanently erased from the cloud.
+                </p>
+                <div class="modal-form">
+                    <label>Current Password</label>
+                    <input type="password" id="delete-pass-1" placeholder="Enter current password">
+                    
+                    <label>Confirm Password</label>
+                    <input type="password" id="delete-pass-2" placeholder="Re-enter password to confirm">
+                    
+                    <div id="delete-account-err" class="modal-err" style="display:none;"></div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-cancel" onclick="closeDeleteAccountModal()">Cancel</button>
+                    <button class="btn-danger" id="confirm-delete-btn" onclick="confirmDeleteAccount()">Delete Permanently</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    document.getElementById('delete-pass-1').value = '';
+    document.getElementById('delete-pass-2').value = '';
+    const errDiv = document.getElementById('delete-account-err');
+    if (errDiv) { errDiv.style.display = 'none'; errDiv.innerText = ''; }
+    modal.style.display = 'flex';
+}
+
+function closeDeleteAccountModal() {
+    const modal = document.getElementById('delete-account-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+async function confirmDeleteAccount() {
+    const pass1 = document.getElementById('delete-pass-1')?.value || '';
+    const pass2 = document.getElementById('delete-pass-2')?.value || '';
+    const errDiv = document.getElementById('delete-account-err');
+    const confirmBtn = document.getElementById('confirm-delete-btn');
+
+    if (!pass1 || !pass2) {
+        if (errDiv) { errDiv.innerText = 'Please fill in both password fields.'; errDiv.style.display = 'block'; }
+        return;
+    }
+
+    if (pass1 !== pass2) {
+        if (errDiv) { errDiv.innerText = 'Passwords do not match.'; errDiv.style.display = 'block'; }
+        return;
+    }
+
+    const currentToken = localStorage.getItem('token');
+    if (!currentToken) return window.location.href = 'index.html';
+
+    if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.innerText = 'Deleting...'; }
+    if (errDiv) errDiv.style.display = 'none';
+
+    try {
+        const response = await fetch(`${API_URL}/api/auth/delete-account`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: currentToken, password: pass1, confirmPassword: pass2 })
+        });
+
+        const resData = await response.json();
+
+        if (!response.ok) {
+            if (errDiv) { errDiv.innerText = resData.error || 'Failed to delete account.'; errDiv.style.display = 'block'; }
+            if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.innerText = 'Delete Permanently'; }
+            return;
+        }
+
+        // Successfully deleted
+        localStorage.clear();
+        alert('Your account has been permanently deleted.');
+        window.location.href = 'index.html';
+
+    } catch (err) {
+        if (errDiv) { errDiv.innerText = 'Network error. Please try again.'; errDiv.style.display = 'block'; }
+        if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.innerText = 'Delete Permanently'; }
     }
 }
 

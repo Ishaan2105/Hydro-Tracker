@@ -134,6 +134,39 @@ app.post('/api/auth/login', async (req, res) => {
     res.json({ token, user });
 });
 
+// Delete Account Permanently
+app.post('/api/auth/delete-account', async (req, res) => {
+    const { token, password, confirmPassword } = req.body;
+
+    if (!token || !password || !confirmPassword) {
+        return res.status(400).json({ error: "Please enter current password and confirmation." });
+    }
+
+    if (password !== confirmPassword) {
+        return res.status(400).json({ error: "Passwords do not match." });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id);
+
+        if (!user) {
+            return res.status(404).json({ error: "User account not found." });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ error: "Incorrect current password." });
+        }
+
+        await User.findByIdAndDelete(decoded.id);
+
+        res.json({ message: "Account deleted permanently." });
+    } catch (err) {
+        res.status(401).json({ error: "Unauthorized or session expired." });
+    }
+});
+
 // --- 4. HYDRATION DATA ROUTES ---
 
 // Sync/Save User Data (Replaces your saveData() function)
