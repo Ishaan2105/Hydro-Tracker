@@ -45,10 +45,11 @@ var selectedDate = todayISO;
 
 function saveLocalCache(userData) {
     try {
-        localStorage.setItem('hydro_data_cache', JSON.stringify(userData));
-        if (typeof window !== 'undefined' && window.BroadcastChannel) {
-            const bc = new BroadcastChannel('hydrotrack_channel');
-            bc.postMessage({ type: 'DATA_UPDATED', userData });
+        const json = JSON.stringify(userData);
+        localStorage.setItem('hydro_data_cache', json);
+        localStorage.setItem('hydro_update_ts', Date.now().toString());
+        if (typeof _hydroBC !== 'undefined' && _hydroBC) {
+            _hydroBC.postMessage({ type: 'DATA_UPDATED', userData });
         }
     } catch(e) {}
 }
@@ -71,10 +72,9 @@ function loadLocalCache() {
 // Initial instant load from cache
 loadLocalCache();
 
-// Listen for live updates from other tabs (e.g. Home tab logging water)
-if (typeof window !== 'undefined' && window.BroadcastChannel) {
-    const bc = new BroadcastChannel('hydrotrack_channel');
-    bc.onmessage = (event) => {
+// PRIMARY: BroadcastChannel live update (same-origin cross-tab)
+if (typeof _hydroBC !== 'undefined' && _hydroBC) {
+    _hydroBC.onmessage = (event) => {
         if (event.data && event.data.type === 'DATA_UPDATED') {
             data = event.data.userData;
             isDataReady = true;
@@ -82,6 +82,16 @@ if (typeof window !== 'undefined' && window.BroadcastChannel) {
         }
     };
 }
+
+// FALLBACK: storage event fires reliably across tabs when localStorage changes
+window.addEventListener('storage', (event) => {
+    if (event.key === 'hydro_update_ts') {
+        // Another tab updated the cache — reload it
+        if (loadLocalCache()) {
+            if (typeof loadDateStats === 'function') loadDateStats();
+        }
+    }
+});
 
 async function syncToCloud() {
     if (!isDataReady) return; 

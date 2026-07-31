@@ -38,12 +38,23 @@ var data = {
     history: {}
 };
 
+// Single persistent BroadcastChannel for cross-tab sync
+var _hydroBC = null;
+try {
+    if (typeof window !== 'undefined' && window.BroadcastChannel) {
+        _hydroBC = new BroadcastChannel('hydrotrack_channel');
+    }
+} catch(e) {}
+
 function saveLocalCache(userData) {
     try {
-        localStorage.setItem('hydro_data_cache', JSON.stringify(userData));
-        if (typeof window !== 'undefined' && window.BroadcastChannel) {
-            const bc = new BroadcastChannel('hydrotrack_channel');
-            bc.postMessage({ type: 'DATA_UPDATED', userData });
+        const json = JSON.stringify(userData);
+        localStorage.setItem('hydro_data_cache', json);
+        // Timestamp key triggers 'storage' event in other tabs reliably
+        localStorage.setItem('hydro_update_ts', Date.now().toString());
+        // BroadcastChannel for same-origin cross-tab updates
+        if (_hydroBC) {
+            _hydroBC.postMessage({ type: 'DATA_UPDATED', userData });
         }
     } catch(e) {}
 }
@@ -66,14 +77,15 @@ function loadLocalCache() {
 // Attempt instant local render from cache
 loadLocalCache();
 
-// Live broadcast listener from other tabs
-if (typeof window !== 'undefined' && window.BroadcastChannel) {
-    const bc = new BroadcastChannel('hydrotrack_channel');
-    bc.onmessage = (event) => {
+// Live broadcast listener — only refresh home UI if on home page
+if (_hydroBC) {
+    _hydroBC.onmessage = (event) => {
         if (event.data && event.data.type === 'DATA_UPDATED') {
             data = event.data.userData;
             isDataReady = true;
-            if (typeof refreshHome === 'function') refreshHome();
+            if (typeof refreshHome === 'function' && document.getElementById('percent-text')) {
+                refreshHome();
+            }
         }
     };
 }
@@ -145,14 +157,19 @@ if (typeof window !== 'undefined' && window.BroadcastChannel) {
 
 window.addEventListener('DOMContentLoaded', () => {
     // 1. Initialize Visuals
-    updateTheme(); 
+    if (typeof updateTheme === 'function') updateTheme(); 
 
-    // 2. Clear One-Time Reminders locally (Optional UI cleanup)
+    // 2. Only run home-specific logic if we're actually on the home page
+    // (history.html also loads home.js, so we guard with a home-page-specific element)
+    const isHomePage = !!document.getElementById('percent-text');
+    if (!isHomePage) return; // history/insights/settings pages handle their own data loading
+
+    // 3. Clear One-Time Reminders locally (Optional UI cleanup)
     if (typeof clearOneTimeReminders === 'function') {
         clearOneTimeReminders();
     }
 
-    // 3. Fetch Fresh Data from Cloud
+    // 4. Fetch Fresh Data from Cloud
     // This function handles the Daily Reset automatically on the server side
     loadUserData(); 
 });
