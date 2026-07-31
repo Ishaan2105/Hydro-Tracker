@@ -1,31 +1,27 @@
 // ============================================================
 // HydroTrack Service Worker — PWA Caching + Push Notifications
-// Version: hydrotrack-v9
+// Version: hydrotrack-v10
 // ============================================================
-const CACHE_NAME = 'hydrotrack-v9';
-const ASSETS_TO_CACHE = [
-    './',
-    './index.html',
-    './home.html',
-    './history.html',
-    './insights.html',
-    './settings.html',
+const CACHE_NAME = 'hydrotrack-v10';
+
+// Only cache static assets that rarely change (icons, manifest)
+const STATIC_ASSETS = [
     './icon-192x192.png',
     './icon-512x512.png',
     './manifest.json'
 ];
 
-// ── Install: cache assets ──────────────────────────────────
+// ── Install: pre-cache only static assets ─────────────────────
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll(ASSETS_TO_CACHE).catch(err => console.log('Cache error:', err));
+            return cache.addAll(STATIC_ASSETS).catch(err => console.log('Cache error:', err));
         })
     );
     self.skipWaiting();
 });
 
-// ── Activate: purge old caches ─────────────────────────────
+// ── Activate: purge ALL old caches ────────────────────────────
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((cacheNames) => {
@@ -38,17 +34,43 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// ── Fetch: cache-first for assets, pass-through for API ────
+// ── Fetch strategy ─────────────────────────────────────────────
+// API calls: always pass through (no caching)
+// HTML + JS + CSS files: NETWORK-FIRST (always get latest, fallback to cache)
+// Images / icons: cache-first (they don't change often)
 self.addEventListener('fetch', (event) => {
+    // Skip non-GET and API requests entirely
     if (event.request.method !== 'GET' || event.request.url.includes('/api/')) return;
-    event.respondWith(
-        caches.match(event.request).then((cachedResponse) => {
-            return cachedResponse || fetch(event.request).then((networkResponse) => {
-                return networkResponse;
-            });
-        })
-    );
+
+    const url = new URL(event.request.url);
+    const ext = url.pathname.split('.').pop().toLowerCase();
+    const isStaticAsset = ['png', 'jpg', 'jpeg', 'gif', 'ico', 'svg', 'webp'].includes(ext);
+
+    if (isStaticAsset) {
+        // Cache-first for images
+        event.respondWith(
+            caches.match(event.request).then((cached) =>
+                cached || fetch(event.request).then((response) => {
+                    const clone = response.clone();
+                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+                    return response;
+                })
+            )
+        );
+    } else {
+        // Network-first for HTML, JS, CSS — always fetch fresh, cache as fallback
+        event.respondWith(
+            fetch(event.request)
+                .then((response) => {
+                    const clone = response.clone();
+                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+                    return response;
+                })
+                .catch(() => caches.match(event.request))
+        );
+    }
 });
+
 
 // ── Push: handle server-sent push notifications ────────────
 self.addEventListener('push', (event) => {
