@@ -192,21 +192,34 @@ async function syncToCloud() {
 const THEME_KEYS = [
     '--accent','--accent-light','--accent-dark','--accent-rgb',
     '--accent-glow','--accent-subtle','--bg-gradient',
-    '--glass-bg','--glass-border','--text-primary','--text-secondary'
+    '--glass-bg','--glass-border','--text-primary','--text-secondary',
+    '--sidebar-bg','--sidebar-border','--sidebar-brand-text','--nav-text'
 ];
 const THEME_PRESETS = {
-    ocean:    ['#1565c0','#42a5f5','#003c8f','21,101,192',
-               'rgba(21,101,192,.28)','rgba(21,101,192,.08)',
-               'linear-gradient(135deg,#f0f7ff,#dce8ff,#c2d9ff)',
-               'rgba(255,255,255,.52)','rgba(255,255,255,.36)','#1a237e','#546e7a'],
-    forest:   ['#2e7d32','#66bb6a','#1b5e20','46,125,50',
-               'rgba(46,125,50,.28)','rgba(46,125,50,.08)',
-               'linear-gradient(135deg,#f1f8e9,#dcedc8,#c8e6c9)',
-               'rgba(255,255,255,.52)','rgba(255,255,255,.36)','#1b5e20','#388e3c'],
-    coral:    ['#e64a19','#ff7043','#bf360c','230,74,25',
-               'rgba(230,74,25,.28)','rgba(230,74,25,.08)',
-               'linear-gradient(135deg,#fff3e0,#ffe0b2,#ffccbc)',
-               'rgba(255,255,255,.52)','rgba(255,255,255,.36)','#bf360c','#e64a19']
+    ocean: [
+        '#0284c7', '#38bdf8', '#0369a1', '2,132,199',
+        'rgba(2,132,199,0.22)', 'rgba(2,132,199,0.08)',
+        'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #bae6fd 100%)',
+        'rgba(255,255,255,0.65)', 'rgba(255,255,255,0.45)',
+        '#0c4a6e', '#475569',
+        'rgba(240,249,255,0.88)', '#bae6fd', '#0284c7', '#0c4a6e'
+    ],
+    forest: [
+        '#2e7d32', '#4caf50', '#1b5e20', '46,125,50',
+        'rgba(46,125,50,0.22)', 'rgba(46,125,50,0.08)',
+        'linear-gradient(135deg, #f4fbf7 0%, #e8f5e9 50%, #c8e6c9 100%)',
+        'rgba(255,255,255,0.65)', 'rgba(255,255,255,0.45)',
+        '#1b5e20', '#388e3c',
+        'rgba(244,251,247,0.88)', '#c8e6c9', '#2e7d32', '#1b5e20'
+    ],
+    coral: [
+        '#e65100', '#ff9800', '#bf360c', '230,81,0',
+        'rgba(230,81,0,0.22)', 'rgba(230,81,0,0.08)',
+        'linear-gradient(135deg, #fff8f5 0%, #fff0e6 50%, #ffe0b2 100%)',
+        'rgba(255,255,255,0.65)', 'rgba(255,255,255,0.45)',
+        '#bf360c', '#e64a19',
+        'rgba(255,248,245,0.88)', '#ffccbc', '#e65100', '#bf360c'
+    ]
 };
 
 function applyTheme(name) {

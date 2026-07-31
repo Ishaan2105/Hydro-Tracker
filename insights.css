@@ -20,7 +20,7 @@ body {
 
 .calc-btn, .save-meals-btn {
     width: 100%; padding: 15px; border-radius: 12px;
-    border: none; background: #2f7bff; color: white;
+    border: none; background: var(--accent, #0284c7); color: white;
     font-weight: bold; cursor: pointer;
 }
 
