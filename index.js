@@ -198,6 +198,17 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         if (response.ok) {
             // Store the JWT token for session persistence
             localStorage.setItem('token', data.token);
+
+            // ── Cache the full user profile at login time ──
+            // This ensures username and data are available on ALL pages instantly,
+            // even before the home page cloud fetch runs.
+            if (data.user) {
+                try {
+                    localStorage.setItem('hydro_data_cache', JSON.stringify(data.user));
+                    localStorage.setItem('hydro_update_ts', Date.now().toString());
+                } catch(e) {}
+            }
+
             window.location.href = 'home.html';
         } else {
             // Display the specific error from your MongoDB (e.g., "User not found")
