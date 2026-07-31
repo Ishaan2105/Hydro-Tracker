@@ -179,6 +179,18 @@ function logout() {
 }
 
 // ── DELETE ACCOUNT MODAL LOGIC ──
+function togglePassVisibility(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    if (input.type === 'password') {
+        input.type = 'text';
+        btn.innerText = '🙈';
+    } else {
+        input.type = 'password';
+        btn.innerText = '👁️';
+    }
+}
+
 function openDeleteAccountModal() {
     let modal = document.getElementById('delete-account-modal');
     if (!modal) {
@@ -196,10 +208,16 @@ function openDeleteAccountModal() {
                 </p>
                 <div class="modal-form">
                     <label>Current Password</label>
-                    <input type="password" id="delete-pass-1" placeholder="Enter current password">
+                    <div class="input-with-eye">
+                        <input type="password" id="delete-pass-1" placeholder="Enter current password">
+                        <button type="button" class="toggle-eye-btn" onclick="togglePassVisibility('delete-pass-1', this)" title="Show/Hide Password">👁️</button>
+                    </div>
                     
                     <label>Confirm Password</label>
-                    <input type="password" id="delete-pass-2" placeholder="Re-enter password to confirm">
+                    <div class="input-with-eye">
+                        <input type="password" id="delete-pass-2" placeholder="Re-enter password to confirm">
+                        <button type="button" class="toggle-eye-btn" onclick="togglePassVisibility('delete-pass-2', this)" title="Show/Hide Password">👁️</button>
+                    </div>
                     
                     <div id="delete-account-err" class="modal-err" style="display:none;"></div>
                 </div>
@@ -211,8 +229,14 @@ function openDeleteAccountModal() {
         `;
         document.body.appendChild(modal);
     }
-    document.getElementById('delete-pass-1').value = '';
-    document.getElementById('delete-pass-2').value = '';
+    const p1 = document.getElementById('delete-pass-1');
+    const p2 = document.getElementById('delete-pass-2');
+    if (p1) { p1.value = ''; p1.type = 'password'; }
+    if (p2) { p2.value = ''; p2.type = 'password'; }
+    
+    const eyeBtns = modal.querySelectorAll('.toggle-eye-btn');
+    eyeBtns.forEach(btn => btn.innerText = '👁️');
+
     const errDiv = document.getElementById('delete-account-err');
     if (errDiv) { errDiv.style.display = 'none'; errDiv.innerText = ''; }
     modal.style.display = 'flex';
