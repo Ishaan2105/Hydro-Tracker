@@ -538,7 +538,7 @@ svg { width: 100%; height: 100%; transform: rotate(-90deg); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* RESPONSIVE MOBILE STYLES */
+/* RESPONSIVE MOBILE STYLES (VERTICAL PORTRAIT MODE) */
 @media (max-width: 768px) {
     body {
         flex-direction: column;
@@ -550,8 +550,8 @@ svg { width: 100%; height: 100%; transform: rotate(-90deg); }
     .sidebar {
         width: 100%;
         height: auto;
-        max-height: 42vh;
-        padding: calc(12px + var(--safe-top)) 14px 12px 14px;
+        max-height: 48vh;
+        padding: calc(10px + var(--safe-top)) 14px 12px 14px;
         border-right: none;
         border-bottom: 1px solid var(--sidebar-border);
         box-shadow: 0 4px 16px rgba(0,0,0,0.06);
@@ -559,6 +559,25 @@ svg { width: 100%; height: 100%; transform: rotate(-90deg); }
         -webkit-overflow-scrolling: touch;
         touch-action: pan-y;
         flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Pinned User Profile at the TOP on vertical mobile view so it is always 100% visible on section switch */
+    .user-profile {
+        order: -1;
+        margin-top: 0;
+        margin-bottom: 12px;
+        padding: 10px 14px;
+        background: rgba(255, 255, 255, 0.75);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+        flex-shrink: 0;
+    }
+
+    .logout-dropdown {
+        top: 56px;
+        bottom: auto;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
     }
 
     .sidebar-brand {
@@ -594,6 +613,19 @@ svg { width: 100%; height: 100%; transform: rotate(-90deg); }
         touch-action: pan-y !important;
     }
 
+    .user-profile {
+        order: 1; /* Pinned at bottom in landscape sidebar mode */
+        margin-top: 14px;
+        margin-bottom: 24px;
+        padding: 8px 10px;
+        flex-shrink: 0;
+    }
+
+    .logout-dropdown {
+        top: auto;
+        bottom: 58px;
+    }
+
     .sidebar-brand {
         padding: 0 4px 8px 4px;
         margin-bottom: 6px;
@@ -621,13 +653,6 @@ svg { width: 100%; height: 100%; transform: rotate(-90deg); }
         border-radius: 8px;
     }
 
-    .user-profile {
-        margin-top: 14px;
-        margin-bottom: 24px;
-        padding: 8px 10px;
-        flex-shrink: 0;
-    }
-
     .user-avatar {
         width: 34px;
         height: 34px;
@@ -636,10 +661,6 @@ svg { width: 100%; height: 100%; transform: rotate(-90deg); }
 
     .user-info span, #username-display {
         font-size: 0.82rem;
-    }
-
-    .logout-dropdown {
-        bottom: 58px;
     }
 }
 
