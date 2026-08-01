@@ -58,6 +58,9 @@ body {
     z-index: 100;
     box-shadow: 4px 0 28px rgba(0,0,0,0.05);
     transition: background 0.4s ease, border-color 0.4s ease;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
 }
 
 /* Brand mark at the top */
@@ -149,7 +152,13 @@ button.nav-item {
 }
 
 /* Main Content & Circular Progress */
-.content { flex: 1; padding: 40px; overflow-y: auto; }
+.content {
+    flex: 1;
+    padding: 40px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+}
 
 .progress-container {
     display: flex;
@@ -526,26 +535,50 @@ svg { width: 100%; height: 100%; transform: rotate(-90deg); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-/*LANDSCSAPE  */
-/* Show a message if the user is in Portrait mode */
-@media screen and (orientation: portrait) {
-  body::before {
-    content: "🔄 Please rotate your device to Landscape mode for the best experience.";
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: #1565c0;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    z-index: 99999;
-    padding: 20px;
-    font-weight: bold;
-  }
+/* RESPONSIVE MOBILE STYLES */
+@media (max-width: 768px) {
+    body {
+        flex-direction: column;
+        height: 100vh;
+        height: 100dvh;
+        overflow: hidden;
+    }
+
+    .sidebar {
+        width: 100%;
+        height: auto;
+        max-height: 42vh;
+        padding: calc(12px + var(--safe-top)) 14px 12px 14px;
+        border-right: none;
+        border-bottom: 1px solid var(--sidebar-border);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
+        flex-shrink: 0;
+    }
+
+    .sidebar-brand {
+        padding: 0 0 10px 0;
+        margin-bottom: 10px;
+    }
+
+    .nav-item {
+        padding: 9px 12px;
+        font-size: 0.88rem;
+    }
+
+    .content {
+        flex: 1;
+        padding: 24px 16px 36px 16px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
+    }
+
+    .log-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
 /* EFFECTS */
