@@ -538,81 +538,101 @@ svg { width: 100%; height: 100%; transform: rotate(-90deg); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* RESPONSIVE SCALED DESKTOP VIEWPORT STYLES */
-body {
-    min-width: 1024px;
-    height: 100vh;
-    height: 100dvh;
-    display: flex;
-    flex-direction: row;
-    overflow: hidden;
+/* PORTRAIT MODE ROTATION PROMPT BANNER (WEB + APP) */
+@media screen and (orientation: portrait) {
+    body::before {
+        content: "🔄 Please rotate your device to Landscape mode for the best experience! 📱✨";
+        position: fixed;
+        top: 14px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        max-width: 460px;
+        background: linear-gradient(135deg, #0284c7, #0369a1);
+        color: #ffffff;
+        padding: 14px 20px;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(2, 132, 199, 0.4);
+        text-align: center;
+        font-weight: 700;
+        font-size: 0.92rem;
+        z-index: 999999;
+        pointer-events: none;
+        letter-spacing: -0.01em;
+        animation: pulseBanner 2s infinite ease-in-out;
+    }
 }
 
-.sidebar {
-    width: 248px;
-    min-width: 248px;
-    flex-shrink: 0;
+@keyframes pulseBanner {
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.02); }
 }
 
-/* SHORT SCREEN & MOBILE LANDSCAPE (HORIZONTAL MODE) STYLES */
-@media (max-height: 550px) {
+/* MOBILE LANDSCAPE (HORIZONTAL MODE) RESPONSIVE STYLES */
+@media (max-width: 900px) and (orientation: landscape) {
+    body {
+        height: 100vh;
+        height: 100dvh;
+        overflow: hidden;
+    }
+
     .sidebar {
-        width: 185px;
-        padding: calc(10px + var(--safe-top)) 8px 36px 8px;
-        justify-content: flex-start;
+        width: 230px;
+        min-width: 210px;
+        height: 100vh;
+        height: 100dvh;
+        padding: calc(12px + var(--safe-top)) 10px 80px 10px !important;
         overflow-y: auto !important;
         -webkit-overflow-scrolling: touch !important;
         touch-action: pan-y !important;
-    }
-
-    .user-profile {
-        order: 1;
-        margin-top: auto;
-        margin-bottom: 24px;
-        padding: 8px 8px;
         flex-shrink: 0;
     }
 
-    .logout-dropdown {
-        top: auto;
-        bottom: 58px;
-    }
-
     .sidebar-brand {
-        padding: 0 4px 8px 4px;
-        margin-bottom: 6px;
+        padding: 0 4px 10px 4px;
+        margin-bottom: 8px;
     }
 
-    .sidebar-brand-icon {
-        font-size: 1.2rem;
-    }
-
-    .sidebar-brand-text {
-        font-size: 0.85rem;
-    }
+    .sidebar-brand-icon { font-size: 1.4rem; }
+    .sidebar-brand-text { font-size: 0.92rem; }
 
     .nav-item {
-        padding: 7px 8px;
-        margin-bottom: 2px;
-        font-size: 0.8rem;
-        border-radius: 8px;
+        padding: 8px 10px;
+        margin-bottom: 3px;
+        font-size: 0.86rem;
+        border-radius: 10px;
     }
 
     .nav-icon {
-        width: 28px;
-        height: 28px;
-        font-size: 0.85rem;
-        border-radius: 6px;
+        width: 32px;
+        height: 32px;
+        font-size: 0.92rem;
+        border-radius: 8px;
+    }
+
+    .user-profile {
+        margin-top: 14px;
+        margin-bottom: 24px;
+        padding: 9px 10px;
+        flex-shrink: 0;
     }
 
     .user-avatar {
-        width: 30px;
-        height: 30px;
-        font-size: 0.85rem;
+        width: 34px;
+        height: 34px;
+        font-size: 0.9rem;
     }
 
     .user-info span, #username-display {
-        font-size: 0.78rem;
+        font-size: 0.82rem;
+    }
+
+    .content {
+        flex: 1;
+        padding: 20px 16px 120px 16px !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: pan-y !important;
     }
 }
 
