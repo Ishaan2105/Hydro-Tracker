@@ -41,6 +41,18 @@
 
 // 1. Only keep the Token (Required to ask the Cloud who you are)
 var token = localStorage.getItem('token'); 
+
+/* ── Auto-lock screen orientation to landscape mode ── */
+function autoLockLandscape() {
+    try {
+        if (window.screen && window.screen.orientation && typeof window.screen.orientation.lock === 'function') {
+            window.screen.orientation.lock('landscape').catch(() => {});
+        }
+    } catch(e) {}
+}
+autoLockLandscape();
+document.addEventListener('touchstart', autoLockLandscape, { once: true });
+document.addEventListener('click', autoLockLandscape, { once: true });
 var API_URL = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http'))
     ? window.location.origin
     : "http://localhost:5000";
