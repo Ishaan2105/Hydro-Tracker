@@ -2,6 +2,19 @@ const API_URL = (typeof window !== 'undefined' && window.location && window.loca
     ? window.location.origin
     : "http://localhost:5000";
 
+// ── Session Persistence / Auto-login check ──
+(function checkAutoLogin() {
+    try {
+        const savedToken = localStorage.getItem('token');
+        if (savedToken) {
+            const parts = savedToken.split('.');
+            if (parts.length === 3) {
+                window.location.href = 'home.html';
+            }
+        }
+    } catch(e) {}
+})();
+
 const rainContainer = document.getElementById('rain-container');
 const rippleContainer = document.getElementById('ripple-container');
 const bottle = document.getElementById('bottle');
