@@ -15,18 +15,6 @@ const API_URL = (typeof window !== 'undefined' && window.location && window.loca
     } catch(e) {}
 })();
 
-/* ── Auto-lock screen orientation to landscape mode ── */
-function autoLockLandscape() {
-    try {
-        if (window.screen && window.screen.orientation && typeof window.screen.orientation.lock === 'function') {
-            window.screen.orientation.lock('landscape').catch(() => {});
-        }
-    } catch(e) {}
-}
-autoLockLandscape();
-document.addEventListener('touchstart', autoLockLandscape, { once: true });
-document.addEventListener('click', autoLockLandscape, { once: true });
-
 const rainContainer = document.getElementById('rain-container');
 const rippleContainer = document.getElementById('ripple-container');
 const bottle = document.getElementById('bottle');

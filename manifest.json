@@ -4,7 +4,7 @@
   "description": "Smart cloud-synced hydration tracking app",
   "start_url": "index.html",
   "display": "standalone",
-  "orientation": "landscape",
+  "orientation": "any",
   "background_color": "#e3f2fd",
   "theme_color": "#1565c0",
   "icons": [
