@@ -756,11 +756,14 @@ function renderCloudReminders() {
         const row = document.createElement('div');
         row.className = 'time-toggle-row';
         row.innerHTML = `
-            <label>
-                <input type="checkbox" value="${rem.time}" ${rem.active ? 'checked' : ''} 
-                       onchange="updateReminderStatus(${index}, this.checked)"> 
-                ${rem.time}
-            </label>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <label class="switch small" title="Toggle On/Off">
+                    <input type="checkbox" value="${rem.time}" ${rem.active ? 'checked' : ''} 
+                           onchange="updateReminderStatus(${index}, this.checked)"> 
+                    <span class="slider"></span>
+                </label>
+                <span style="font-weight:700; font-size:0.95rem; color:var(--text-primary, #0c4a6e);">🔔 ${rem.time}</span>
+            </div>
             <div class="daily-wrapper">
                 <span>Daily</span>
                 <label class="switch small">
@@ -768,7 +771,7 @@ function renderCloudReminders() {
                            onchange="updateReminderType(${index}, this.checked)">
                     <span class="slider"></span>
                 </label>
-                <button onclick="deleteReminder(${index})" style="background:none; border:none; margin-left:10px; cursor:pointer;">🗑️</button>
+                <button onclick="deleteReminder(${index})" style="background:none; border:none; margin-left:10px; cursor:pointer;" title="Delete Reminder">🗑️</button>
             </div>
         `;
         container.appendChild(row);
