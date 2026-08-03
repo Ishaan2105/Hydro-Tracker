@@ -894,6 +894,6 @@ async function triggerPWAInstall() {
 window.addEventListener('appinstalled', () => {
     const installBtn = document.getElementById('pwa-install-btn');
     if (installBtn) installBtn.style.display = 'none';
-    if (typeof showToast === 'function') showToast('HydroTrack Installed Successfully! 🎉');
+    if (typeof showToast === 'function') showToast('Hydro Tracker Installed Successfully! 🎉');
 });
 

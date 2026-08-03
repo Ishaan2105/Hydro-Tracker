@@ -1,6 +1,6 @@
 {
-  "name": "HydroTrack",
-  "short_name": "HydroTrack",
+  "name": "Hydro Tracker",
+  "short_name": "Hydro Tracker",
   "description": "Smart cloud-synced hydration tracking app",
   "start_url": "index.html",
   "display": "standalone",
