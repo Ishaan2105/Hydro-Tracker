@@ -179,10 +179,10 @@ app.get('/api/leaderboard', async (req, res) => {
             };
         });
 
-        // Sort by Completion Rate % descending, then Streak descending, then Intake descending
+        // Sort by Streak descending (1st priority), then Completion % descending (2nd priority), then Intake ml descending (3rd priority)
         rankedList.sort((a, b) => {
-            if (b.pct !== a.pct) return b.pct - a.pct;
             if (b.streak !== a.streak) return b.streak - a.streak;
+            if (b.pct !== a.pct) return b.pct - a.pct;
             return b.intake - a.intake;
         });
 

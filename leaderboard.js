@@ -183,7 +183,7 @@ function updatePodiumCard(cardId, item) {
 
     if (item) {
         if (nameEl) nameEl.innerText = item.username.toUpperCase();
-        if (pctEl) pctEl.innerText = item.pct + '%';
+        if (pctEl) pctEl.innerText = `🔥 ${item.streak}d • ${item.pct}%`;
         if (titleEl) titleEl.innerText = item.rankTitle;
         if (avatarEl) avatarEl.innerText = item.username[0].toUpperCase();
     } else {
