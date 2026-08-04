@@ -332,7 +332,7 @@ body {
     height: 100vh;
     z-index: -1; /* Keep behind sidebar and cards */
     pointer-events: none; /* Let mouse clicks pass through to buttons */
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: transparent;
 }
 
 .waves-canvas {
