@@ -51,8 +51,10 @@ async function loadUserData() {
 
         const displayElement = document.getElementById('username-display');
         const initialElement = document.getElementById('user-initial');
+        const mobileInitialElement = document.getElementById('mobile-user-initial');
         if (displayElement && data.username) displayElement.innerText = data.username.toUpperCase();
         if (initialElement && data.username) initialElement.innerText = data.username[0].toUpperCase();
+        if (mobileInitialElement && data.username) mobileInitialElement.innerText = data.username[0].toUpperCase();
 
     } catch (err) {
         console.error("Cloud connection failed:", err);
@@ -803,9 +805,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (data && data.username) {
         const nameDisplay = document.getElementById('username-display');
         const initialDisplay = document.getElementById('user-initial');
+        const mobileInitialDisplay = document.getElementById('mobile-user-initial');
         
         if (nameDisplay) nameDisplay.innerText = data.username.toUpperCase();
         if (initialDisplay) initialDisplay.innerText = data.username[0].toUpperCase();
+        if (mobileInitialDisplay) mobileInitialDisplay.innerText = data.username[0].toUpperCase();
     }
 
     // ✅ FIX 2: Sync Post-Meal Toggle (Ensures it stays ON if saved in Cloud)
@@ -944,8 +948,46 @@ async function triggerPWAInstall() {
     deferredPWAInstallPrompt = null;
 }
 
+
 window.addEventListener('appinstalled', () => {
     const installBtn = document.getElementById('pwa-install-btn');
     if (installBtn) installBtn.style.display = 'none';
     if (typeof showToast === 'function') showToast('Hydro Tracker Installed Successfully! 🎉');
 });
+
+// ── COMMUNITY LEADERBOARD OPT-IN TOGGLE ──
+async function toggleLeaderboardOptIn() {
+    const toggle = document.getElementById('leaderboard-toggle');
+    if (!toggle) return;
+
+    const optIn = toggle.checked;
+    data.leaderboardOptIn = optIn;
+    saveLocalCache(data);
+
+    try {
+        await fetch(`${API_URL}/api/user/data`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ leaderboardOptIn: optIn })
+        });
+        showToast(optIn ? '🏆 You are now on the community leaderboard!' : '👤 Removed from community leaderboard.');
+    } catch (err) {
+        console.error('Failed to update leaderboard opt-in:', err);
+        showToast('Could not save setting. Try again.');
+        // Revert toggle on failure
+        toggle.checked = !optIn;
+        data.leaderboardOptIn = !optIn;
+    }
+}
+
+// Mobile avatar dropdown toggle (for pages that don't load home.js)
+function toggleMobileLogout() {
+    const menu = document.getElementById('mobile-logout-menu');
+    if (menu) {
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+}
+

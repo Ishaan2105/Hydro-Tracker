@@ -138,15 +138,17 @@ body {
     font-size: 1.2rem;
 }
 
-.input-row { display: flex; gap: 12px; margin: 15px 0; }
-
+.input-row { display: flex; gap: 10px; margin: 15px 0; width: 100%; }
 .input-row input { 
     flex: 1; 
-    padding: 12px;
+    min-width: 0;
+    width: 50%;
+    box-sizing: border-box;
+    padding: 12px 10px;
     border-radius: 10px;
     border: 1px solid #ddd;
     text-align: center;
-    font-size: 1rem;
+    font-size: 0.95rem;
     outline: none;
 }
 
@@ -732,13 +734,18 @@ input[type="time"] {
     }
 
     .input-row {
+        display: flex;
         flex-direction: row;
         gap: 8px;
+        width: 100%;
     }
 
     .input-row input {
-        font-size: 0.9rem;
-        padding: 10px;
+        flex: 1;
+        min-width: 0;
+        box-sizing: border-box;
+        font-size: 0.88rem;
+        padding: 10px 8px;
     }
 
     .roadmap-progress-header {

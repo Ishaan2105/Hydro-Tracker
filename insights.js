@@ -235,8 +235,10 @@ async function loadCloudData() {
         // Update Sidebar
         const uDisp = document.getElementById('username-display');
         const uInit = document.getElementById('user-initial');
+        const uMobile = document.getElementById('mobile-user-initial');
         if (uDisp && data.username) uDisp.innerText = data.username.toUpperCase();
         if (uInit && data.username) uInit.innerText = data.username[0].toUpperCase();
+        if (uMobile && data.username) uMobile.innerText = data.username[0].toUpperCase();
     } catch (err) {
         showToast("Cloud fetch failed. Check connection.");
     }

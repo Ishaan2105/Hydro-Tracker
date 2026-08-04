@@ -119,6 +119,7 @@ header h1 {
 }
 
 .podium-card.gold {
+    order: 2;
     border-color: #f59e0b;
     background: linear-gradient(180deg, rgba(254, 243, 199, 0.8) 0%, var(--glass-bg, rgba(255, 255, 255, 0.7)) 100%);
     box-shadow: 0 14px 30px rgba(245, 158, 11, 0.2);
@@ -126,11 +127,13 @@ header h1 {
 }
 
 .podium-card.silver {
+    order: 1;
     border-color: #94a3b8;
     background: linear-gradient(180deg, rgba(241, 245, 249, 0.8) 0%, var(--glass-bg, rgba(255, 255, 255, 0.7)) 100%);
 }
 
 .podium-card.bronze {
+    order: 3;
     border-color: #d97706;
     background: linear-gradient(180deg, rgba(254, 215, 170, 0.8) 0%, var(--glass-bg, rgba(255, 255, 255, 0.7)) 100%);
 }
@@ -406,6 +409,9 @@ header h1 {
         grid-template-columns: 1fr;
         gap: 12px;
     }
+    .podium-card.gold { order: 1 !important; }
+    .podium-card.silver { order: 2 !important; }
+    .podium-card.bronze { order: 3 !important; }
 }
 
 /* EFFECTS — matches all other pages */

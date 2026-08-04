@@ -199,6 +199,13 @@ function toggleLogout() {
     }
 }
 
+function toggleMobileLogout() {
+    const menu = document.getElementById('mobile-logout-menu');
+    if (menu) {
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+}
+
 function logout() {
     localStorage.clear(); 
     window.location.href = 'index.html';
@@ -467,6 +474,8 @@ async function loadHistoryData() {
     if (cachedLoaded) {
         if (userDisplay && data.username) userDisplay.innerText = data.username.toUpperCase();
         if (avatar && data.username) avatar.innerText = data.username[0].toUpperCase();
+        const mobileAvatar = document.getElementById('mobile-user-initial');
+        if (mobileAvatar && data.username) mobileAvatar.innerText = data.username[0].toUpperCase();
         loadDateStats(); // Show whatever we have immediately
     }
 
@@ -511,6 +520,8 @@ async function loadHistoryData() {
 
         if (userDisplay && data.username) userDisplay.innerText = data.username.toUpperCase();
         if (avatar && data.username) avatar.innerText = data.username[0].toUpperCase();
+        const mobileAvatar = document.getElementById('mobile-user-initial');
+        if (mobileAvatar && data.username) mobileAvatar.innerText = data.username[0].toUpperCase();
 
         loadDateStats(); // Re-render with merged authoritative data
 

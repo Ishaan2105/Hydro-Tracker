@@ -114,6 +114,7 @@
             if (name) {
                 var d = document.getElementById('username-display'); if (d) d.innerText = name.toUpperCase();
                 var a = document.getElementById('user-initial'); if (a) a.innerText = name[0].toUpperCase();
+                var m = document.getElementById('mobile-user-initial'); if (m) m.innerText = name[0].toUpperCase();
             }
         })();
     </script>
@@ -143,18 +144,18 @@
             </div>
         </section>
 
-        <!-- TOP 3 PODIUM -->
+        <!-- TOP 3 PODIUM — ordered 1st, 2nd, 3rd for correct portrait stacking -->
         <section class="podium-section" id="podium-section">
-            <div class="podium-card silver" id="podium-2">
-                <div class="crown">🥈</div>
-                <div class="podium-avatar">2</div>
+            <div class="podium-card gold" id="podium-1">
+                <div class="crown">🥇</div>
+                <div class="podium-avatar">1</div>
                 <h4 class="podium-name">Loading...</h4>
                 <div class="podium-pct">0%</div>
                 <div class="podium-title">--</div>
             </div>
-            <div class="podium-card gold" id="podium-1">
-                <div class="crown">🥇</div>
-                <div class="podium-avatar">1</div>
+            <div class="podium-card silver" id="podium-2">
+                <div class="crown">🥈</div>
+                <div class="podium-avatar">2</div>
                 <h4 class="podium-name">Loading...</h4>
                 <div class="podium-pct">0%</div>
                 <div class="podium-title">--</div>

@@ -129,10 +129,31 @@ window.addEventListener('DOMContentLoaded', () => {
     if (cachedName) {
         if (userDisplay) userDisplay.innerText = cachedName.toUpperCase();
         if (avatar) avatar.innerText = cachedName[0].toUpperCase();
+        const mobileAvatar = document.getElementById('mobile-user-initial');
+        if (mobileAvatar) mobileAvatar.innerText = cachedName[0].toUpperCase();
     }
 
     loadLeaderboard();
 });
+
+function toggleLogout() {
+    const menu = document.getElementById('logout-menu');
+    if (menu) {
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+}
+
+function toggleMobileLogout() {
+    const menu = document.getElementById('mobile-logout-menu');
+    if (menu) {
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+}
+
+function logout() {
+    localStorage.clear();
+    window.location.href = 'index.html';
+}
 
 /* ── LOAD LEADERBOARD FROM API ── */
 async function loadLeaderboard() {

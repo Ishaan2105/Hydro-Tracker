@@ -108,8 +108,9 @@
             try { var c = JSON.parse(localStorage.getItem('hydro_data_cache')); if (c && c.username && c.username !== 'Loading...') name = c.username; } catch(e){}
             if (!name) { try { var t = localStorage.getItem('token'); if (t) { var p = JSON.parse(atob(t.split('.')[1])); name = p.username || p.name || null; } } catch(e){} }
             if (name) {
-                var d = document.getElementById('username-display'); if (d) d.innerText = name;
+                var d = document.getElementById('username-display'); if (d) d.innerText = name.toUpperCase();
                 var a = document.getElementById('user-initial'); if (a) a.innerText = name[0].toUpperCase();
+                var m = document.getElementById('mobile-user-initial'); if (m) m.innerText = name[0].toUpperCase();
             }
         })();
     </script>
