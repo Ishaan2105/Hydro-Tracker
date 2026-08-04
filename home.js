@@ -1054,15 +1054,42 @@ new WaterWaves('waves-bg', {
     yGap: 36
 });
 
-/* ── PWA INSTALLATION PROMPT ── */
+/* ── PWA INSTALLATION & OPEN IN APP LOGIC ── */
 var deferredPWAInstallPrompt = window.deferredPWAInstallPrompt || null;
 
+function isAppStandalone() {
+    return window.matchMedia('(display-mode: standalone)').matches ||
+           window.navigator.standalone === true ||
+           document.referrer.includes('android-app://');
+}
+
 function updatePWAInstallButtons() {
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    // 1. If currently inside the installed app, ALWAYS hide install/open buttons
+    if (isAppStandalone()) {
+        document.querySelectorAll('.install-app-btn').forEach(btn => {
+            btn.style.display = 'none';
+        });
+        return;
+    }
+
+    const isInstalled = localStorage.getItem('pwa_installed') === 'true';
     const btns = document.querySelectorAll('.install-app-btn');
+
     btns.forEach(btn => {
-        if (deferredPWAInstallPrompt && !isStandalone) {
+        if (isInstalled) {
+            // Show "Open App" button in browser when app is already installed
             btn.style.display = 'flex';
+            const icon = btn.querySelector('.nav-icon, .mob-nav-icon');
+            const label = btn.querySelector('.nav-label, .mob-nav-label');
+            if (icon) icon.textContent = '🚀';
+            if (label) label.textContent = btn.classList.contains('mob-nav-item') ? 'Open App' : 'Open App';
+        } else if (deferredPWAInstallPrompt) {
+            // Show "Install" button in browser when prompt is ready
+            btn.style.display = 'flex';
+            const icon = btn.querySelector('.nav-icon, .mob-nav-icon');
+            const label = btn.querySelector('.nav-label, .mob-nav-label');
+            if (icon) icon.textContent = '📲';
+            if (label) label.textContent = btn.classList.contains('mob-nav-item') ? 'Install' : 'Install App';
         } else {
             btn.style.display = 'none';
         }
@@ -1076,12 +1103,30 @@ window.addEventListener('beforeinstallprompt', (e) => {
     updatePWAInstallButtons();
 });
 
+function openInApp() {
+    const currentHost = window.location.host;
+    const currentPath = window.location.pathname + window.location.search + window.location.hash;
+    const intentUrl = `intent://${currentHost}${currentPath}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(window.location.href)};end;`;
+
+    if (/android/i.test(navigator.userAgent)) {
+        window.location.href = intentUrl;
+    } else {
+        window.location.href = 'home.html';
+    }
+}
+
 async function triggerPWAInstall() {
-    if (!deferredPWAInstallPrompt) return;
+    const isInstalled = localStorage.getItem('pwa_installed') === 'true';
+    if (isInstalled || !deferredPWAInstallPrompt) {
+        openInApp();
+        return;
+    }
+
     deferredPWAInstallPrompt.prompt();
     try {
         const choice = await deferredPWAInstallPrompt.userChoice;
         if (choice && choice.outcome === 'accepted') {
+            localStorage.setItem('pwa_installed', 'true');
             deferredPWAInstallPrompt = null;
             window.deferredPWAInstallPrompt = null;
             updatePWAInstallButtons();
@@ -1090,6 +1135,7 @@ async function triggerPWAInstall() {
 }
 
 window.addEventListener('appinstalled', () => {
+    localStorage.setItem('pwa_installed', 'true');
     deferredPWAInstallPrompt = null;
     window.deferredPWAInstallPrompt = null;
     updatePWAInstallButtons();
