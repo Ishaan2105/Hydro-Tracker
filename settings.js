@@ -925,6 +925,7 @@ function togglePass(inputId) {
 
 /* ── PWA INSTALLATION LOGIC ── */
 var deferredPWAInstallPrompt = window.deferredPWAInstallPrompt || null;
+try { localStorage.removeItem('pwa_installed'); } catch(e) {}
 
 function isAppStandalone() {
     return window.matchMedia('(display-mode: standalone)').matches ||
@@ -936,12 +937,10 @@ function isAppStandalone() {
 }
 
 function updatePWAInstallButtons() {
-    const isInstalled = localStorage.getItem('pwa_installed') === 'true';
     const standalone = isAppStandalone();
-
     const btns = document.querySelectorAll('.install-app-btn');
 
-    if (isInstalled || standalone) {
+    if (standalone) {
         btns.forEach(btn => {
             btn.style.setProperty('display', 'none', 'important');
         });
@@ -971,7 +970,6 @@ async function triggerPWAInstall() {
     try {
         const choice = await deferredPWAInstallPrompt.userChoice;
         if (choice && choice.outcome === 'accepted') {
-            localStorage.setItem('pwa_installed', 'true');
             deferredPWAInstallPrompt = null;
             window.deferredPWAInstallPrompt = null;
             updatePWAInstallButtons();
@@ -980,7 +978,6 @@ async function triggerPWAInstall() {
 }
 
 window.addEventListener('appinstalled', () => {
-    localStorage.setItem('pwa_installed', 'true');
     deferredPWAInstallPrompt = null;
     window.deferredPWAInstallPrompt = null;
     updatePWAInstallButtons();
