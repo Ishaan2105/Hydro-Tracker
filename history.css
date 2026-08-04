@@ -1,7 +1,6 @@
 body {
-    background-color: #091322 !important;
-    background-image: linear-gradient(135deg, #091322 0%, #0d1b2e 50%, #0a1526 100%) !important;
-    color: var(--text-primary, #f8fafc) !important;
+    background: var(--bg-gradient) !important;
+    color: var(--text-primary) !important;
     min-height: 100vh;
 }
 
@@ -14,12 +13,12 @@ body {
 
 /* Glass Card Style with Theme Variables */
 .stat-card-wide {
-    background: var(--glass-bg, rgba(15, 23, 42, 0.78)) !important;
+    background: var(--glass-bg, rgba(255, 255, 255, 0.6)) !important;
     padding: 20px;
     border-radius: 18px;
-    border: 1px solid var(--glass-border, rgba(56, 189, 248, 0.22));
-    color: var(--text-primary, #f8fafc) !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.3));
+    color: var(--text-primary, #1a237e) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     transition: transform 0.2s ease;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -32,12 +31,12 @@ body {
 .stat-card-wide h2 { 
     font-size: 1.4rem; 
     margin-top: 8px; 
-    color: var(--accent, #38bdf8);
+    color: var(--accent, #1565c0);
     font-weight: 800;
 }
 
 .stat-card-wide small {
-    color: var(--text-secondary, #94a3b8);
+    color: var(--text-secondary, #555555);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -50,11 +49,11 @@ body {
 }
 
 .calendar-card {
-    background: var(--glass-bg, rgba(15, 23, 42, 0.78)) !important;
+    background: var(--glass-bg, white);
     padding: 12px;
     border-radius: 15px;
     margin: 10px 0;
-    border: 1px solid var(--glass-border, rgba(56, 189, 248, 0.22));
+    border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.1));
     backdrop-filter: blur(16px);
 }
 
@@ -62,7 +61,7 @@ body {
     width: 100%;
     border: none;
     font-size: 1.1rem;
-    color: var(--text-primary, #f8fafc);
+    color: var(--text-primary, #333);
     background: transparent;
     font-weight: 600;
     outline: none;
@@ -71,21 +70,20 @@ body {
 
 /* Real-time Day Statistics Box */
 .day-stats-box {
-    background: var(--glass-bg, rgba(15, 23, 42, 0.85)) !important;
+    background: #ffffff !important;
     padding: 20px;
     border-radius: 18px;
-    color: var(--text-primary, #f8fafc) !important;
-    border: 1px solid var(--glass-border, rgba(56, 189, 248, 0.22));
+    color: #000000 !important;
+    border: 1px solid rgba(0, 0, 0, 0.1);
     margin-top: 15px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .day-stats-box h4 {
     margin-bottom: 15px;
     font-size: 1.1rem;
-    border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+    border-bottom: 1px solid #eee;
     padding-bottom: 8px;
-    color: var(--text-secondary, #94a3b8);
 }
 
 .day-stats-box p {
@@ -93,7 +91,6 @@ body {
     margin: 10px 0;
     display: flex;
     justify-content: space-between;
-    color: var(--text-primary, #f8fafc);
 }
 
 #day-status {
@@ -102,23 +99,23 @@ body {
 
 /* Notepad Styles */
 .notepad-container {
-    background: var(--glass-bg, rgba(15, 23, 42, 0.78));
+    background: white;
     border-radius: 18px;
     padding: 15px;
-    border: 1px solid var(--glass-border, rgba(56, 189, 248, 0.22));
+    border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 #daily-note-area {
     width: 100%;
     height: 120px;
-    background: rgba(10, 20, 36, 0.6);
-    border: 1px solid rgba(56, 189, 248, 0.2);
+    background: #f9f9f9;
+    border: 1px solid #eee;
     border-radius: 12px;
     padding: 12px;
     font-size: 1rem;
     resize: none;
     outline: none;
-    color: #f8fafc;
+    color: #333;
 }
 
 .note-btns {
@@ -127,13 +124,14 @@ body {
     margin-top: 10px;
 }
 
-.save-btn { flex: 2; background: #0284c7; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; }
-.delete-btn { flex: 1; background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; }
+.save-btn { flex: 2; background: #1565c0; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; }
+.delete-btn { flex: 1; background: #ffebee; color: #c62828; border: none; padding: 12px; border-radius: 10px; font-weight: bold; }
 
 /* --- Modern Calendar Styling --- */
+
 .calendar-section h3 {
     font-size: 1.1rem;
-    color: #38bdf8;
+    color: #1a237e;
     margin-bottom: 12px;
     font-weight: 700;
     display: flex;
@@ -141,43 +139,47 @@ body {
     gap: 8px;
 }
 
+/* The Card holding the input */
 .calendar-card {
-    background: var(--glass-bg, rgba(15, 23, 42, 0.78));
+    background: #ffffff;
     padding: 15px;
     border-radius: 18px;
-    border: 1px solid rgba(56, 189, 248, 0.22);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
     display: flex;
     align-items: center;
     transition: all 0.3s ease;
 }
 
 .calendar-card:focus-within {
-    border-color: #38bdf8;
-    box-shadow: 0 4px 20px rgba(56, 189, 248, 0.25);
+    border-color: #1565c0;
+    box-shadow: 0 4px 20px rgba(21, 101, 192, 0.15);
 }
 
+/* Styling the actual Input */
 #calendar-picker {
     width: 100%;
     border: none;
     background: transparent;
     font-size: 1.1rem;
     font-weight: 600;
-    color: #f8fafc;
+    color: #1a237e;
     outline: none;
     cursor: pointer;
     font-family: inherit;
+    /* Custom icon for Chrome/Safari */
     appearance: none;
     -webkit-appearance: none;
 }
 
+/* Enhancing the calendar icon inside the input (Chrome/Safari) */
 ::-webkit-calendar-picker-indicator {
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%2338bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>');
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%231565c0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>');
     background-size: contain;
     width: 20px;
     height: 20px;
     cursor: pointer;
-    opacity: 0.9;
+    opacity: 0.8;
     transition: opacity 0.2s;
 }
 
@@ -185,18 +187,19 @@ body {
     opacity: 1;
 }
 
+/* --- Stats Box Styling (White Background / Black Text) --- */
 .day-stats-box {
-    background: var(--glass-bg, rgba(15, 23, 42, 0.85)) !important;
+    background: #ffffff !important;
     margin-top: 15px;
     padding: 20px;
     border-radius: 18px;
-    border: 1px solid rgba(56, 189, 248, 0.22);
-    color: #f8fafc !important;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: #000000 !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
 .day-stats-box h4 {
-    color: #94a3b8;
+    color: #666;
     text-transform: uppercase;
     font-size: 0.8rem;
     letter-spacing: 1px;
@@ -209,60 +212,101 @@ body {
     display: flex;
     justify-content: space-between;
     margin: 10px 0;
-    color: #f8fafc;
 }
 
 #day-consumed {
-    color: #38bdf8;
+    color: #1565c0;
 }
 
+/* Timeline Styles */
 .timeline-section {
     margin-top: 25px;
     margin-bottom: 50px;
 }
 
 .timeline-container {
-    background: var(--glass-bg, rgba(15, 23, 42, 0.78));
+    background: #ffffff;
     border-radius: 18px;
     padding: 10px;
-    border: 1px solid rgba(56, 189, 248, 0.22);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .timeline-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 14px 16px;
+    padding: 15px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.timeline-item:last-child {
+    border-bottom: none;
+}
+
+.timeline-time {
+    font-weight: 700;
+    color: #1565c0;
+    font-size: 0.9rem;
+}
+
+.timeline-amount {
+    font-weight: 800;
+    color: #000;
+    background: #e3f2fd;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+}
+
+.timeline-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
     margin-bottom: 8px;
-    background: rgba(10, 20, 36, 0.6);
+    background: #f8fbff;
     border-radius: 12px;
-    border-left: 4px solid #38bdf8;
-    color: #f8fafc;
+    border-left: 4px solid #1565c0;
 }
 
 .timeline-time {
     font-size: 0.9rem;
-    color: #94a3b8;
+    color: #666;
     font-weight: 600;
 }
 
 .timeline-amount {
     font-size: 1.1rem;
     font-weight: 800;
-    color: #38bdf8;
+    color: #1565c0;
 }
 
+.timeline-item {
+    background: #f8fbff;
+    margin-bottom: 10px;
+    padding: 15px;
+    border-radius: 12px;
+    border-left: 4px solid #1565c0;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+.timeline-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.timeline-time { font-weight: 600; color: #666; }
+.timeline-amount { font-weight: 800; color: #1565c0; font-size: 1.1rem; }
+
 .logout-dropdown {
-    display: none;
+    display: none; /* Hidden by default */
     position: absolute;
     bottom: 80px;
     left: 0;
     width: 100%;
-    background: rgba(15, 23, 42, 0.95);
+    background: white;
     border-radius: 12px;
-    border: 1px solid rgba(56, 189, 248, 0.3);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
     overflow: hidden;
     z-index: 1000;
 }
@@ -272,10 +316,12 @@ body {
     padding: 12px;
     border: none;
     background: transparent;
-    color: #f87171;
+    color: #ff3b30; /* Danger Red */
     font-weight: 600;
     cursor: pointer;
 }
+
+
 
 /* EFFECTS */
 #waves-bg {
@@ -284,9 +330,9 @@ body {
     left: 0;
     width: 100vw;
     height: 100vh;
-    z-index: -1;
-    pointer-events: none;
-    background-color: transparent !important;
+    z-index: -1; /* Keep behind sidebar and cards */
+    pointer-events: none; /* Let mouse clicks pass through to buttons */
+    background-color: rgba(255, 255, 255, 0.2);
 }
 
 .waves-canvas {

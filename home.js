@@ -1043,7 +1043,7 @@ class WaterWaves {
 
 // Initialize with your settings
 new WaterWaves('waves-bg', {
-    lineColor: "rgba(56, 189, 248, 0.45)",
+    lineColor: "#ffffff",
     waveSpeedX: 0.0125,
     waveSpeedY: 0.01,
     waveAmpX: 40,
