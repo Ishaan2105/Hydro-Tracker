@@ -538,8 +538,8 @@ svg { width: 100%; height: 100%; transform: rotate(-90deg); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* PORTRAIT VIEW NATIVE MOBILE LAYOUT (TOP HEADER + BOTTOM TAB BAR) */
-@media (max-width: 900px) and (orientation: portrait) {
+/* PORTRAIT & MOBILE VIEW NATIVE LAYOUT (TOP BRAND/AVATAR HEADER + STRICT BOTTOM TAB BAR) */
+@media (max-width: 900px) and (orientation: portrait), (max-width: 768px) {
     body {
         min-width: 0 !important;
         width: 100vw !important;
@@ -550,7 +550,7 @@ svg { width: 100%; height: 100%; transform: rotate(-90deg); }
         overflow: hidden !important;
     }
 
-    /* Top Header Bar */
+    /* Top Header Bar (Contains ONLY Brand Title & User Avatar Circle) */
     .sidebar {
         width: 100% !important;
         min-width: 0 !important;
@@ -558,14 +558,15 @@ svg { width: 100%; height: 100%; transform: rotate(-90deg); }
         position: fixed !important;
         top: 0 !important;
         left: 0 !important;
+        right: 0 !important;
         padding: calc(8px + var(--safe-top, 0px)) 16px 8px 16px !important;
-        background: var(--sidebar-bg, rgba(255, 255, 255, 0.85)) !important;
+        background: var(--sidebar-bg, rgba(255, 255, 255, 0.92)) !important;
         backdrop-filter: blur(24px) !important;
         -webkit-backdrop-filter: blur(24px) !important;
         border-bottom: 1px solid var(--sidebar-border, rgba(255, 255, 255, 0.4)) !important;
         border-right: none !important;
         box-shadow: 0 2px 14px rgba(0, 0, 0, 0.04) !important;
-        z-index: 1000 !important;
+        z-index: 99990 !important;
         display: flex !important;
         flex-direction: row !important;
         align-items: center !important;
@@ -616,7 +617,7 @@ svg { width: 100%; height: 100%; transform: rotate(-90deg); }
     }
 
     .user-info {
-        display: none !important; /* Text hidden in top-bar; avatar button is in top right corner */
+        display: none !important;
     }
 
     .logout-dropdown {
@@ -626,16 +627,18 @@ svg { width: 100%; height: 100%; transform: rotate(-90deg); }
         left: auto !important;
         width: 200px !important;
         box-shadow: 0 10px 30px rgba(0,0,0,0.18) !important;
+        z-index: 100000 !important;
     }
 
-    /* Bottom Navigation Tab Bar */
+    /* STRICT BOTTOM NAVIGATION TAB BAR — ALL TABS FIXED AT THE BOTTOM OF THE SCREEN */
     .nav-links {
         position: fixed !important;
         bottom: 0 !important;
         left: 0 !important;
+        right: 0 !important;
         width: 100% !important;
         height: 66px !important;
-        background: var(--sidebar-bg, rgba(255, 255, 255, 0.9)) !important;
+        background: var(--sidebar-bg, rgba(255, 255, 255, 0.95)) !important;
         backdrop-filter: blur(24px) !important;
         -webkit-backdrop-filter: blur(24px) !important;
         border-top: 1px solid var(--sidebar-border, rgba(255, 255, 255, 0.4)) !important;
@@ -645,8 +648,8 @@ svg { width: 100%; height: 100%; transform: rotate(-90deg); }
         justify-content: space-around !important;
         align-items: center !important;
         padding: 4px 6px !important;
-        z-index: 1000 !important;
-        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05) !important;
+        z-index: 99999 !important;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08) !important;
     }
 
     .nav-item {
