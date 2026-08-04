@@ -924,15 +924,25 @@ function togglePass(inputId) {
 }
 
 /* ── PWA INSTALLATION PROMPT ── */
-var deferredPWAInstallPrompt = null;
+var deferredPWAInstallPrompt = window.deferredPWAInstallPrompt || null;
+
+function updatePWAInstallButtons() {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    const btns = document.querySelectorAll('.install-app-btn');
+    btns.forEach(btn => {
+        if (deferredPWAInstallPrompt && !isStandalone) {
+            btn.style.display = 'flex';
+        } else {
+            btn.style.display = 'none';
+        }
+    });
+}
 
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPWAInstallPrompt = e;
-    const installBtn = document.getElementById('pwa-install-btn');
-    if (installBtn && !window.matchMedia('(display-mode: standalone)').matches) {
-        installBtn.style.display = 'flex';
-    }
+    window.deferredPWAInstallPrompt = e;
+    updatePWAInstallButtons();
 });
 
 async function triggerPWAInstall() {
@@ -941,19 +951,25 @@ async function triggerPWAInstall() {
     try {
         const choice = await deferredPWAInstallPrompt.userChoice;
         if (choice && choice.outcome === 'accepted') {
-            const installBtn = document.getElementById('pwa-install-btn');
-            if (installBtn) installBtn.style.display = 'none';
+            deferredPWAInstallPrompt = null;
+            window.deferredPWAInstallPrompt = null;
+            updatePWAInstallButtons();
         }
     } catch(e) {}
-    deferredPWAInstallPrompt = null;
 }
 
-
 window.addEventListener('appinstalled', () => {
-    const installBtn = document.getElementById('pwa-install-btn');
-    if (installBtn) installBtn.style.display = 'none';
+    deferredPWAInstallPrompt = null;
+    window.deferredPWAInstallPrompt = null;
+    updatePWAInstallButtons();
     if (typeof showToast === 'function') showToast('Hydro Tracker Installed Successfully! 🎉');
 });
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', updatePWAInstallButtons);
+} else {
+    updatePWAInstallButtons();
+}
 
 // ── COMMUNITY LEADERBOARD OPT-IN TOGGLE ──
 async function toggleLeaderboardOptIn() {
