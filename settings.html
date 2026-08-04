@@ -18,6 +18,7 @@
 </head>
 <body class="theme-day">
     <div id="toast-container" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 10000;"></div>
+    <!-- DESKTOP/LANDSCAPE SIDEBAR -->
     <nav class="sidebar">
         <div class="sidebar-brand">
             <span class="sidebar-brand-icon">💧</span>
@@ -53,13 +54,51 @@
             <div class="user-avatar" id="user-initial">U</div>
             <div class="user-info">
                 <span id="username-display">User</span>
-                <!-- <small>Active</small> -->
             </div>
             <div id="logout-menu" class="logout-dropdown">
                 <button class="logout-btn" onclick="logout()">🚪 Logout</button>
                 <button class="delete-btn" onclick="openDeleteAccountModal()">🗑️ Delete Account</button>
             </div>
         </div>
+    </nav>
+
+    <!-- MOBILE TOP HEADER BAR (Portrait / Small screens only) -->
+    <header class="mobile-topbar">
+        <div class="mobile-brand">
+            <span class="sidebar-brand-icon">💧</span>
+            <span class="sidebar-brand-text">HydroTracker</span>
+        </div>
+        <div class="mobile-user-btn" onclick="toggleMobileLogout()">
+            <div class="user-avatar" id="mobile-user-initial">U</div>
+            <div id="mobile-logout-menu" class="logout-dropdown" style="display:none;">
+                <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+                <button class="delete-btn" onclick="openDeleteAccountModal()">🗑️ Delete Account</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MOBILE BOTTOM NAVIGATION TAB BAR -->
+    <nav class="mobile-bottom-nav">
+        <a href="home.html" class="mob-nav-item">
+            <span class="mob-nav-icon">🏠</span>
+            <span class="mob-nav-label">Home</span>
+        </a>
+        <a href="history.html" class="mob-nav-item">
+            <span class="mob-nav-icon">📅</span>
+            <span class="mob-nav-label">History</span>
+        </a>
+        <a href="insights.html" class="mob-nav-item">
+            <span class="mob-nav-icon">💡</span>
+            <span class="mob-nav-label">Insights</span>
+        </a>
+        <a href="leaderboard.html" class="mob-nav-item">
+            <span class="mob-nav-icon">🏆</span>
+            <span class="mob-nav-label">Leaderboard</span>
+        </a>
+        <a href="settings.html" class="mob-nav-item active">
+            <span class="mob-nav-icon">⚙️</span>
+            <span class="mob-nav-label">Settings</span>
+        </a>
     </nav>
     <script>
         // Instantly set username from cache or JWT — no flash of "User"

@@ -323,6 +323,13 @@ function toggleLogout() {
     }
 }
 
+function toggleMobileLogout() {
+    const menu = document.getElementById('mobile-logout-menu');
+    if (menu) {
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+}
+
 function logout() {
     localStorage.clear(); // Clear token and all session data
     window.location.href = 'index.html';    // Redirect to login
@@ -357,8 +364,10 @@ async function loadUserData() {
         // Update Sidebar UI from Cloud response
         const displayElement = document.getElementById('username-display');
         const initialElement = document.getElementById('user-initial');
+        const mobileInitialElement = document.getElementById('mobile-user-initial');
         if (displayElement && data.username) displayElement.innerText = data.username.toUpperCase();
         if (initialElement && data.username) initialElement.innerText = data.username[0].toUpperCase();
+        if (mobileInitialElement && data.username) mobileInitialElement.innerText = data.username[0].toUpperCase();
         
         // Refresh the progress ring and stats
         refreshHome();
