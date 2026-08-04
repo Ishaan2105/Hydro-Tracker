@@ -340,9 +340,9 @@ input:checked + .slider:before { transform: translateX(24px); }
     left: 0;
     width: 100vw;
     height: 100vh;
-    z-index: -1; /* Keep behind sidebar and cards */
-    pointer-events: none; /* Let mouse clicks pass through to buttons */
-    background-color: rgba(255, 255, 255, 0.2);
+    z-index: -1;
+    pointer-events: none;
+    background-color: transparent !important;
 }
 
 .waves-canvas {
