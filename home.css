@@ -633,7 +633,7 @@ svg { width: 100%; height: 100%; transform: rotate(-90deg); }
         box-shadow: 0 8px 30px rgba(0,0,0,0.15) !important;
     }
 
-    /* ── BOTTOM NAVIGATION TAB BAR ── */
+    /* ── BOTTOM NAVIGATION TAB BAR (HORIZONTALLY SCROLLABLE) ── */
     .mobile-bottom-nav {
         display: flex !important;
         position: fixed !important;
@@ -649,9 +649,20 @@ svg { width: 100%; height: 100%; transform: rotate(-90deg); }
         box-shadow: 0 -4px 20px rgba(0,0,0,0.07) !important;
         z-index: 99999 !important;
         flex-direction: row !important;
-        justify-content: space-around !important;
+        flex-wrap: nowrap !important;
+        justify-content: flex-start !important;
         align-items: center !important;
-        padding: 4px 4px !important;
+        padding: 4px 10px !important;
+        gap: 6px !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important; /* Hide scrollbar for Firefox */
+        -ms-overflow-style: none !important; /* Hide scrollbar for IE/Edge */
+    }
+
+    .mobile-bottom-nav::-webkit-scrollbar {
+        display: none !important; /* Hide scrollbar for Chrome/Safari */
     }
 
     .mob-nav-item {
@@ -660,13 +671,13 @@ svg { width: 100%; height: 100%; transform: rotate(-90deg); }
         align-items: center !important;
         justify-content: center !important;
         gap: 2px !important;
-        flex: 1 !important;
-        padding: 6px 4px !important;
+        flex: 0 0 auto !important;
+        min-width: 68px !important;
+        padding: 6px 6px !important;
         border-radius: 14px !important;
         text-decoration: none !important;
         color: var(--nav-text, #64748b) !important;
         transition: all 0.2s ease !important;
-        max-width: 70px !important;
         background: transparent !important;
         border: none !important;
         cursor: pointer !important;
