@@ -127,7 +127,7 @@ input:focus {
     margin-top: 15px; 
 }
 
-.btn-save, .btn-cancel, .manual-time button {
+.btn-save, .btn-cancel {
     padding: 12px 20px;
     border-radius: 12px;
     border: none;
@@ -148,6 +148,8 @@ input:focus {
     color: #333; 
 }
 
+/* --- Goal Input Row & Manual Time Row --- */
+.goal-input-row,
 .manual-time {
     display: flex;
     gap: 12px;
@@ -157,6 +159,7 @@ input:focus {
     box-sizing: border-box;
 }
 
+.goal-input-row input,
 .manual-time input[type="time"] {
     flex: 1 1 auto;
     min-width: 0;
@@ -177,36 +180,6 @@ input:focus {
 .manual-time input[type="time"]::-webkit-date-and-time-value {
     min-height: 1.5em;
     text-align: left;
-}
-
-.manual-time button {
-    flex: 0 0 auto;
-    height: 48px;
-    padding: 0 24px;
-    border-radius: 12px;
-    border: none;
-    font-size: 1rem;
-    font-weight: 700;
-    background: var(--accent, #1565c0);
-    color: #ffffff;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 14px var(--accent-glow, rgba(21, 101, 192, 0.28));
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    white-space: nowrap;
-    box-sizing: border-box;
-    margin: 0;
-}
-
-.manual-time button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px var(--accent-glow, rgba(21, 101, 192, 0.35));
-}
-
-.manual-time button:active { 
-    transform: scale(0.97); 
 }
 
 /* --- Reminder Rows & Toggles --- */
@@ -308,7 +281,7 @@ input:checked + .slider:before { transform: translateX(24px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Notification Mode Selector & Target Buttons */
+/* Notification Mode Selector & Target/Action Buttons */
 .notif-type-selector {
     display: flex; 
     background: transparent;
@@ -317,12 +290,19 @@ input:checked + .slider:before { transform: translateX(24px); }
     padding: 0;
 }
 
-#set-target-btn,
-#btn-specific,
 .notif-type-selector button {
     width: 100%;
-    padding: 14px;
-    margin-top: 10px;
+}
+
+#set-target-btn,
+.manual-time button,
+#add-time-btn,
+#btn-specific,
+.notif-type-selector button {
+    flex: 0 0 auto;
+    height: 48px;
+    padding: 0 24px;
+    margin: 0;
     border-radius: 12px;
     font-size: 1rem;
     font-weight: 700;
@@ -330,6 +310,11 @@ input:checked + .slider:before { transform: translateX(24px); }
     transition: all 0.2s ease;
     outline: none;
     text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    box-sizing: border-box;
 
     /* --- Primary Accent State --- */
     background-color: var(--accent, #1565c0);
@@ -339,6 +324,8 @@ input:checked + .slider:before { transform: translateX(24px); }
 }
 
 #set-target-btn:hover,
+.manual-time button:hover,
+#add-time-btn:hover,
 #btn-specific:hover,
 .notif-type-selector button:hover {
     transform: translateY(-2px);
@@ -346,6 +333,8 @@ input:checked + .slider:before { transform: translateX(24px); }
 }
 
 #set-target-btn:active,
+.manual-time button:active,
+#add-time-btn:active,
 #btn-specific:active,
 .notif-type-selector button:active {
     transform: scale(0.97);
