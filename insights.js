@@ -110,7 +110,6 @@ function showToast(message) {
 function createToastContainer() {
     const div = document.createElement('div');
     div.id = 'toast-container';
-    div.style = "position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999;";
     document.body.appendChild(div);
     return div;
 }
