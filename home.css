@@ -633,7 +633,7 @@ svg { width: 100%; height: 100%; transform: rotate(-90deg); }
         box-shadow: 0 8px 30px rgba(0,0,0,0.15) !important;
     }
 
-    /* ── BOTTOM NAVIGATION TAB BAR (HORIZONTALLY SCROLLABLE) ── */
+    /* ── BOTTOM NAVIGATION TAB BAR ── */
     .mobile-bottom-nav {
         display: flex !important;
         position: fixed !important;
@@ -641,7 +641,9 @@ svg { width: 100%; height: 100%; transform: rotate(-90deg); }
         left: 0 !important;
         right: 0 !important;
         width: 100% !important;
-        height: 64px !important;
+        /* Account for iOS home indicator safe area */
+        height: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+        padding-bottom: env(safe-area-inset-bottom, 0px) !important;
         background: var(--sidebar-bg, rgba(240, 249, 255, 0.97)) !important;
         backdrop-filter: blur(20px) !important;
         -webkit-backdrop-filter: blur(20px) !important;
@@ -650,19 +652,29 @@ svg { width: 100%; height: 100%; transform: rotate(-90deg); }
         z-index: 99999 !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
-        justify-content: flex-start !important;
+        /* Evenly space tabs when they fit without scrolling */
+        justify-content: space-evenly !important;
         align-items: center !important;
-        padding: 4px 10px !important;
-        gap: 6px !important;
+        padding-left: 4px !important;
+        padding-right: 4px !important;
+        padding-top: 4px !important;
+        gap: 0px !important;
         overflow-x: auto !important;
         overflow-y: hidden !important;
         -webkit-overflow-scrolling: touch !important;
-        scrollbar-width: none !important; /* Hide scrollbar for Firefox */
-        -ms-overflow-style: none !important; /* Hide scrollbar for IE/Edge */
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+        box-sizing: border-box !important;
     }
 
     .mobile-bottom-nav::-webkit-scrollbar {
-        display: none !important; /* Hide scrollbar for Chrome/Safari */
+        display: none !important;
+    }
+
+    /* When install button is visible, switch to scrollable flex-start layout */
+    .mobile-bottom-nav.has-install-btn {
+        justify-content: flex-start !important;
+        gap: 2px !important;
     }
 
     .mob-nav-item {
@@ -671,9 +683,10 @@ svg { width: 100%; height: 100%; transform: rotate(-90deg); }
         align-items: center !important;
         justify-content: center !important;
         gap: 2px !important;
-        flex: 0 0 auto !important;
-        min-width: 68px !important;
-        padding: 6px 6px !important;
+        /* Grow equally to fill full screen width on all portrait devices (phones + tablets) */
+        flex: 1 1 0 !important;
+        min-width: 50px !important;
+        padding: 6px 4px !important;
         border-radius: 14px !important;
         text-decoration: none !important;
         color: var(--nav-text, #64748b) !important;
@@ -682,6 +695,13 @@ svg { width: 100%; height: 100%; transform: rotate(-90deg); }
         border: none !important;
         cursor: pointer !important;
         font-family: inherit !important;
+    }
+
+    /* In scrollable mode, items become fixed-width */
+    .mobile-bottom-nav.has-install-btn .mob-nav-item {
+        flex: 0 0 auto !important;
+        min-width: 68px !important;
+        max-width: none !important;
     }
 
     .mob-nav-icon {

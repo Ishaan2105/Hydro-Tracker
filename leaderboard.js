@@ -443,24 +443,70 @@ function isAppStandalone() {
            window.location.search.includes('mode=standalone');
 }
 
+function isIOS() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+           (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
 function updatePWAInstallButtons() {
     const standalone = isAppStandalone();
     const btns = document.querySelectorAll('.install-app-btn');
+    const nav = document.querySelector('.mobile-bottom-nav');
 
+    // If running inside standalone app mode, hide install button
     if (standalone) {
-        btns.forEach(btn => {
-            btn.style.setProperty('display', 'none', 'important');
-        });
+        btns.forEach(btn => btn.style.setProperty('display', 'none', 'important'));
+        if (nav) nav.classList.remove('has-install-btn');
         return;
     }
 
+    // iOS Safari: show install button that triggers iOS banner (no beforeinstallprompt)
+    const iosInstallable = isIOS() && !standalone;
+
     btns.forEach(btn => {
-        if (deferredPWAInstallPrompt) {
+        if (deferredPWAInstallPrompt || iosInstallable) {
             btn.style.setProperty('display', 'flex', 'important');
+            if (nav) nav.classList.add('has-install-btn');
         } else {
             btn.style.setProperty('display', 'none', 'important');
+            if (nav) nav.classList.remove('has-install-btn');
         }
     });
+}
+
+/* iOS: Show a custom "Add to Home Screen" tip banner */
+function showIOSInstallBanner() {
+    if (!isIOS() || isAppStandalone() || localStorage.getItem('ios_banner_dismissed')) return;
+
+    const existing = document.getElementById('ios-install-banner');
+    if (existing) return;
+
+    const banner = document.createElement('div');
+    banner.id = 'ios-install-banner';
+    banner.style.cssText = `
+        position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+        background: rgba(10,20,40,0.92); color: #fff; border-radius: 18px;
+        padding: 14px 20px; z-index: 999999; max-width: 320px; width: 90%;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.35); backdrop-filter: blur(12px);
+        font-size: 0.875rem; text-align: center; line-height: 1.5;
+        border: 1px solid rgba(255,255,255,0.15); animation: slideUpFade 0.4s ease;
+    `;
+    banner.innerHTML = `
+        <div style="font-size:1.5rem;margin-bottom:6px">📲</div>
+        <strong style="display:block;margin-bottom:6px;font-size:1rem">Install Hydro Tracker</strong>
+        Tap <strong>Share</strong> <span style="font-size:1.1rem">⬆️</span> then
+        <strong>"Add to Home Screen"</strong> to install as an app.
+        <button onclick="document.getElementById('ios-install-banner').remove();localStorage.setItem('ios_banner_dismissed','true')"
+            style="display:block;margin:10px auto 0;padding:7px 22px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:30px;color:#fff;font-size:0.8rem;cursor:pointer;">
+            Got it
+        </button>
+    `;
+    document.body.appendChild(banner);
+
+    // Auto-dismiss after 10 seconds
+    setTimeout(() => {
+        if (banner.parentNode) banner.remove();
+    }, 10000);
 }
 
 window.addEventListener('beforeinstallprompt', (e) => {
@@ -471,17 +517,21 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 
 async function triggerPWAInstall() {
-    if (!deferredPWAInstallPrompt) return;
-
-    deferredPWAInstallPrompt.prompt();
-    try {
-        const choice = await deferredPWAInstallPrompt.userChoice;
-        if (choice && choice.outcome === 'accepted') {
-            deferredPWAInstallPrompt = null;
-            window.deferredPWAInstallPrompt = null;
-            updatePWAInstallButtons();
-        }
-    } catch(e) {}
+    if (deferredPWAInstallPrompt) {
+        deferredPWAInstallPrompt.prompt();
+        try {
+            const choice = await deferredPWAInstallPrompt.userChoice;
+            if (choice && choice.outcome === 'accepted') {
+                deferredPWAInstallPrompt = null;
+                window.deferredPWAInstallPrompt = null;
+                updatePWAInstallButtons();
+            }
+        } catch(e) {}
+    } else if (isIOS()) {
+        // On iOS: show instruction banner
+        localStorage.removeItem('ios_banner_dismissed');
+        showIOSInstallBanner();
+    }
 }
 
 window.addEventListener('appinstalled', () => {
@@ -492,9 +542,13 @@ window.addEventListener('appinstalled', () => {
 });
 
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', updatePWAInstallButtons);
+    document.addEventListener('DOMContentLoaded', () => {
+        updatePWAInstallButtons();
+        if (isIOS() && !isAppStandalone()) setTimeout(showIOSInstallBanner, 1500);
+    });
 } else {
     updatePWAInstallButtons();
+    if (isIOS() && !isAppStandalone()) setTimeout(showIOSInstallBanner, 1500);
 }
 
 // EFFECTS — matches all other pages
