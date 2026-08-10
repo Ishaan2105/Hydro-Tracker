@@ -249,7 +249,7 @@ function togglePassVisibility(inputId, btn) {
     if (!input) return;
     if (input.type === 'password') {
         input.type = 'text';
-        btn.innerText = '🙈';
+        btn.innerText = '🔒';
     } else {
         input.type = 'password';
         btn.innerText = '👁️';

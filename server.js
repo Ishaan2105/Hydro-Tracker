@@ -77,7 +77,7 @@ const UserSchema = new mongoose.Schema({
     currentLogs: Array,
     mealTimes: {
         type: Object,
-        default: { bfast: "08:30", lunch: "13:30", dinner: "20:30" }
+        default: { bfast: "", lunch: "", dinner: "" }
     },
     badges: { type: Array, default: [] },
     postMealEnabled: { type: Boolean, default: false },
@@ -111,7 +111,7 @@ app.post('/api/auth/register', async (req, res) => {
                 { time: "18:00", daily: true, active: true },
                 { time: "21:00", daily: true, active: true }
             ],
-            mealTimes: { bfast: "08:30", lunch: "13:30", dinner: "20:30" },
+            mealTimes: { bfast: "", lunch: "", dinner: "" },
             postMealEnabled: false,
             leaderboardOptIn: true
         });

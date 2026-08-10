@@ -58,7 +58,7 @@ var data = {
         { time: "18:00", daily: true, active: true },
         { time: "21:00", daily: true, active: true }
     ],
-    mealTimes: { bfast: "08:30", lunch: "13:30", dinner: "20:30" },
+    mealTimes: { bfast: "", lunch: "", dinner: "" },
     postMealEnabled: false,
     currentLogs: [],
     history: {}
@@ -388,7 +388,7 @@ function togglePassVisibility(inputId, btn) {
     if (!input) return;
     if (input.type === 'password') {
         input.type = 'text';
-        btn.innerText = '🙈';
+        btn.innerText = '🔒';
     } else {
         input.type = 'password';
         btn.innerText = '👁️';

@@ -18,7 +18,7 @@ var data = typeof data !== 'undefined' ? data : {
         { time: "18:00", daily: true, active: true },
         { time: "21:00", daily: true, active: true }
     ],
-    mealTimes: { bfast: "08:30", lunch: "13:30", dinner: "20:30" },
+    mealTimes: { bfast: "", lunch: "", dinner: "" },
     postMealEnabled: false
 };
 
@@ -67,7 +67,7 @@ function togglePassVisibility(inputId, btn) {
     if (!input) return;
     if (input.type === 'password') {
         input.type = 'text';
-        btn.innerText = '🙈';
+        btn.innerText = '🔒';
     } else {
         input.type = 'password';
         btn.innerText = '👁️';
@@ -724,12 +724,18 @@ async function togglePostMeal() {
     const toggle = document.getElementById('post-meal-toggle');
     if (!toggle) return;
     
-    if (!data.mealTimes || typeof data.mealTimes !== 'object') {
-        data.mealTimes = { bfast: "08:30", lunch: "13:30", dinner: "20:30" };
+    const m = data.mealTimes || {};
+    const hasBfast = m.bfast && String(m.bfast).trim() !== "";
+    const hasLunch = m.lunch && String(m.lunch).trim() !== "";
+    const hasDinner = m.dinner && String(m.dinner).trim() !== "";
+
+    // If user is enabling the toggle but any meal time is missing/blank
+    if (toggle.checked && (!hasBfast || !hasLunch || !hasDinner)) {
+        toggle.checked = false;
+        data.postMealEnabled = false;
+        showToast("⚠️ Please enter your meal times in Insights before turning on Post-Meal reminders.");
+        return;
     }
-    if (!data.mealTimes.bfast) data.mealTimes.bfast = "08:30";
-    if (!data.mealTimes.lunch) data.mealTimes.lunch = "13:30";
-    if (!data.mealTimes.dinner) data.mealTimes.dinner = "20:30";
 
     data.postMealEnabled = toggle.checked; 
     await syncToCloud();
