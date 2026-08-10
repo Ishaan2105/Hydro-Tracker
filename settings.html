@@ -167,20 +167,20 @@
                 <!-- <button id="btn-interval" onclick="setNotifMode('interval')">Interval Based</button> -->
             </div>
 
+            <div id="notif-permission-banner" style="margin-top:14px; margin-bottom:14px; padding:12px 14px; border-radius:12px; background:rgba(21,101,192,0.08); border:1px solid rgba(21,101,192,0.2); display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+                <span id="notif-permission-status" style="font-size:13px; font-weight:600; color:#555;"></span>
+                <div style="display:flex; gap:8px;">
+                    <button id="notif-enable-btn" onclick="requestNotifPermission()" style="padding:8px 16px; border-radius:10px; font-weight:700; background:var(--accent,#1565c0); color:white; border:none; cursor:pointer; font-size:13px; flex-shrink:0;">🔔 Enable Notifications</button>
+                    <button id="notif-test-btn" onclick="testPushNotification()" style="padding:8px 14px; border-radius:10px; font-weight:700; background:rgba(21,101,192,0.12); color:#1565c0; border:1px solid rgba(21,101,192,0.3); cursor:pointer; font-size:13px; flex-shrink:0;">🧪 Test Push</button>
+                </div>
+            </div>
+
             <div id="specific-options" class="notif-sub-panel">
                 <div class="dummy-times"></div>
 
                 <div class="manual-time">
                     <input type="time" id="manual-t" placeholder="00:00">
                     <button onclick="addManualTime()">Add Time</button>
-                </div>
-            </div>
-
-            <div id="notif-permission-banner" style="margin-top:14px; padding:12px 14px; border-radius:12px; background:rgba(21,101,192,0.08); border:1px solid rgba(21,101,192,0.2); display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-                <span id="notif-permission-status" style="font-size:13px; font-weight:600; color:#555;"></span>
-                <div style="display:flex; gap:8px;">
-                    <button id="notif-enable-btn" onclick="requestNotifPermission()" style="padding:8px 16px; border-radius:10px; font-weight:700; background:var(--accent,#1565c0); color:white; border:none; cursor:pointer; font-size:13px; flex-shrink:0;">🔔 Enable Notifications</button>
-                    <button id="notif-test-btn" onclick="testPushNotification()" style="padding:8px 14px; border-radius:10px; font-weight:700; background:rgba(21,101,192,0.12); color:#1565c0; border:1px solid rgba(21,101,192,0.3); cursor:pointer; font-size:13px; flex-shrink:0;">🧪 Test Push</button>
                 </div>
             </div>
 
