@@ -281,8 +281,8 @@ async function recoverPassword() {
                         <div style="background: rgba(255,255,255,0.9); color: #0284c7; font-size: 1.25rem; font-weight: 800; padding: 10px; border-radius: 8px; border: 1px dashed #0284c7; letter-spacing: 2px; user-select: all; margin: 8px 0;">
                             ${result.tempPass}
                         </div>
-                        <div style="font-size: 0.78rem; opacity: 0.9; margin-bottom: 10px;">
-                            ${result.emailSent ? "📧 Also sent to your email inbox." : "⚠️ Email service offline. Use this temporary password to log in."}
+                        <div style="font-size: 0.8rem; opacity: 0.95; margin-bottom: 10px; line-height: 1.4;">
+                            ${result.emailSent ? `📧 Sent to <strong>${result.maskedEmail || 'your email'}</strong>! Check your Primary Inbox & <strong>Spam/Junk</strong> folder.` : `⚠️ Mail server offline. Add <code>EMAIL_USER</code> & <code>GMAIL_APP_PASSWORD</code> in your Render dashboard environment variables.`}
                         </div>
                         <button type="button" onclick="navigator.clipboard.writeText('${result.tempPass}'); if(typeof showNotification==='function') showNotification('Password copied to clipboard! 📋');"
                             style="padding: 6px 16px; background: #1565c0; color: #fff; border: none; border-radius: 20px; font-weight: 700; font-size: 0.8rem; cursor: pointer;">
