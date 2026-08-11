@@ -360,7 +360,7 @@ app.post('/api/push/test', async (req, res) => {
         }
 
         const payload = JSON.stringify({
-            title: "🧪 Web Push Test | HydroTrack",
+            title: "🧪 Web Push Test | HydroTracker",
             body: "Server-side Web Push is working! Alarms will ring even when app is closed.",
             icon: "./icon-192x192.png",
             badge: "./icon-192x192.png"
@@ -569,14 +569,14 @@ app.post('/api/auth/recover', async (req, res) => {
         // 4. Try sending the email via Gmail / SMTP
         try {
             const transporter = await createTransporter();
-            const senderEmail = process.env.EMAIL_USER || process.env.SMTP_USER || "noreply@hydrotrack.com";
+            const senderEmail = process.env.EMAIL_USER || process.env.SMTP_USER || "noreply@hydrotracker.com";
             const mailOptions = {
-                from: `HydroTrack <${senderEmail}>`,
+                from: `HydroTracker <${senderEmail}>`,
                 to: targetEmail,
-                subject: "Your Temporary Password | HydroTrack",
+                subject: "Your Temporary Password | HydroTracker",
                 html: `
                     <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #e3f2fd; border-radius: 10px;">
-                        <h2 style="color: #1565c0;">💧 HydroTrack Recovery</h2>
+                        <h2 style="color: #1565c0;">💧 HydroTracker Recovery</h2>
                         <p>Hello <strong>${user.username}</strong>,</p>
                         <p>You requested a password reset. Use your temporary password below to log in:</p>
                         <div style="background: #f0f4f8; padding: 15px; font-size: 1.4rem; font-weight: bold; text-align: center; border-radius: 5px; color: #1565c0; letter-spacing: 2px;">
@@ -648,7 +648,7 @@ app.use((req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-    console.log(`🚀 HydroTrack Server live on port ${PORT}`);
+    console.log(`🚀 HydroTracker Server live on port ${PORT}`);
     startServerPushCron();
 });
 
@@ -689,7 +689,7 @@ function startServerPushCron() {
                 if (!user.pushSubscriptions || user.pushSubscriptions.length === 0) continue;
 
                 let shouldNotify = false;
-                let notifTitle = "💧 HydroTrack Reminder";
+                let notifTitle = "💧 HydroTracker Reminder";
                 let notifBody = "Time to stay hydrated!";
 
                 // 1. Check Specific-Time Reminders

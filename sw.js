@@ -1,8 +1,8 @@
 // ============================================================
-// HydroTrack Service Worker — PWA Caching + Push Notifications
-// Version: hydrotrack-v48
+// HydroTracker Service Worker — PWA Caching + Push Notifications
+// Version: hydrotrack-v50
 // ============================================================
-const CACHE_NAME = 'hydrotrack-v48';
+const CACHE_NAME = 'hydrotrack-v50';
 
 // Only cache static assets that rarely change (icons, manifest)
 const STATIC_ASSETS = [
@@ -79,11 +79,11 @@ self.addEventListener('push', (event) => {
         try {
             payload = event.data.json();
         } catch (e) {
-            payload = { title: '💧 HydroTrack', body: event.data.text() };
+            payload = { title: '💧 HydroTracker', body: event.data.text() };
         }
     }
 
-    const title = payload.title || '💧 HydroTrack Reminder';
+    const title = payload.title || '💧 HydroTracker Reminder';
     const options = {
         body: payload.body || 'Time to stay hydrated!',
         icon: './icon-192x192.png',
@@ -121,7 +121,7 @@ self.addEventListener('message', (event) => {
 
     if (event.data.type === 'SHOW_NOTIFICATION') {
         const { title, body, tag } = event.data;
-        self.registration.showNotification(title || '💧 HydroTrack', {
+        self.registration.showNotification(title || '💧 HydroTracker', {
             body: body || 'Time to stay hydrated!',
             icon: 'icon-192x192.png',
             badge: 'icon-192x192.png',

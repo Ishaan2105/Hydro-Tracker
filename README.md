@@ -1,5 +1,5 @@
-💧 HydroTrack
-HydroTrack is a high-performance, interactive MERN stack web application designed to help users track their daily water intake, set personalized goals, and stay consistent with smart notifications. It features a gamified experience with hydration ranks and visual trends.
+💧 HydroTracker
+HydroTracker is a high-performance, interactive MERN stack web application designed to help users track their daily water intake, set personalized goals, and stay consistent with smart notifications. It features a gamified experience with hydration ranks and visual trends.
 
 🚀 Features
 Personalized Goal Setting: Calculate your ideal daily intake based on weight and height using integrated health formulas.
@@ -49,4 +49,4 @@ npm start
 # For development (requires nodemon)
 npm run dev
 📱 Progressive Web App (PWA)
-HydroTrack is PWA-ready. You can "Install" it on your mobile device via the browser to get a native-app feel, including a standalone display and custom theme colors.
+HydroTracker is PWA-ready. You can "Install" it on your mobile device via the browser to get a native-app feel, including a standalone display and custom theme colors.

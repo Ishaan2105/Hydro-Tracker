@@ -432,7 +432,7 @@ function requestNotifPermission() {
             // Fire a test notification via Service Worker so the user sees it immediately
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.ready.then(reg => {
-                    reg.showNotification('💧 HydroTrack', {
+                    reg.showNotification('💧 HydroTracker', {
                         body: 'Notifications enabled! You will get hydration reminders.',
                         icon: 'icon-192x192.png',
                         badge: 'icon-192x192.png',
@@ -469,7 +469,7 @@ async function testPushNotification() {
 
     // 1. Immediately trigger a local native OS notification banner to test OS display
     if (typeof sendSystemNotification === 'function') {
-        sendSystemNotification("💧 HydroTrack Test", "Local test notification! OS banner pipeline is active.");
+        sendSystemNotification("💧 HydroTracker Test", "Local test notification! OS banner pipeline is active.");
     }
 
     // 2. Refresh push subscription token with server

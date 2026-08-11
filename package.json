@@ -1,7 +1,7 @@
 {
-  "name": "hydrotrack-backend",
+  "name": "hydrotracker-backend",
   "version": "1.0.0",
-  "description": "Backend for HydroTrack MERN App",
+  "description": "Backend for HydroTracker MERN App",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
