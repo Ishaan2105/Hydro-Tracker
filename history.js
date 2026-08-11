@@ -751,26 +751,16 @@ function isIOS() {
 function updatePWAInstallButtons() {
     const standalone = isAppStandalone();
     const btns = document.querySelectorAll('.install-app-btn');
-    const nav = document.querySelector('.mobile-bottom-nav');
 
-    // If running inside standalone app mode, hide install button
+    // If running inside standalone app mode, hide install button completely
     if (standalone) {
         btns.forEach(btn => btn.style.setProperty('display', 'none', 'important'));
-        if (nav) nav.classList.remove('has-install-btn');
         return;
     }
 
-    // iOS Safari: show install button that triggers iOS banner (no beforeinstallprompt)
-    const iosInstallable = isIOS() && !standalone;
-
+    // In web browser mode: ALWAYS show install button so user can download/install
     btns.forEach(btn => {
-        if (deferredPWAInstallPrompt || iosInstallable) {
-            btn.style.setProperty('display', 'flex', 'important');
-            if (nav) nav.classList.add('has-install-btn');
-        } else {
-            btn.style.setProperty('display', 'none', 'important');
-            if (nav) nav.classList.remove('has-install-btn');
-        }
+        btn.style.setProperty('display', 'flex', 'important');
     });
 }
 
@@ -785,7 +775,7 @@ function showIOSInstallBanner() {
     banner.id = 'ios-install-banner';
     banner.style.cssText = `
         position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
-        background: rgba(10,20,40,0.92); color: #fff; border-radius: 18px;
+        background: rgba(10,20,40,0.95); color: #fff; border-radius: 18px;
         padding: 14px 20px; z-index: 999999; max-width: 320px; width: 90%;
         box-shadow: 0 8px 32px rgba(0,0,0,0.35); backdrop-filter: blur(12px);
         font-size: 0.875rem; text-align: center; line-height: 1.5;
@@ -803,10 +793,37 @@ function showIOSInstallBanner() {
     `;
     document.body.appendChild(banner);
 
-    // Auto-dismiss after 10 seconds
     setTimeout(() => {
         if (banner.parentNode) banner.remove();
     }, 10000);
+}
+
+/* Chrome / Android / Desktop Install Guide Banner */
+function showBrowserInstallBanner() {
+    const existing = document.getElementById('browser-install-banner');
+    if (existing) { existing.remove(); return; }
+
+    const banner = document.createElement('div');
+    banner.id = 'browser-install-banner';
+    banner.style.cssText = `
+        position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+        background: rgba(10,20,40,0.95); color: #fff; border-radius: 18px;
+        padding: 16px 20px; z-index: 999999; max-width: 340px; width: 90%;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.35); backdrop-filter: blur(12px);
+        font-size: 0.875rem; text-align: center; line-height: 1.5;
+        border: 1px solid rgba(255,255,255,0.15); animation: slideUpFade 0.4s ease;
+    `;
+    banner.innerHTML = `
+        <div style="font-size:1.5rem;margin-bottom:6px">📲</div>
+        <strong style="display:block;margin-bottom:6px;font-size:1rem">Install Hydro Tracker</strong>
+        Tap browser menu <strong style="font-size:1.1rem">⋮</strong> or Share icon, then select <strong>"Add to Home Screen"</strong> or <strong>"Install App"</strong>.
+        <button onclick="document.getElementById('browser-install-banner').remove()"
+            style="display:block;margin:12px auto 0;padding:7px 24px;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.3);border-radius:30px;color:#fff;font-size:0.8rem;cursor:pointer;font-weight:700;">
+            Got it
+        </button>
+    `;
+    document.body.appendChild(banner);
+    setTimeout(() => { if (banner.parentNode) banner.remove(); }, 12000);
 }
 
 window.addEventListener('beforeinstallprompt', (e) => {
@@ -828,9 +845,10 @@ async function triggerPWAInstall() {
             }
         } catch(e) {}
     } else if (isIOS()) {
-        // On iOS: show instruction banner
         localStorage.removeItem('ios_banner_dismissed');
         showIOSInstallBanner();
+    } else {
+        showBrowserInstallBanner();
     }
 }
 
