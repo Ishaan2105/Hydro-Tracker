@@ -533,6 +533,33 @@ const createTransporter = async () => {
     throw new Error("No email credentials configured. Please set GMAIL_APP_PASSWORD & EMAIL_USER in server environment.");
 };
 
+// ── Debug Email Test Endpoint ──────────────────────────────
+// GET /api/test-email  — tests credentials & sends a real email
+app.get('/api/test-email', async (req, res) => {
+    const hasAppPass = !!process.env.GMAIL_APP_PASSWORD;
+    const emailUser  = process.env.EMAIL_USER || null;
+    console.log('[test-email] EMAIL_USER:', emailUser, '| APP_PASS exists:', hasAppPass);
+
+    if (!hasAppPass || !emailUser) {
+        return res.json({ ok: false, reason: 'Missing GMAIL_APP_PASSWORD or EMAIL_USER env vars on this server.' });
+    }
+
+    try {
+        const transporter = await createTransporter();
+        const info = await transporter.sendMail({
+            from: `HydroTracker <${emailUser}>`,
+            to: emailUser,
+            subject: '✅ HydroTracker Email Test',
+            text: 'If you see this, email delivery from Render is working correctly!'
+        });
+        console.log('[test-email] SUCCESS:', info.response);
+        res.json({ ok: true, accepted: info.accepted, response: info.response });
+    } catch (err) {
+        console.error('[test-email] FAIL:', err.message, err.code, err.responseCode);
+        res.json({ ok: false, error: err.message, code: err.code, responseCode: err.responseCode });
+    }
+});
+
 // Forgot Password Route
 app.post('/api/auth/recover', async (req, res) => {
     const { email } = req.body;
