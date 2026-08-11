@@ -250,17 +250,18 @@ function hideRecovery() {
 }
 
 async function recoverPassword() {
-    const email = document.getElementById('recoveryEmail').value.trim();
+    const emailInput = document.getElementById('recoveryEmail');
+    const inputVal = emailInput.value.trim();
     const resultBox = document.getElementById('recovery-result-box');
     if (resultBox) resultBox.style.display = 'none';
 
-    if (!email) return showNotification("Please enter your email.");
+    if (!inputVal) return showNotification("Please enter your registered email or username.");
 
     try {
         const response = await fetch(`${API_URL}/api/auth/recover`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email })
+            body: JSON.stringify({ email: inputVal })
         });
         
         const result = await response.json();
@@ -268,7 +269,29 @@ async function recoverPassword() {
         if (response.ok) {
             showNotification(result.message || "Temporary password generated!");
             if (resultBox) {
-                resultBox.innerHTML = result.message;
+                if (result.tempPass) {
+                    // Auto-fill login form for convenience
+                    const loginUser = document.getElementById('loginUser');
+                    const loginPass = document.getElementById('loginPass');
+                    if (loginUser && result.username) loginUser.value = result.username;
+                    if (loginPass && result.tempPass) loginPass.value = result.tempPass;
+
+                    resultBox.innerHTML = `
+                        <div style="font-size: 0.95rem; margin-bottom: 8px;">🔑 <strong>Temporary Password</strong></div>
+                        <div style="background: rgba(255,255,255,0.9); color: #0284c7; font-size: 1.25rem; font-weight: 800; padding: 10px; border-radius: 8px; border: 1px dashed #0284c7; letter-spacing: 2px; user-select: all; margin: 8px 0;">
+                            ${result.tempPass}
+                        </div>
+                        <div style="font-size: 0.78rem; opacity: 0.9; margin-bottom: 10px;">
+                            ${result.emailSent ? "📧 Also sent to your email inbox." : "⚠️ Email service offline. Use this temporary password to log in."}
+                        </div>
+                        <button type="button" onclick="navigator.clipboard.writeText('${result.tempPass}'); if(typeof showNotification==='function') showNotification('Password copied to clipboard! 📋');"
+                            style="padding: 6px 16px; background: #1565c0; color: #fff; border: none; border-radius: 20px; font-weight: 700; font-size: 0.8rem; cursor: pointer;">
+                            📋 Copy Password & Login
+                        </button>
+                    `;
+                } else {
+                    resultBox.innerHTML = result.message;
+                }
                 resultBox.style.display = 'block';
             }
         } else {

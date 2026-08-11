@@ -466,10 +466,22 @@ const createTransporter = async () => {
 app.post('/api/auth/recover', async (req, res) => {
     const { email } = req.body;
     try {
-        // 1. Find user by email
-        const user = await User.findOne({ email });
+        const cleanInput = String(email || "").trim();
+        if (!cleanInput) {
+            return res.status(400).json({ error: "Please enter your registered email or username." });
+        }
+
+        // 1. Find user by email OR username (case-insensitive)
+        const escapedInput = cleanInput.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+        const user = await User.findOne({
+            $or: [
+                { email: new RegExp(`^${escapedInput}$`, 'i') },
+                { username: new RegExp(`^${escapedInput}$`, 'i') }
+            ]
+        });
+
         if (!user) {
-            return res.status(404).json({ error: "No account found with this email." });
+            return res.status(404).json({ error: "No account found matching this email or username." });
         }
 
         // 2. Generate temp password
@@ -480,19 +492,22 @@ app.post('/api/auth/recover', async (req, res) => {
         // 3. Always update user's password in DB so temp password works for login
         await User.findByIdAndUpdate(user._id, { password: hashedPassword });
 
+        const targetEmail = user.email || cleanInput;
+
         // 4. Try sending the email via Gmail / SMTP
         try {
             const transporter = await createTransporter();
             const senderEmail = process.env.EMAIL_USER || process.env.SMTP_USER || "noreply@hydrotrack.com";
             const mailOptions = {
                 from: `HydroTrack <${senderEmail}>`,
-                to: email,
+                to: targetEmail,
                 subject: "Your Temporary Password | HydroTrack",
                 html: `
                     <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #e3f2fd; border-radius: 10px;">
                         <h2 style="color: #1565c0;">💧 HydroTrack Recovery</h2>
-                        <p>You requested a password reset. Use the temporary password below to log in:</p>
-                        <div style="background: #f0f4f8; padding: 15px; font-size: 1.2rem; font-weight: bold; text-align: center; border-radius: 5px; color: #333;">
+                        <p>Hello <strong>${user.username}</strong>,</p>
+                        <p>You requested a password reset. Use your temporary password below to log in:</p>
+                        <div style="background: #f0f4f8; padding: 15px; font-size: 1.4rem; font-weight: bold; text-align: center; border-radius: 5px; color: #1565c0; letter-spacing: 2px;">
                             ${tempPass}
                         </div>
                         <p style="color: #666; font-size: 0.9rem; margin-top: 15px;">
@@ -502,12 +517,22 @@ app.post('/api/auth/recover', async (req, res) => {
                 `
             };
             await transporter.sendMail(mailOptions);
-            res.json({ message: "Temporary password sent to your email! Please check your inbox." });
+            res.json({ 
+                success: true,
+                emailSent: true,
+                username: user.username,
+                tempPass: tempPass,
+                message: `📧 Temporary password sent to ${targetEmail}! Please check your inbox.`
+            });
         } catch (emailErr) {
             console.error("⚠️ Email delivery failed (OAuth/SMTP):", emailErr.message || emailErr);
-            // Fallback so password reset works even if email service is not configured
+            // Fallback so password reset works even if email server is not configured
             res.json({ 
-                message: `🔑 Temp Pass: ${tempPass} (Email sending failed or SMTP not configured. Log in with this password!)`
+                success: true,
+                emailSent: false,
+                username: user.username,
+                tempPass: tempPass,
+                message: `🔑 Temp Pass: ${tempPass} (Email service offline. Use this password to log in!)`
             });
         }
 
