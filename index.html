@@ -51,12 +51,12 @@
                     <a href="#" onclick="showRecovery()">Forgot Password?</a>
                 </div>
 
-                <div id="recoveryForm" style="display: none;">
+                <div id="recoveryForm" style="display: none; max-height: 420px; overflow-y: auto; padding-right: 4px;">
                     <p style="font-size: 14px; margin-bottom: 10px; color: #333;">Enter your registered email or username to receive a temporary password.</p>
                     <input type="text" id="recoveryEmail" placeholder="Registered Email or Username">
                     <button type="button" class="btn-main" onclick="recoverPassword()">Send Temporary Pass</button>
                     <div id="recovery-result-box" style="display:none; margin-top:14px; padding:14px; border-radius:12px; background:rgba(21,101,192,0.1); border:1px solid rgba(21,101,192,0.25); color:#0d47a1; font-weight:600; font-size:13px; text-align:center; word-break:break-word; line-height:1.5;"></div>
-                    <div class="switch">
+                    <div class="switch" style="margin-top: 10px;">
                         <a href="#" onclick="hideRecovery()">Back to Login</a>
                     </div>
                 </div>

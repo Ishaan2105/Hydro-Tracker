@@ -72,7 +72,7 @@ body {
     height: 540px;
     background: rgba(255, 255, 255, 0.1);
     border: 2px solid rgba(255, 255, 255, 0.4);
-    border-radius: 40px 40px 80px 80px;
+    border-radius: 40px;
     backdrop-filter: blur(12px);
     overflow: hidden;
     z-index: 10;

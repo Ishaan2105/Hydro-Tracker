@@ -459,3 +459,19 @@ document.addEventListener('click', (e) => {
         dropdown.style.display = 'none';
     }
 });
+
+// ── PWA: Hide install button if app is already installed ──
+(function hidePWABtnIfInstalled() {
+    const isStandalone =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.matchMedia('(display-mode: minimal-ui)').matches ||
+        window.matchMedia('(display-mode: fullscreen)').matches ||
+        window.navigator.standalone === true ||
+        document.referrer.includes('android-app://');
+
+    if (isStandalone) {
+        document.querySelectorAll('.install-app-btn').forEach(btn =>
+            btn.style.setProperty('display', 'none', 'important')
+        );
+    }
+})();
