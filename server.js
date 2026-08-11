@@ -460,8 +460,28 @@ const { google } = require('googleapis');
 
 const OAuth2 = google.auth.OAuth2;
 
+function maskEmail(email) {
+    if (!email || !email.includes('@')) return email || '';
+    const [user, domain] = email.split('@');
+    if (user.length <= 2) return `${user[0]}***@${domain}`;
+    return `${user[0]}***${user[user.length - 1]}@${domain}`;
+}
+
 const createTransporter = async () => {
-    // 1. Generic SMTP configuration (Host, Port, User, Pass)
+    // 1. Gmail App Password authentication (Direct SSL on Port 465)
+    if (process.env.GMAIL_APP_PASSWORD && process.env.EMAIL_USER) {
+        return nodemailer.createTransport({
+            host: 'smtp.gmail.com',
+            port: 465,
+            secure: true,
+            auth: {
+                user: process.env.EMAIL_USER.trim(),
+                pass: process.env.GMAIL_APP_PASSWORD.replace(/\s+/g, '')
+            }
+        });
+    }
+
+    // 2. Generic SMTP configuration (Host, Port, User, Pass)
     if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
         return nodemailer.createTransport({
             host: process.env.SMTP_HOST,
@@ -470,17 +490,6 @@ const createTransporter = async () => {
             auth: {
                 user: process.env.SMTP_USER,
                 pass: process.env.SMTP_PASS
-            }
-        });
-    }
-
-    // 2. Gmail App Password authentication (Recommended - Never expires)
-    if (process.env.GMAIL_APP_PASSWORD && process.env.EMAIL_USER) {
-        return nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.GMAIL_APP_PASSWORD.replace(/\s+/g, '')
             }
         });
     }
@@ -554,6 +563,7 @@ app.post('/api/auth/recover', async (req, res) => {
         await User.findByIdAndUpdate(user._id, { password: hashedPassword });
 
         const targetEmail = user.email || cleanInput;
+        const masked = maskEmail(targetEmail);
 
         // 4. Try sending the email via Gmail / SMTP
         try {
@@ -581,9 +591,11 @@ app.post('/api/auth/recover', async (req, res) => {
             res.json({ 
                 success: true,
                 emailSent: true,
+                targetEmail: targetEmail,
+                maskedEmail: masked,
                 username: user.username,
                 tempPass: tempPass,
-                message: `📧 Temporary password sent to ${targetEmail}! Please check your inbox.`
+                message: `📧 Temporary password sent to ${masked}! Please check your inbox (and Spam folder).`
             });
         } catch (emailErr) {
             console.error("⚠️ Email delivery failed (OAuth/SMTP):", emailErr.message || emailErr);
@@ -591,6 +603,8 @@ app.post('/api/auth/recover', async (req, res) => {
             res.json({ 
                 success: true,
                 emailSent: false,
+                targetEmail: targetEmail,
+                maskedEmail: masked,
                 username: user.username,
                 tempPass: tempPass,
                 message: `🔑 Temp Pass: ${tempPass} (Email service offline. Use this password to log in!)`
