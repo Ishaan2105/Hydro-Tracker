@@ -267,33 +267,44 @@ async function recoverPassword() {
         const result = await response.json();
 
         if (response.ok) {
-            showNotification(result.message || "Temporary password generated!");
             if (resultBox) {
-                if (result.tempPass) {
-                    // Auto-fill login form for convenience
-                    const loginUser = document.getElementById('loginUser');
-                    const loginPass = document.getElementById('loginPass');
-                    if (loginUser && result.username) loginUser.value = result.username;
-                    if (loginPass && result.tempPass) loginPass.value = result.tempPass;
-
+                if (result.emailSent) {
+                    // Email was sent — show clean confirmation only, no password on screen
                     resultBox.innerHTML = `
-                        <div style="font-size: 0.95rem; margin-bottom: 8px;">🔑 <strong>Temporary Password</strong></div>
-                        <div style="background: rgba(255,255,255,0.9); color: #0284c7; font-size: 1.25rem; font-weight: 800; padding: 10px; border-radius: 8px; border: 1px dashed #0284c7; letter-spacing: 2px; user-select: all; margin: 8px 0;">
-                            ${result.tempPass}
+                        <div style="text-align:center; padding: 8px 0;">
+                            <div style="font-size: 2rem; margin-bottom: 8px;">📧</div>
+                            <div style="font-size: 1rem; font-weight: 700; margin-bottom: 6px;">Email Sent!</div>
+                            <div style="font-size: 0.82rem; opacity: 0.9; line-height: 1.5;">
+                                A temporary password has been sent to<br>
+                                <strong>${result.maskedEmail || 'your registered email'}</strong>.<br>
+                                Please check your <strong>Inbox</strong> and <strong>Spam/Junk</strong> folder.
+                            </div>
+                            <button type="button" onclick="hideRecovery()"
+                                style="margin-top: 12px; padding: 7px 20px; background: #1565c0; color: #fff; border: none; border-radius: 20px; font-weight: 700; font-size: 0.82rem; cursor: pointer;">
+                                ← Back to Login
+                            </button>
                         </div>
-                        <div style="font-size: 0.8rem; opacity: 0.95; margin-bottom: 10px; line-height: 1.4;">
-                            ${result.emailSent ? `📧 Sent to <strong>${result.maskedEmail || 'your email'}</strong>! Check your Primary Inbox & <strong>Spam/Junk</strong> folder.` : `⚠️ Mail server offline. Add <code>EMAIL_USER</code> & <code>GMAIL_APP_PASSWORD</code> in your Render dashboard environment variables.`}
-                        </div>
-                        <button type="button" onclick="navigator.clipboard.writeText('${result.tempPass}'); if(typeof showNotification==='function') showNotification('Password copied to clipboard! 📋');"
-                            style="padding: 6px 16px; background: #1565c0; color: #fff; border: none; border-radius: 20px; font-weight: 700; font-size: 0.8rem; cursor: pointer;">
-                            📋 Copy Password & Login
-                        </button>
                     `;
                 } else {
-                    resultBox.innerHTML = result.message;
+                    // Email failed — still don't show password, just ask them to contact support or retry
+                    resultBox.innerHTML = `
+                        <div style="text-align:center; padding: 8px 0;">
+                            <div style="font-size: 2rem; margin-bottom: 8px;">⚠️</div>
+                            <div style="font-size: 0.95rem; font-weight: 700; margin-bottom: 6px;">Email Service Unavailable</div>
+                            <div style="font-size: 0.82rem; opacity: 0.9; line-height: 1.5;">
+                                We couldn't send the email right now.<br>
+                                Please try again in a few minutes or<br>contact support.
+                            </div>
+                            <button type="button" onclick="hideRecovery()"
+                                style="margin-top: 12px; padding: 7px 20px; background: #888; color: #fff; border: none; border-radius: 20px; font-weight: 700; font-size: 0.82rem; cursor: pointer;">
+                                ← Back to Login
+                            </button>
+                        </div>
+                    `;
                 }
                 resultBox.style.display = 'block';
             }
+            showNotification(result.emailSent ? "📧 Check your inbox for your temporary password!" : "⚠️ Email delivery failed. Please try again.");
         } else {
             showNotification(result.error || "Recovery failed.");
             if (resultBox) {
