@@ -528,7 +528,15 @@ async function renderRealTimeTrend() {
 // 12-Hour Format Display Logic
 function formatTo12Hr(time24) {
     if (!time24) return "";
-    let [hours, minutes] = time24.split(':');
+    time24 = String(time24).trim();
+    if (time24.includes('AM') || time24.includes('PM') || time24.includes('am') || time24.includes('pm')) {
+        return time24;
+    }
+    let parts = time24.split(':');
+    if (parts.length < 2) return time24;
+    let hours = parseInt(parts[0], 10);
+    let minutes = parts[1];
+    if (isNaN(hours)) return time24;
     let ampm = hours >= 12 ? 'PM' : 'AM';
     hours = hours % 12 || 12;
     return `${hours}:${minutes} ${ampm}`;

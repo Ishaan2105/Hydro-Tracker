@@ -592,13 +592,25 @@ function startServerPushCron() {
                 let notifBody = "Time to stay hydrated!";
 
                 // 1. Check Specific-Time Reminders
+function formatTo12HrServer(time24) {
+    if (!time24) return "";
+    let parts = String(time24).split(':');
+    if (parts.length < 2) return time24;
+    let hours = parseInt(parts[0], 10);
+    let minutes = parts[1];
+    if (isNaN(hours)) return time24;
+    let ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    return `${hours}:${minutes} ${ampm}`;
+}
+
                 if (Array.isArray(user.reminders)) {
                     for (const r of user.reminders) {
                         if (r && r.active !== false && r.time === currentTime) {
                             shouldNotify = true;
                             const randomMsg = hydrationMessages[Math.floor(Math.random() * hydrationMessages.length)];
                             notifTitle = "💧 Hydration Reminder";
-                            notifBody = `🔔 ${r.time} — ${randomMsg}`;
+                            notifBody = `🔔 ${formatTo12HrServer(r.time)} — ${randomMsg}`;
                             break;
                         }
                     }

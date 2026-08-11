@@ -211,7 +211,7 @@ function logWater(ml) {
     if(!data.currentLogs) data.currentLogs = [];
     
     data.currentLogs.push({
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }),
         ml: ml
     });
     

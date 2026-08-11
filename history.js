@@ -427,6 +427,22 @@ function loadDateStats() {
     if (timelineContainer) {
         timelineContainer.innerHTML = "";
 
+function formatTo12Hr(time24) {
+    if (!time24) return "--:--";
+    time24 = String(time24).trim();
+    if (time24.includes('AM') || time24.includes('PM') || time24.includes('am') || time24.includes('pm')) {
+        return time24;
+    }
+    let parts = time24.split(':');
+    if (parts.length < 2) return time24;
+    let hours = parseInt(parts[0], 10);
+    let minutes = parts[1];
+    if (isNaN(hours)) return time24;
+    let ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    return `${hours}:${minutes} ${ampm}`;
+}
+
         if (dailyLogs.length === 0) {
             timelineContainer.innerHTML = `
                 <div style="text-align:center; padding: 30px; opacity:0.6;">
@@ -439,7 +455,7 @@ function loadDateStats() {
                 item.className = 'timeline-item';
 
                 const val = log.ml || log.amount || 0;
-                const timeStr = log.time || '--:--';
+                const timeStr = formatTo12Hr(log.time);
 
                 item.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">

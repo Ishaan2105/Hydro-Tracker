@@ -689,7 +689,7 @@ async function addManualTime() {
     if (typeof syncRemindersToSW === 'function') syncRemindersToSW();
     renderCloudReminders(); // Re-render the list
     timeInput.value = "";
-    showToast(`✅ Added ${timeValue}`);
+    showToast(`✅ Added ${formatTo12Hr(timeValue)}`);
 }
 
 async function deleteReminder(index) {
@@ -704,7 +704,7 @@ async function deleteReminder(index) {
     renderCloudReminders(); 
 
     // Use your existing toast for non-intrusive feedback
-    showToast(`🗑️ Deleted reminder for ${deletedTime}`);
+    showToast(`🗑️ Deleted reminder for ${formatTo12Hr(deletedTime)}`);
 }
 
 async function updateReminderStatus(index, isChecked) {
@@ -770,7 +770,7 @@ function renderCloudReminders() {
                            onchange="updateReminderStatus(${index}, this.checked)"> 
                     <span class="slider"></span>
                 </label>
-                <span style="font-weight:700; font-size:0.95rem; color:var(--text-primary, #0c4a6e);">🔔 ${rem.time}</span>
+                <span style="font-weight:700; font-size:0.95rem; color:var(--text-primary, #0c4a6e);">🔔 ${formatTo12Hr(rem.time)}</span>
             </div>
             <div class="daily-wrapper">
                 <span>Daily</span>
@@ -792,7 +792,15 @@ function renderCloudReminders() {
 // Helper to display human-readable time
 function formatTo12Hr(time24) {
     if (!time24) return "";
-    let [hours, minutes] = time24.split(':');
+    time24 = String(time24).trim();
+    if (time24.includes('AM') || time24.includes('PM') || time24.includes('am') || time24.includes('pm')) {
+        return time24;
+    }
+    let parts = time24.split(':');
+    if (parts.length < 2) return time24;
+    let hours = parseInt(parts[0], 10);
+    let minutes = parts[1];
+    if (isNaN(hours)) return time24;
     let ampm = hours >= 12 ? 'PM' : 'AM';
     hours = hours % 12 || 12;
     return `${hours}:${minutes} ${ampm}`;
