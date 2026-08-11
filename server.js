@@ -94,14 +94,45 @@ const User = mongoose.model('User', UserSchema);
 app.post('/api/auth/register', async (req, res) => {
     try {
         const { username, email, password } = req.body;
+        const cleanUsername = String(username || "").trim();
+        const cleanEmail = String(email || "").trim().toLowerCase();
+
+        if (!cleanUsername || !cleanEmail || !password) {
+            return res.status(400).json({ error: "All fields are required." });
+        }
+
+        // 1. Check if Username already exists (case-insensitive)
+        const escapedUsername = cleanUsername.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+        const existingUsername = await User.findOne({ 
+            username: new RegExp(`^${escapedUsername}$`, 'i') 
+        });
+        if (existingUsername) {
+            return res.status(409).json({ 
+                code: "USERNAME_TAKEN",
+                error: "This username already exists. Please add extra unique symbols or numbers to your username to make it unique from others." 
+            });
+        }
+
+        // 2. Check if Email already exists (case-insensitive)
+        const escapedEmail = cleanEmail.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+        const existingEmail = await User.findOne({ 
+            email: new RegExp(`^${escapedEmail}$`, 'i') 
+        });
+        if (existingEmail) {
+            return res.status(409).json({ 
+                code: "EMAIL_TAKEN",
+                error: "An account with this email address already exists. Please log in or use another email." 
+            });
+        }
+
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
         const todayISO = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
 
         const newUser = new User({ 
-            username, 
-            email, 
+            username: cleanUsername, 
+            email: cleanEmail, 
             password: hashedPassword,
             lastLogDate: todayISO,
             goal: 2500,
@@ -119,7 +150,37 @@ app.post('/api/auth/register', async (req, res) => {
         await newUser.save();
         res.status(201).json({ message: "User created!" });
     } catch (err) {
-        res.status(400).json({ error: "Username or Email already exists." });
+        console.error("Registration Error:", err);
+        res.status(400).json({ error: "Signup failed. Username or email may already exist." });
+    }
+});
+
+// Predict username route for login autocomplete
+app.get('/api/auth/predict-username', async (req, res) => {
+    try {
+        const query = String(req.query.q || '').trim();
+        if (!query || query.length < 1) {
+            return res.json({ suggestions: [] });
+        }
+
+        const escapedQuery = query.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+        const prefixMatches = await User.find({
+            username: new RegExp(`^${escapedQuery}`, 'i')
+        }).select('username').limit(5);
+
+        let suggestions = prefixMatches.map(u => u.username);
+
+        if (suggestions.length < 5) {
+            const subMatches = await User.find({
+                username: new RegExp(escapedQuery, 'i'),
+                _id: { $nin: prefixMatches.map(u => u._id) }
+            }).select('username').limit(5 - suggestions.length);
+            suggestions = suggestions.concat(subMatches.map(u => u.username));
+        }
+
+        res.json({ suggestions });
+    } catch (err) {
+        res.json({ suggestions: [] });
     }
 });
 

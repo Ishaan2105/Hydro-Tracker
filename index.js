@@ -161,8 +161,8 @@ function togglePass(id) {
 // 5. LocalStorage Auth
 document.getElementById('signupForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = document.getElementById('regEmail').value;
-    const username = document.getElementById('regUser').value;
+    const email = document.getElementById('regEmail').value.trim();
+    const username = document.getElementById('regUser').value.trim();
     const password = document.getElementById('regPass').value;
     const confirm  = document.getElementById('regConfirm').value;
 
@@ -183,12 +183,12 @@ document.getElementById('signupForm').addEventListener('submit', async (e) => {
         if (response.ok) {
             showNotification("Account created! Please login.");
             toggleForm();
+        } else if (response.status === 409 && (data.code === 'USERNAME_TAKEN' || (data.error && data.error.toLowerCase().includes('username')))) {
+            openUsernameAlertModal(username);
         } else {
-            // Displays the specific error from your MongoDB logic (e.g., "Email already exists")
             showNotification(data.error || "Signup failed");
         }
     } catch (err) {
-        // This triggers if the Render service is "sleeping" or down
         showNotification("Cloud connection error. Please try again.");
     }
 });
@@ -321,3 +321,130 @@ function showNotification(message) {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
+
+// --- USERNAME CONFLICT ALERT MODAL LOGIC ---
+function openUsernameAlertModal(attemptedUsername) {
+    const modal = document.getElementById('username-alert-modal');
+    const suggestEl = document.getElementById('modal-suggested-username');
+    if (suggestEl && attemptedUsername) {
+        suggestEl.innerText = `${attemptedUsername}_${Math.floor(10 + Math.random() * 89 + 10)}`;
+    }
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+function closeUsernameAlertModal() {
+    const modal = document.getElementById('username-alert-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    const regUserInput = document.getElementById('regUser');
+    if (regUserInput) {
+        regUserInput.focus();
+        regUserInput.select();
+    }
+}
+
+// --- USERNAME PREDICTION / AUTOCOMPLETE LOGIC ---
+let _usernameDebounceTimer = null;
+
+function handleUsernameInput(inputEl) {
+    if (typeof updateBottle === 'function') updateBottle();
+
+    const query = inputEl.value.trim();
+    const dropdown = document.getElementById('username-suggestions');
+    if (!dropdown) return;
+
+    if (_usernameDebounceTimer) clearTimeout(_usernameDebounceTimer);
+
+    if (!query) {
+        dropdown.style.display = 'none';
+        dropdown.innerHTML = '';
+        return;
+    }
+
+    _usernameDebounceTimer = setTimeout(async () => {
+        try {
+            const res = await fetch(`${API_URL}/api/auth/predict-username?q=${encodeURIComponent(query)}`);
+            if (!res.ok) {
+                dropdown.style.display = 'none';
+                return;
+            }
+            const data = await res.json();
+            const suggestions = data.suggestions || [];
+
+            if (suggestions.length === 0) {
+                dropdown.style.display = 'none';
+                dropdown.innerHTML = '';
+                return;
+            }
+
+            dropdown.innerHTML = '';
+            suggestions.forEach(username => {
+                const item = document.createElement('div');
+                item.className = 'suggestion-item';
+
+                let matchHtml = '';
+                const lowerUser = username.toLowerCase();
+                const lowerQuery = query.toLowerCase();
+
+                if (lowerUser.startsWith(lowerQuery)) {
+                    const matchPart = username.substring(0, query.length);
+                    const restPart = username.substring(query.length);
+                    matchHtml = `<span class="match-highlight">${escapeHtml(matchPart)}</span><span class="rest-text">${escapeHtml(restPart)}</span>`;
+                } else {
+                    matchHtml = `<span>${escapeHtml(username)}</span>`;
+                }
+
+                item.innerHTML = `
+                    <div>👤 ${matchHtml}</div>
+                    <span style="font-size:0.7rem; opacity:0.6;">Select ↵</span>
+                `;
+
+                item.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    selectSuggestedUsername(username);
+                });
+
+                dropdown.appendChild(item);
+            });
+
+            dropdown.style.display = 'block';
+        } catch(e) {
+            dropdown.style.display = 'none';
+        }
+    }, 150);
+}
+
+function selectSuggestedUsername(username) {
+    const input = document.getElementById('loginUser');
+    const dropdown = document.getElementById('username-suggestions');
+    if (input) {
+        input.value = username;
+        if (typeof updateBottle === 'function') updateBottle();
+    }
+    if (dropdown) {
+        dropdown.style.display = 'none';
+        dropdown.innerHTML = '';
+    }
+    const passInput = document.getElementById('loginPass');
+    if (passInput) passInput.focus();
+}
+
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+// Close suggestion dropdown when clicking outside
+document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('username-suggestions');
+    const wrapper = document.querySelector('.username-predict-wrapper');
+    if (dropdown && wrapper && !wrapper.contains(e.target)) {
+        dropdown.style.display = 'none';
+    }
+});
