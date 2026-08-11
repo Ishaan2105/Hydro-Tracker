@@ -468,95 +468,89 @@ function maskEmail(email) {
     return `${user[0]}***${user[user.length - 1]}@${domain}`;
 }
 
-const createTransporter = async () => {
-    // 1. Gmail App Password authentication (Direct SSL on Port 465)
-    if (process.env.GMAIL_APP_PASSWORD && process.env.EMAIL_USER) {
-        return nodemailer.createTransport({
-            host: 'smtp.gmail.com',
-            port: 465,
-            secure: true,
-            auth: {
-                user: process.env.EMAIL_USER.trim(),
-                pass: process.env.GMAIL_APP_PASSWORD.replace(/\s+/g, '')
-            }
-        });
+// ── Primary: Gmail REST API via HTTPS (works on Render — no SMTP ports needed) ──
+async function sendViaGmailAPI({ to, subject, html }) {
+    const { GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN, EMAIL_USER } = process.env;
+    if (!GMAIL_CLIENT_ID || !GMAIL_CLIENT_SECRET || !GMAIL_REFRESH_TOKEN || !EMAIL_USER) {
+        throw new Error('Missing OAuth2 env vars: GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN, EMAIL_USER');
     }
 
-    // 2. Generic SMTP configuration (Host, Port, User, Pass)
-    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-        return nodemailer.createTransport({
-            host: process.env.SMTP_HOST,
-            port: parseInt(process.env.SMTP_PORT || '587'),
-            secure: process.env.SMTP_SECURE === 'true' || process.env.SMTP_PORT === '465',
-            auth: {
-                user: process.env.SMTP_USER,
-                pass: process.env.SMTP_PASS
-            }
-        });
+    const oauth2Client = new OAuth2(
+        GMAIL_CLIENT_ID,
+        GMAIL_CLIENT_SECRET,
+        'https://developers.google.com/oauthplayground'
+    );
+    oauth2Client.setCredentials({ refresh_token: GMAIL_REFRESH_TOKEN });
+
+    const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+
+    const messageParts = [
+        `From: HydroTracker <${EMAIL_USER}>`,
+        `To: ${to}`,
+        `Subject: ${subject}`,
+        'MIME-Version: 1.0',
+        'Content-Type: text/html; charset=utf-8',
+        '',
+        html
+    ];
+    const raw = Buffer.from(messageParts.join('\r\n'))
+        .toString('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+
+    const result = await gmail.users.messages.send({
+        userId: 'me',
+        requestBody: { raw }
+    });
+    console.log('[Gmail API] Sent OK — id:', result.data.id);
+    return result.data;
+}
+
+// ── Fallback: App Password SMTP (for local dev) ──
+async function sendViaSMTP({ to, subject, html }) {
+    const { EMAIL_USER, GMAIL_APP_PASSWORD } = process.env;
+    if (!EMAIL_USER || !GMAIL_APP_PASSWORD) throw new Error('Missing EMAIL_USER or GMAIL_APP_PASSWORD');
+    const transporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com', port: 465, secure: true,
+        auth: { user: EMAIL_USER.trim(), pass: GMAIL_APP_PASSWORD.replace(/\s+/g, '') }
+    });
+    const info = await transporter.sendMail({
+        from: `HydroTracker <${EMAIL_USER}>`, to, subject, html
+    });
+    console.log('[SMTP] Sent OK:', info.response);
+    return info;
+}
+
+// ── Unified send function: tries Gmail API first, then SMTP ──
+async function sendEmail({ to, subject, html }) {
+    try {
+        await sendViaGmailAPI({ to, subject, html });
+        return { method: 'gmail-api' };
+    } catch (apiErr) {
+        console.warn('[Gmail API] failed:', apiErr.message, '— trying SMTP fallback...');
+        await sendViaSMTP({ to, subject, html });
+        return { method: 'smtp' };
     }
-
-    // 3. OAuth2 authentication
-    if (process.env.GMAIL_CLIENT_ID && process.env.GMAIL_CLIENT_SECRET && process.env.GMAIL_REFRESH_TOKEN && process.env.EMAIL_USER) {
-        const oauth2Client = new OAuth2(
-            process.env.GMAIL_CLIENT_ID,
-            process.env.GMAIL_CLIENT_SECRET,
-            "https://developers.google.com/oauthplayground"
-        );
-
-        oauth2Client.setCredentials({
-            refresh_token: process.env.GMAIL_REFRESH_TOKEN
-        });
-
-        const accessToken = await new Promise((resolve, reject) => {
-            oauth2Client.getAccessToken((err, token) => {
-                if (err) {
-                    console.error("OAuth Token Error:", err.message || err);
-                    reject(err);
-                }
-                resolve(token);
-            });
-        });
-
-        return nodemailer.createTransport({
-            service: "gmail",
-            auth: {
-                type: "OAuth2",
-                user: process.env.EMAIL_USER,
-                accessToken,
-                clientId: process.env.GMAIL_CLIENT_ID,
-                clientSecret: process.env.GMAIL_CLIENT_SECRET,
-                refreshToken: process.env.GMAIL_REFRESH_TOKEN
-            }
-        });
-    }
-
-    throw new Error("No email credentials configured. Please set GMAIL_APP_PASSWORD & EMAIL_USER in server environment.");
-};
+}
 
 // ── Debug Email Test Endpoint ──────────────────────────────
-// GET /api/test-email  — tests credentials & sends a real email
+// GET /api/test-email
 app.get('/api/test-email', async (req, res) => {
-    const hasAppPass = !!process.env.GMAIL_APP_PASSWORD;
-    const emailUser  = process.env.EMAIL_USER || null;
-    console.log('[test-email] EMAIL_USER:', emailUser, '| APP_PASS exists:', hasAppPass);
-
-    if (!hasAppPass || !emailUser) {
-        return res.json({ ok: false, reason: 'Missing GMAIL_APP_PASSWORD or EMAIL_USER env vars on this server.' });
-    }
-
+    console.log('[test-email] ENV CHECK — EMAIL_USER:', process.env.EMAIL_USER,
+        '| CLIENT_ID exists:', !!process.env.GMAIL_CLIENT_ID,
+        '| REFRESH_TOKEN exists:', !!process.env.GMAIL_REFRESH_TOKEN,
+        '| APP_PASS exists:', !!process.env.GMAIL_APP_PASSWORD);
     try {
-        const transporter = await createTransporter();
-        const info = await transporter.sendMail({
-            from: `HydroTracker <${emailUser}>`,
-            to: emailUser,
+        const result = await sendEmail({
+            to: process.env.EMAIL_USER || 'ishaanhingway@gmail.com',
             subject: '✅ HydroTracker Email Test',
-            text: 'If you see this, email delivery from Render is working correctly!'
+            html: '<h2>✅ It works!</h2><p>Email delivery from Render is working correctly via Gmail API.</p>'
         });
-        console.log('[test-email] SUCCESS:', info.response);
-        res.json({ ok: true, accepted: info.accepted, response: info.response });
+        res.json({ ok: true, method: result.method });
     } catch (err) {
-        console.error('[test-email] FAIL:', err.message, err.code, err.responseCode);
-        res.json({ ok: false, error: err.message, code: err.code, responseCode: err.responseCode });
+        console.error('[test-email] FAIL:', err.message);
+        res.json({ ok: false, error: err.message });
     }
 });
 
@@ -593,49 +587,44 @@ app.post('/api/auth/recover', async (req, res) => {
         const targetEmail = user.email || cleanInput;
         const masked = maskEmail(targetEmail);
 
-        // 4. Try sending the email via Gmail / SMTP
+        // 4. Send email via Gmail API (HTTPS) with SMTP fallback
         try {
-            const transporter = await createTransporter();
-            const senderEmail = process.env.EMAIL_USER || process.env.SMTP_USER || "noreply@hydrotracker.com";
-            const mailOptions = {
-                from: `HydroTracker <${senderEmail}>`,
+            await sendEmail({
                 to: targetEmail,
                 subject: "Your Temporary Password | HydroTracker",
                 html: `
-                    <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #e3f2fd; border-radius: 10px;">
+                    <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #e3f2fd; border-radius: 10px; max-width: 480px;">
                         <h2 style="color: #1565c0;">💧 HydroTracker Recovery</h2>
                         <p>Hello <strong>${user.username}</strong>,</p>
                         <p>You requested a password reset. Use your temporary password below to log in:</p>
-                        <div style="background: #f0f4f8; padding: 15px; font-size: 1.4rem; font-weight: bold; text-align: center; border-radius: 5px; color: #1565c0; letter-spacing: 2px;">
+                        <div style="background: #f0f4f8; padding: 15px; font-size: 1.4rem; font-weight: bold; text-align: center; border-radius: 5px; color: #1565c0; letter-spacing: 2px; margin: 16px 0;">
                             ${tempPass}
                         </div>
                         <p style="color: #666; font-size: 0.9rem; margin-top: 15px;">
-                            Important: Please change your password immediately after logging in from the Settings page.
+                            ⚠️ Please change your password immediately after logging in from the <strong>Settings</strong> page.
                         </p>
+                        <hr style="border: none; border-top: 1px solid #e3f2fd; margin: 20px 0;">
+                        <p style="color: #aaa; font-size: 0.75rem;">HydroTracker — Stay Hydrated 💧</p>
                     </div>
                 `
-            };
-            await transporter.sendMail(mailOptions);
-            res.json({ 
+            });
+            res.json({
                 success: true,
                 emailSent: true,
-                targetEmail: targetEmail,
+                targetEmail,
                 maskedEmail: masked,
                 username: user.username,
-                tempPass: tempPass,
-                message: `📧 Temporary password sent to ${masked}! Please check your inbox (and Spam folder).`
+                message: `📧 Temporary password sent to ${masked}! Please check your inbox (and Spam/Junk folder).`
             });
         } catch (emailErr) {
-            console.error("⚠️ Email delivery failed (OAuth/SMTP):", emailErr.message || emailErr);
-            // Fallback so password reset works even if email server is not configured
-            res.json({ 
+            console.error("⚠️ Email delivery failed (all methods):", emailErr.message || emailErr);
+            res.json({
                 success: true,
                 emailSent: false,
-                targetEmail: targetEmail,
+                targetEmail,
                 maskedEmail: masked,
                 username: user.username,
-                tempPass: tempPass,
-                message: `🔑 Temp Pass: ${tempPass} (Email service offline. Use this password to log in!)`
+                message: `Email delivery failed. Please contact support.`
             });
         }
 
