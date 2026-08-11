@@ -400,8 +400,21 @@ const { google } = require('googleapis');
 const OAuth2 = google.auth.OAuth2;
 
 const createTransporter = async () => {
-    // 1. App Password authentication (Recommended - Never expires)
-    if (process.env.GMAIL_APP_PASSWORD) {
+    // 1. Generic SMTP configuration (Host, Port, User, Pass)
+    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+        return nodemailer.createTransport({
+            host: process.env.SMTP_HOST,
+            port: parseInt(process.env.SMTP_PORT || '587'),
+            secure: process.env.SMTP_SECURE === 'true' || process.env.SMTP_PORT === '465',
+            auth: {
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASS
+            }
+        });
+    }
+
+    // 2. Gmail App Password authentication (Recommended - Never expires)
+    if (process.env.GMAIL_APP_PASSWORD && process.env.EMAIL_USER) {
         return nodemailer.createTransport({
             service: 'gmail',
             auth: {
@@ -411,38 +424,42 @@ const createTransporter = async () => {
         });
     }
 
-    // 2. OAuth2 authentication
-    const oauth2Client = new OAuth2(
-        process.env.GMAIL_CLIENT_ID,
-        process.env.GMAIL_CLIENT_SECRET,
-        "https://developers.google.com/oauthplayground"
-    );
+    // 3. OAuth2 authentication
+    if (process.env.GMAIL_CLIENT_ID && process.env.GMAIL_CLIENT_SECRET && process.env.GMAIL_REFRESH_TOKEN && process.env.EMAIL_USER) {
+        const oauth2Client = new OAuth2(
+            process.env.GMAIL_CLIENT_ID,
+            process.env.GMAIL_CLIENT_SECRET,
+            "https://developers.google.com/oauthplayground"
+        );
 
-    oauth2Client.setCredentials({
-        refresh_token: process.env.GMAIL_REFRESH_TOKEN
-    });
-
-    const accessToken = await new Promise((resolve, reject) => {
-        oauth2Client.getAccessToken((err, token) => {
-            if (err) {
-                console.error("OAuth Token Error:", err.message || err);
-                reject(err);
-            }
-            resolve(token);
+        oauth2Client.setCredentials({
+            refresh_token: process.env.GMAIL_REFRESH_TOKEN
         });
-    });
 
-    return nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-            type: "OAuth2",
-            user: process.env.EMAIL_USER,
-            accessToken,
-            clientId: process.env.GMAIL_CLIENT_ID,
-            clientSecret: process.env.GMAIL_CLIENT_SECRET,
-            refreshToken: process.env.GMAIL_REFRESH_TOKEN
-        }
-    });
+        const accessToken = await new Promise((resolve, reject) => {
+            oauth2Client.getAccessToken((err, token) => {
+                if (err) {
+                    console.error("OAuth Token Error:", err.message || err);
+                    reject(err);
+                }
+                resolve(token);
+            });
+        });
+
+        return nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+                type: "OAuth2",
+                user: process.env.EMAIL_USER,
+                accessToken,
+                clientId: process.env.GMAIL_CLIENT_ID,
+                clientSecret: process.env.GMAIL_CLIENT_SECRET,
+                refreshToken: process.env.GMAIL_REFRESH_TOKEN
+            }
+        });
+    }
+
+    throw new Error("No email credentials configured. Please set GMAIL_APP_PASSWORD & EMAIL_USER in server environment.");
 };
 
 // Forgot Password Route
@@ -463,11 +480,12 @@ app.post('/api/auth/recover', async (req, res) => {
         // 3. Always update user's password in DB so temp password works for login
         await User.findByIdAndUpdate(user._id, { password: hashedPassword });
 
-        // 4. Try sending the email via Gmail OAuth
+        // 4. Try sending the email via Gmail / SMTP
         try {
             const transporter = await createTransporter();
+            const senderEmail = process.env.EMAIL_USER || process.env.SMTP_USER || "noreply@hydrotrack.com";
             const mailOptions = {
-                from: `HydroTrack <${process.env.EMAIL_USER}>`,
+                from: `HydroTrack <${senderEmail}>`,
                 to: email,
                 subject: "Your Temporary Password | HydroTrack",
                 html: `
@@ -484,12 +502,12 @@ app.post('/api/auth/recover', async (req, res) => {
                 `
             };
             await transporter.sendMail(mailOptions);
-            res.json({ message: "Temporary password sent to your email!" });
+            res.json({ message: "Temporary password sent to your email! Please check your inbox." });
         } catch (emailErr) {
             console.error("⚠️ Email delivery failed (OAuth/SMTP):", emailErr.message || emailErr);
-            // Fallback so password reset works even if OAuth credentials are invalid or expired
+            // Fallback so password reset works even if email service is not configured
             res.json({ 
-                message: `Temp Pass generated: ${tempPass} (Email sending failed. Please use this temporary password to log in!)`
+                message: `🔑 Temp Pass: ${tempPass} (Email sending failed or SMTP not configured. Log in with this password!)`
             });
         }
 

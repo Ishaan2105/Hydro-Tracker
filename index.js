@@ -251,6 +251,9 @@ function hideRecovery() {
 
 async function recoverPassword() {
     const email = document.getElementById('recoveryEmail').value.trim();
+    const resultBox = document.getElementById('recovery-result-box');
+    if (resultBox) resultBox.style.display = 'none';
+
     if (!email) return showNotification("Please enter your email.");
 
     try {
@@ -263,10 +266,17 @@ async function recoverPassword() {
         const result = await response.json();
 
         if (response.ok) {
-            showNotification(result.message || "Temporary password sent to your email!");
-            hideRecovery();
+            showNotification(result.message || "Temporary password generated!");
+            if (resultBox) {
+                resultBox.innerHTML = result.message;
+                resultBox.style.display = 'block';
+            }
         } else {
             showNotification(result.error || "Recovery failed.");
+            if (resultBox) {
+                resultBox.innerHTML = `<span style="color:#d32f2f;">❌ ${result.error || "Recovery failed."}</span>`;
+                resultBox.style.display = 'block';
+            }
         }
     } catch (err) {
         showNotification("Cloud connection failed. Please try again in a few seconds.");
