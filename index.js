@@ -143,12 +143,18 @@ function updateBottle() {
 }
 
 function toggleForm() {
+    // Always close the recovery form first
+    const recoveryForm = document.getElementById('recoveryForm');
+    const resultBox = document.getElementById('recovery-result-box');
+    if (recoveryForm) recoveryForm.style.display = 'none';
+    if (resultBox) { resultBox.style.display = 'none'; resultBox.innerHTML = ''; }
+
     isLogin = !isLogin;
     document.getElementById('loginForm').style.display = isLogin ? 'block' : 'none';
     document.getElementById('signupForm').style.display = isLogin ? 'none' : 'block';
     document.getElementById('form-title').innerText = isLogin ? 'Login' : 'Sign Up';
-    document.getElementById('switch-text').innerHTML = isLogin ? 
-        'New here? <a href="#" onclick="toggleForm()">Sign Up</a>' : 
+    document.getElementById('switch-text').innerHTML = isLogin ?
+        'New here? <a href="#" onclick="toggleForm()">Sign Up</a>' :
         'Already a member? <a href="#" onclick="toggleForm()">Login</a>';
     updateBottle();
 }
@@ -239,11 +245,18 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 // --- 2. Forgot Password Logic ---
 function showRecovery() {
     document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('signupForm').style.display = 'none';
     document.getElementById('recoveryForm').style.display = 'block';
     document.getElementById('form-title').innerText = 'Recover';
+    // Make sure we're in "login" mode so Back to Login works correctly
+    isLogin = true;
+    const switchText = document.getElementById('switch-text');
+    if (switchText) switchText.innerHTML = 'New here? <a href="#" onclick="toggleForm()">Sign Up</a>';
 }
 
 function hideRecovery() {
+    const resultBox = document.getElementById('recovery-result-box');
+    if (resultBox) { resultBox.style.display = 'none'; resultBox.innerHTML = ''; }
     document.getElementById('recoveryForm').style.display = 'none';
     document.getElementById('loginForm').style.display = 'block';
     document.getElementById('form-title').innerText = 'Login';

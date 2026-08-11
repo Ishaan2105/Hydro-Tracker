@@ -1,8 +1,8 @@
 // ============================================================
 // HydroTracker Service Worker — PWA Caching + Push Notifications
-// Version: hydrotrack-v54
+// Version: hydrotrack-v55
 // ============================================================
-const CACHE_NAME = 'hydrotrack-v54';
+const CACHE_NAME = 'hydrotrack-v55';
 
 // Only cache static assets that rarely change (icons, manifest)
 const STATIC_ASSETS = [
