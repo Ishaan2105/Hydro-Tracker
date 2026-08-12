@@ -275,3 +275,27 @@ input:focus { background: #fff; box-shadow: 0 0 15px rgba(47, 123, 255, 0.2); }
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* ── Premium Scrollbar for Recovery Form ── */
+#recoveryForm {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(21, 101, 192, 0.45) transparent;
+}
+
+#recoveryForm::-webkit-scrollbar {
+    width: 4px;
+}
+
+#recoveryForm::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#recoveryForm::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(21, 101, 192, 0.6), rgba(100, 180, 255, 0.5));
+    border-radius: 100px;
+    transition: background 0.3s ease;
+}
+
+#recoveryForm::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(21, 101, 192, 0.9), rgba(100, 180, 255, 0.85));
+}
