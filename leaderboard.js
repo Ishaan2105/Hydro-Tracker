@@ -170,10 +170,11 @@ async function loadLeaderboard() {
 
         const result = await response.json();
         const leaderboard = result.leaderboard || [];
+        const todayKey = result.date || '';
 
         renderPodium(leaderboard);
         renderMyRankBanner(leaderboard);
-        renderLeaderboardList(leaderboard);
+        renderLeaderboardList(leaderboard, todayKey);
 
     } catch (err) {
         console.error("Leaderboard fetch error:", err);
@@ -204,12 +205,12 @@ function updatePodiumCard(cardId, item) {
 
     if (item) {
         if (nameEl) nameEl.innerText = item.username.toUpperCase();
-        if (pctEl) pctEl.innerText = `🔥 ${item.streak}d • ${item.pct}%`;
+        if (pctEl) pctEl.innerText = `🔥 ${item.streak}d • ${item.intake}ml`;
         if (titleEl) titleEl.innerText = item.rankTitle;
         if (avatarEl) avatarEl.innerText = item.username[0].toUpperCase();
     } else {
         if (nameEl) nameEl.innerText = '--';
-        if (pctEl) pctEl.innerText = '0%';
+        if (pctEl) pctEl.innerText = '0ml';
         if (titleEl) titleEl.innerText = 'Empty';
     }
 }
@@ -249,7 +250,7 @@ function renderMyRankBanner(list) {
     }
 }
 
-function renderLeaderboardList(list) {
+function renderLeaderboardList(list, todayKey) {
     const listEl = document.getElementById('leaderboard-list');
     if (!listEl) return;
 
@@ -258,13 +259,26 @@ function renderLeaderboardList(list) {
         return;
     }
 
-    listEl.innerHTML = '';
+    // Format today's date nicely for the header
+    let dateLabel = 'Today';
+    if (todayKey) {
+        const d = new Date(todayKey + 'T00:00:00');
+        dateLabel = 'Today — ' + d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    listEl.innerHTML = `
+        <div style="text-align:center; font-size:0.78rem; font-weight:700; letter-spacing:0.08em;
+            color: var(--accent); opacity:0.75; padding: 8px 0 14px; text-transform:uppercase;">
+            📅 ${dateLabel} &nbsp;•&nbsp; Ranked by Streak
+        </div>
+    `;
 
     list.forEach(item => {
         const div = document.createElement('div');
         div.className = `leaderboard-item ${item.isCurrent ? 'current-user' : ''}`;
 
         const cappedPct = Math.min(100, item.pct);
+        const intakeDisplay = item.intake > 0 ? `${item.intake}ml` : '0ml';
 
         div.innerHTML = `
             <div class="rank-number">#${item.rank}</div>
@@ -279,7 +293,7 @@ function renderLeaderboardList(list) {
                 </div>
             </div>
             <div class="item-meta">
-                <div class="item-pct-val">${item.pct}%</div>
+                <div class="item-pct-val">${intakeDisplay}</div>
                 <div class="item-streak-val">🔥 ${item.streak}d</div>
             </div>
         `;

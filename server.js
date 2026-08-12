@@ -211,13 +211,32 @@ app.get('/api/leaderboard', async (req, res) => {
             } catch(e) {}
         }
 
-        // Fetch users who have opted into the leaderboard (default: true)
-        const users = await User.find({ leaderboardOptIn: { $ne: false } }).select('username goal intake streak lastLogDate');
+        // Today's date key in IST (matches how the app stores history)
+        const now = new Date();
+        const istOffset = 5.5 * 60 * 60 * 1000;
+        const istDate = new Date(now.getTime() + istOffset);
+        const todayKey = istDate.toISOString().split('T')[0]; // "YYYY-MM-DD"
+
+        // Fetch users who have opted into the leaderboard
+        const users = await User.find({ leaderboardOptIn: { $ne: false } })
+            .select('username goal streak lastLogDate history');
 
         const rankedList = users.map(u => {
             const goal = u.goal || 2500;
-            const intake = u.intake || 0;
-            const pct = Math.round((intake / goal) * 100);
+
+            // Pull today's intake from history map
+            let todayIntake = 0;
+            if (u.history && u.history.get) {
+                const todayData = u.history.get(todayKey);
+                if (todayData && typeof todayData.intake === 'number') {
+                    todayIntake = todayData.intake;
+                }
+            } else if (u.history && u.history[todayKey]) {
+                todayIntake = u.history[todayKey].intake || 0;
+            }
+
+            const pct = Math.min(100, Math.round((todayIntake / goal) * 100));
+            const streak = u.streak || 0;
 
             let rankTitle = "🌵 Desert Dweller";
             if (pct >= 90) rankTitle = "🔱 Ocean Master";
@@ -232,33 +251,35 @@ app.get('/api/leaderboard', async (req, res) => {
             return {
                 id: u._id.toString(),
                 username: u.username,
-                intake: intake,
+                intake: todayIntake,
                 goal: goal,
-                streak: u.streak || 0,
+                streak: streak,
                 pct: pct,
                 rankTitle: rankTitle,
+                lastLogDate: u.lastLogDate || null,
                 isCurrent: currentUserId ? (u._id.toString() === currentUserId.toString()) : false
             };
         });
 
-        // Sort by Streak descending (1st priority), then Completion % descending (2nd priority), then Intake ml descending (3rd priority)
+        // Sort: Streak desc (1st), today's completion % desc (2nd), today's intake ml desc (3rd)
         rankedList.sort((a, b) => {
             if (b.streak !== a.streak) return b.streak - a.streak;
             if (b.pct !== a.pct) return b.pct - a.pct;
             return b.intake - a.intake;
         });
 
-        // Add numerical rank (1-indexed)
         const finalLeaderboard = rankedList.map((item, index) => ({
             rank: index + 1,
             ...item
         }));
 
-        res.json({ leaderboard: finalLeaderboard });
+        res.json({ leaderboard: finalLeaderboard, date: todayKey });
     } catch (err) {
+        console.error('[leaderboard]', err.message);
         res.status(500).json({ error: "Failed to load leaderboard." });
     }
 });
+
 
 // Delete Account Permanently
 app.post('/api/auth/delete-account', async (req, res) => {
