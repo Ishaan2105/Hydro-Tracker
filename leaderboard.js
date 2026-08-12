@@ -293,7 +293,6 @@ function renderLeaderboardList(list, todayKey) {
                 </div>
             </div>
             <div class="item-meta">
-                <div class="item-pct-val">${intakeDisplay}</div>
                 <div class="item-streak-val">🔥 ${item.streak}d</div>
             </div>
         `;
