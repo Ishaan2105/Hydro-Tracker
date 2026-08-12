@@ -211,28 +211,28 @@ app.get('/api/leaderboard', async (req, res) => {
             } catch(e) {}
         }
 
-        // Today's date key in IST (matches how the app stores history)
-        const now = new Date();
-        const istOffset = 5.5 * 60 * 60 * 1000;
-        const istDate = new Date(now.getTime() + istOffset);
-        const todayKey = istDate.toISOString().split('T')[0]; // "YYYY-MM-DD"
+        // Today's date key in IST — same format the app uses for lastLogDate
+        const todayKey = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
 
         // Fetch users who have opted into the leaderboard
+        // Must include 'intake' — today's live intake is stored there until midnight reset
         const users = await User.find({ leaderboardOptIn: { $ne: false } })
-            .select('username goal streak lastLogDate history');
+            .select('username goal streak lastLogDate intake history');
 
         const rankedList = users.map(u => {
             const goal = u.goal || 2500;
 
-            // Pull today's intake from history map
+            // Today's intake:
+            // - If lastLogDate === today → user.intake is the live current-day value
+            // - Otherwise → user hasn't opened the app today yet, so intake is stale; use 0
+            //   (also check history[todayKey] as a fallback for edge cases)
             let todayIntake = 0;
-            if (u.history && u.history.get) {
-                const todayData = u.history.get(todayKey);
-                if (todayData && typeof todayData.intake === 'number') {
-                    todayIntake = todayData.intake;
-                }
-            } else if (u.history && u.history[todayKey]) {
-                todayIntake = u.history[todayKey].intake || 0;
+            if (u.lastLogDate === todayKey) {
+                todayIntake = u.intake || 0;
+            } else if (u.history) {
+                // Fallback: history map may have today's entry in rare edge cases
+                const todayData = u.history.get ? u.history.get(todayKey) : u.history[todayKey];
+                if (todayData) todayIntake = todayData.total || todayData.intake || 0;
             }
 
             const pct = Math.min(100, Math.round((todayIntake / goal) * 100));
