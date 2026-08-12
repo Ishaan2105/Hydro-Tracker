@@ -205,12 +205,12 @@ function updatePodiumCard(cardId, item) {
 
     if (item) {
         if (nameEl) nameEl.innerText = item.username.toUpperCase();
-        if (pctEl) pctEl.innerText = `🔥 ${item.streak}d • ${item.intake}ml`;
+        if (pctEl) pctEl.innerText = `🔥 ${item.streak}d • ${item.pct}%`;
         if (titleEl) titleEl.innerText = item.rankTitle;
         if (avatarEl) avatarEl.innerText = item.username[0].toUpperCase();
     } else {
         if (nameEl) nameEl.innerText = '--';
-        if (pctEl) pctEl.innerText = '0ml';
+        if (pctEl) pctEl.innerText = '0%';
         if (titleEl) titleEl.innerText = 'Empty';
     }
 }
@@ -293,6 +293,7 @@ function renderLeaderboardList(list, todayKey) {
                 </div>
             </div>
             <div class="item-meta">
+                <div class="item-pct-val">${cappedPct}%</div>
                 <div class="item-streak-val">🔥 ${item.streak}d</div>
             </div>
         `;
