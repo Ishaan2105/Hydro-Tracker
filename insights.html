@@ -133,30 +133,28 @@
                         <h3 class="calc-card-title">⚖️ Personalized Goal</h3>
                         <p class="calc-card-subtitle">Enter your details to calculate your ideal intake.</p>
                     </div>
-                    <div class="calc-unit-pill">
-                        <span class="calc-unit-label">Height Unit:</span>
-                        <select id="calc-height-unit" onchange="toggleHeightUnit()" class="calc-unit-select">
-                            <option value="ft_in" selected>Feet & Inches (ft + in)</option>
-                            <option value="cm">Centimeters (cm)</option>
-                        </select>
-                    </div>
                 </div>
 
                 <!-- 2x2 GRID CONTAINER -->
                 <div class="calc-grid-2x2">
-                    <!-- ROW 1 - LEFT: Height (Feet & Inches together) -->
-                    <div class="calc-grid-item" id="height-ft-in-container">
-                        <span class="calc-item-label">Height (ft + in)</span>
-                        <div class="calc-dual-inputs">
+                    <!-- ROW 1 - LEFT: Height with Height Unit selector beside label! -->
+                    <div class="calc-grid-item" id="height-card-item">
+                        <div class="calc-label-unit-row">
+                            <span class="calc-item-label" id="height-label-text">Height (ft + in)</span>
+                            <div class="calc-unit-inline">
+                                <select id="calc-height-unit" onchange="toggleHeightUnit()" class="calc-unit-select-inline">
+                                    <option value="ft_in" selected>ft + in</option>
+                                    <option value="cm">cm</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="calc-dual-inputs" id="height-ft-in-inputs">
                             <input type="number" id="height-ft" placeholder="0 ft" min="1" max="8" class="calc-input">
                             <input type="number" id="height-in" placeholder="0 in" min="0" max="11" class="calc-input">
                         </div>
-                    </div>
-
-                    <!-- ROW 1 - LEFT FALLBACK: Height (cm) -->
-                    <div class="calc-grid-item" id="height-cm-container" style="display:none;">
-                        <span class="calc-item-label">Height (cm)</span>
-                        <input type="number" id="height-cm" placeholder="0 cm" class="calc-input">
+                        <div id="height-cm-input-wrap" style="display:none;">
+                            <input type="number" id="height-cm" placeholder="0 cm" class="calc-input">
+                        </div>
                     </div>
 
                     <!-- ROW 1 - RIGHT: Weight (kg) -->

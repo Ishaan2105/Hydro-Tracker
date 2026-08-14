@@ -70,15 +70,18 @@ window.addEventListener('DOMContentLoaded', () => {
 
 function toggleHeightUnit() {
     const unit = document.getElementById('calc-height-unit')?.value || 'ft_in';
-    const ftInBox = document.getElementById('height-ft-in-container');
-    const cmBox = document.getElementById('height-cm-container');
+    const ftInInputs = document.getElementById('height-ft-in-inputs');
+    const cmInputWrap = document.getElementById('height-cm-input-wrap');
+    const labelText = document.getElementById('height-label-text');
 
     if (unit === 'ft_in') {
-        if (ftInBox) ftInBox.style.display = 'block';
-        if (cmBox) cmBox.style.display = 'none';
+        if (ftInInputs) ftInInputs.style.display = 'flex';
+        if (cmInputWrap) cmInputWrap.style.display = 'none';
+        if (labelText) labelText.innerText = 'Height (ft + in)';
     } else {
-        if (ftInBox) ftInBox.style.display = 'none';
-        if (cmBox) cmBox.style.display = 'block';
+        if (ftInInputs) ftInInputs.style.display = 'none';
+        if (cmInputWrap) cmInputWrap.style.display = 'block';
+        if (labelText) labelText.innerText = 'Height (cm)';
     }
 }
 
