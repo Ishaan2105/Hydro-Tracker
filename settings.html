@@ -156,24 +156,39 @@
                 <button id="set-target-btn" onclick="saveGlobalGoal()">Set Target</button>
             </div>
 
-            <!-- Age-based Ideal Intake Calculator -->
+            <!-- Age + Weight + Height Ideal Intake Calculator -->
             <div class="age-calc-divider"></div>
-            <div class="age-calc-row">
-                <div class="age-calc-label">
-                    <span class="age-calc-icon">🧮</span>
-                    <div>
-                        <strong>Ideal Intake Calculator</strong>
-                        <p style="font-size:0.78rem; color:#64748b; margin:2px 0 0;">Enter your age to get a recommended daily goal</p>
-                    </div>
-                </div>
-                <div class="age-calc-inputs">
-                    <input type="number" id="age-val" min="1" max="120" placeholder="Age" style="width:80px; text-align:center;">
-                    <button onclick="calcIdealIntake()" class="calc-btn">Calculate</button>
+            <div class="age-calc-label" style="margin-bottom:12px;">
+                <span class="age-calc-icon">🧮</span>
+                <div>
+                    <strong>Ideal Intake Calculator</strong>
+                    <p style="font-size:0.78rem; color:#64748b; margin:2px 0 0;">Based on your age, weight &amp; height</p>
                 </div>
             </div>
-            <div id="ideal-intake-result" style="display:none; margin-top:10px; padding:10px 14px; border-radius:10px;
+            <div class="age-calc-inputs-grid">
+                <div class="calc-input-group">
+                    <label class="calc-input-label">Age</label>
+                    <div class="calc-input-wrap">
+                        <input type="number" id="age-val" min="1" max="120" placeholder="yrs">
+                    </div>
+                </div>
+                <div class="calc-input-group">
+                    <label class="calc-input-label">Weight</label>
+                    <div class="calc-input-wrap">
+                        <input type="number" id="weight-val" min="1" max="300" placeholder="kg">
+                    </div>
+                </div>
+                <div class="calc-input-group">
+                    <label class="calc-input-label">Height</label>
+                    <div class="calc-input-wrap">
+                        <input type="number" id="height-val" min="30" max="250" placeholder="cm">
+                    </div>
+                </div>
+                <button onclick="calcIdealIntake()" class="calc-btn">⚡ Calculate</button>
+            </div>
+            <div id="ideal-intake-result" style="display:none; margin-top:12px; padding:12px 14px; border-radius:10px;
                 background:rgba(21,101,192,0.08); border:1px solid rgba(21,101,192,0.18);
-                font-size:0.85rem; color:#1565c0; font-weight:600; line-height:1.5;"></div>
+                font-size:0.85rem; color:#1565c0; font-weight:600; line-height:1.6;"></div>
         </section>
 
 

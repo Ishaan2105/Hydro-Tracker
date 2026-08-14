@@ -439,6 +439,46 @@ input:checked + .slider:before { transform: translateX(24px); }
     align-items: center;
     flex-shrink: 0;
 }
+
+/* 3-input grid for age+weight+height calculator */
+.age-calc-inputs-grid {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+.calc-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 64px;
+}
+.calc-input-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-secondary, #546e7a);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.calc-input-wrap input {
+    width: 100%;
+    text-align: center;
+    padding: 8px 6px;
+    border-radius: 10px;
+    border: 1.5px solid rgba(21,101,192,0.2);
+    background: rgba(255,255,255,0.6);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary, #0c4a6e);
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+.calc-input-wrap input:focus {
+    outline: none;
+    border-color: var(--accent, #1565c0);
+    background: rgba(255,255,255,0.9);
+}
 .calc-btn {
     padding: 8px 16px;
     border-radius: 20px;

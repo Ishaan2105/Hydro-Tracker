@@ -620,51 +620,79 @@ function closePassAccordion() {
     if (arrow) arrow.style.transform = 'rotate(0deg)';
 }
 
-/* ── Ideal Water Intake Calculator ── */
+/* ── Ideal Water Intake Calculator (Age + Weight + Height) ── */
 function calcIdealIntake() {
-    const ageInput = document.getElementById('age-val');
-    const resultEl = document.getElementById('ideal-intake-result');
-    if (!ageInput || !resultEl) return;
+    const ageInput    = document.getElementById('age-val');
+    const weightInput = document.getElementById('weight-val');
+    const heightInput = document.getElementById('height-val');
+    const resultEl    = document.getElementById('ideal-intake-result');
+    if (!resultEl) return;
 
-    const age = parseInt(ageInput.value, 10);
-    if (!age || age < 1 || age > 120) {
-        resultEl.style.display = 'block';
-        resultEl.innerHTML = '❌ Please enter a valid age (1–120).';
-        resultEl.style.color = '#c0392b';
+    const age    = parseInt(ageInput ? ageInput.value : '', 10);
+    const weight = parseFloat(weightInput ? weightInput.value : '');
+    const height = parseFloat(heightInput ? heightInput.value : '');
+
+    const errors = [];
+    if (!age    || age < 1    || age > 120)    errors.push('age (1–120 yrs)');
+    if (!weight || weight < 5  || weight > 300) errors.push('weight (5–300 kg)');
+    if (!height || height < 30 || height > 250) errors.push('height (30–250 cm)');
+
+    if (errors.length > 0) {
+        resultEl.style.display    = 'block';
+        resultEl.style.color      = '#c0392b';
+        resultEl.style.background = 'rgba(192,57,43,0.07)';
+        resultEl.style.border     = '1px solid rgba(192,57,43,0.2)';
+        resultEl.innerHTML = '❌ Please enter valid: ' + errors.join(', ') + '.';
         return;
     }
 
-    // Age-based ideal daily water intake (per medical/WHO guidelines)
-    let idealMl, note;
-    if (age <= 3) {
-        idealMl = 1300; note = 'Toddlers (1–3 yrs): ~1.3L/day';
-    } else if (age <= 8) {
-        idealMl = 1700; note = 'Children (4–8 yrs): ~1.7L/day';
-    } else if (age <= 13) {
-        idealMl = 2100; note = 'Pre-teens (9–13 yrs): ~2.1L/day';
-    } else if (age <= 18) {
-        idealMl = 2400; note = 'Teens (14–18 yrs): ~2.4L/day';
-    } else if (age <= 30) {
-        idealMl = 2700; note = 'Young adults (19–30 yrs): ~2.7L/day';
-    } else if (age <= 55) {
-        idealMl = 2500; note = 'Adults (31–55 yrs): ~2.5L/day';
-    } else if (age <= 70) {
-        idealMl = 2300; note = 'Seniors (56–70 yrs): ~2.3L/day';
-    } else {
-        idealMl = 2000; note = 'Elderly (70+ yrs): ~2.0L/day';
-    }
+    // ── Formula (EFSA / WHO dietary reference values) ──
+    // Step 1: Age-based ml/kg rate
+    let mlPerKg;
+    if      (age <= 3)  mlPerKg = 100;
+    else if (age <= 8)  mlPerKg = 75;
+    else if (age <= 13) mlPerKg = 55;
+    else if (age <= 18) mlPerKg = 45;
+    else if (age <= 30) mlPerKg = 38;
+    else if (age <= 55) mlPerKg = 35;
+    else if (age <= 70) mlPerKg = 30;
+    else                mlPerKg = 27;
 
-    const idealL = (idealMl / 1000).toFixed(1);
-    resultEl.style.display = 'block';
-    resultEl.style.color = '#1565c0';
+    // Step 2: Weight-based base intake
+    const base = weight * mlPerKg;
+
+    // Step 3: Height correction — taller = larger body surface → more fluid loss
+    // +6ml per cm above 160cm
+    const heightBonus = Math.max(0, (height - 160) * 6);
+
+    // Step 4: Total, rounded to nearest 50ml, clamped to 1–6L
+    let totalMl = Math.round((base + heightBonus) / 50) * 50;
+    totalMl = Math.max(1000, Math.min(totalMl, 6000));
+
+    const totalL  = (totalMl / 1000).toFixed(1);
+    const baseL   = (base / 1000).toFixed(2);
+    const bonusL  = (heightBonus / 1000).toFixed(2);
+    const diffCm  = Math.round(height - 160);
+    const diffStr = diffCm >= 0 ? '+' + diffCm : '' + diffCm;
+
+    resultEl.style.display    = 'block';
+    resultEl.style.color      = '#1565c0';
+    resultEl.style.background = 'rgba(21,101,192,0.08)';
+    resultEl.style.border     = '1px solid rgba(21,101,192,0.18)';
     resultEl.innerHTML = `
-        💧 <strong>Recommended: ${idealL}L / day</strong><br>
-        <span style="font-weight:400; font-size:0.8rem; color:#475569;">${note} &mdash; based on average body weight &amp; activity.</span>
-        <br><button onclick="applyIdealGoal(${idealMl})" style="
-            margin-top:8px; padding:6px 18px; border-radius:20px; border:none;
-            background:var(--accent,#1565c0); color:#fff; font-size:0.8rem;
+        💧 <strong>Recommended: ${totalL}L / day</strong><br>
+        <div style="margin-top:6px; padding:8px 10px; background:rgba(255,255,255,0.55);
+            border-radius:8px; font-size:0.78rem; font-weight:500; color:#475569; line-height:1.8;">
+            🧔 Weight × rate &nbsp;→&nbsp; <strong>${baseL}L</strong>
+            &nbsp;(${weight}kg × ${mlPerKg}ml/kg)<br>
+            📏 Height bonus &nbsp;→&nbsp; <strong>+${bonusL}L</strong>
+            &nbsp;(${height}cm, ${diffStr}cm vs 160cm baseline)
+        </div>
+        <button onclick="applyIdealGoal(${totalMl})" style="
+            margin-top:10px; padding:7px 20px; border-radius:20px; border:none;
+            background:var(--accent,#1565c0); color:#fff; font-size:0.82rem;
             font-weight:700; cursor:pointer; letter-spacing:0.03em;
-        ">✔️ Use ${idealL}L as my goal</button>
+        ">✔️ Use ${totalL}L as my goal</button>
     `;
 }
 
