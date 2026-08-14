@@ -134,7 +134,21 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     loadLeaderboard();
+    checkDuoAcceptedBanner();
 });
+
+function checkDuoAcceptedBanner() {
+    if (window.location.search.includes('duo_accepted=true')) {
+        setTimeout(() => {
+            if (typeof showToast === 'function') {
+                showToast("🎉 Hydration Duo activated! Welcome to your Co-Op Streak!");
+            }
+            try {
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } catch(e) {}
+        }, 800);
+    }
+}
 
 function toggleLogout() {
     const menu = document.getElementById('logout-menu');

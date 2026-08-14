@@ -945,19 +945,42 @@ app.get('/api/user/buddy/email-respond', async (req, res) => {
                 <!DOCTYPE html>
                 <html>
                 <head>
-                    <title>Hydration Duo Accepted</title>
+                    <title>Hydration Duo Accepted 🎉</title>
                     <meta name="viewport" content="width=device-width, initial-scale=1">
                     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;800&display=swap" rel="stylesheet">
+                    <style>
+                        body { font-family:'Outfit',sans-serif; text-align:center; padding:40px 20px; background:#f0f9ff; color:#0c4a6e; margin:0; }
+                        .card { max-width:480px; margin:40px auto; background:#fff; padding:36px 28px; border-radius:24px; box-shadow:0 12px 36px rgba(2,132,199,0.15); border:1px solid #e0f2fe; }
+                        .btn-open { display:inline-block; padding:14px 32px; background:linear-gradient(135deg,#0284c7,#0369a1); color:#fff; text-decoration:none; font-weight:800; border-radius:30px; font-size:0.95rem; box-shadow:0 6px 20px rgba(2,132,199,0.3); }
+                    </style>
                 </head>
-                <body style="font-family:'Outfit',sans-serif; text-align:center; padding:40px 20px; background:#f0f9ff; color:#0c4a6e; margin:0;">
-                    <div style="max-width:480px; margin:40px auto; background:#fff; padding:36px 28px; border-radius:24px; box-shadow:0 12px 36px rgba(2,132,199,0.15);">
+                <body>
+                    <div class="card">
                         <div style="font-size:3.5rem; margin-bottom:12px;">🎉</div>
                         <h2 style="color:#0284c7; margin-bottom:12px; font-size:1.6rem;">Hydration Duo Activated!</h2>
-                        <p style="font-size:1rem; line-height:1.6; color:#475569; margin-bottom:24px;">
+                        <p style="font-size:1rem; line-height:1.6; color:#475569; margin-bottom:20px;">
                             Awesome! You and <strong>${sender.username}</strong> are now official <strong>Hydration Duo</strong> partners!
                         </p>
-                        <a href="/leaderboard.html" style="display:inline-block; padding:14px 32px; background:linear-gradient(135deg,#0284c7,#0369a1); color:#fff; text-decoration:none; font-weight:800; border-radius:30px; font-size:0.95rem;">Go to Leaderboard 🏆</a>
+                        <p style="font-size:0.88rem; color:#0284c7; font-weight:700; margin-bottom:24px;" id="redirect-status">
+                            📲 Redirecting to HydroTracker App / Website in <span id="countdown">3</span>s...
+                        </p>
+                        <a href="/leaderboard.html?duo_accepted=true" id="app-btn" class="btn-open">Open App / Website 🚀</a>
                     </div>
+
+                    <script>
+                        let seconds = 3;
+                        const countdownEl = document.getElementById('countdown');
+                        const targetUrl = window.location.origin + '/leaderboard.html?duo_accepted=true';
+
+                        const timer = setInterval(() => {
+                            seconds--;
+                            if (countdownEl) countdownEl.textContent = seconds;
+                            if (seconds <= 0) {
+                                clearInterval(timer);
+                                window.location.href = targetUrl;
+                            }
+                        }, 1000);
+                    </script>
                 </body>
                 </html>
             `);
