@@ -933,6 +933,66 @@ app.get('/api/user/buddy/email-respond', async (req, res) => {
         target.markModified('incomingBuddyRequests');
 
         if (action === 'accept') {
+            // Check if sender (inviter) is already in an active duo with someone else
+            if (sender.buddy && sender.buddy.status === 'accepted' && sender.buddy.username.toLowerCase() !== target.username.toLowerCase()) {
+                await target.save();
+                return res.send(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Already in a Duo ⚠️</title>
+                        <meta name="viewport" content="width=device-width, initial-scale=1">
+                        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;800&display=swap" rel="stylesheet">
+                        <style>
+                            body { font-family:'Outfit',sans-serif; text-align:center; padding:40px 20px; background:#fefce8; color:#713f12; margin:0; }
+                            .card { max-width:480px; margin:40px auto; background:#fff; padding:36px 28px; border-radius:24px; box-shadow:0 12px 36px rgba(234,179,8,0.18); border:1px solid #fef08a; }
+                            .btn-open { display:inline-block; padding:14px 32px; background:linear-gradient(135deg,#ca8a04,#a16207); color:#fff; text-decoration:none; font-weight:800; border-radius:30px; font-size:0.95rem; box-shadow:0 6px 20px rgba(202,138,4,0.3); }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="card">
+                            <div style="font-size:3.5rem; margin-bottom:12px;">👥</div>
+                            <h2 style="color:#ca8a04; margin-bottom:12px; font-size:1.6rem;">Already In A Hydration Duo!</h2>
+                            <p style="font-size:1rem; line-height:1.6; color:#475569; margin-bottom:24px;">
+                                <strong>${sender.username}</strong> is already in an active Hydration Duo with <strong>${sender.buddy.username}</strong>.
+                            </p>
+                            <a href="/leaderboard.html" class="btn-open">Go to Leaderboard 🏆</a>
+                        </div>
+                    </body>
+                    </html>
+                `);
+            }
+
+            // Check if target (recipient) is already in an active duo with someone else
+            if (target.buddy && target.buddy.status === 'accepted' && target.buddy.username.toLowerCase() !== sender.username.toLowerCase()) {
+                await target.save();
+                return res.send(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>You're in a Duo ⚠️</title>
+                        <meta name="viewport" content="width=device-width, initial-scale=1">
+                        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;800&display=swap" rel="stylesheet">
+                        <style>
+                            body { font-family:'Outfit',sans-serif; text-align:center; padding:40px 20px; background:#fefce8; color:#713f12; margin:0; }
+                            .card { max-width:480px; margin:40px auto; background:#fff; padding:36px 28px; border-radius:24px; box-shadow:0 12px 36px rgba(234,179,8,0.18); border:1px solid #fef08a; }
+                            .btn-open { display:inline-block; padding:14px 32px; background:linear-gradient(135deg,#ca8a04,#a16207); color:#fff; text-decoration:none; font-weight:800; border-radius:30px; font-size:0.95rem; box-shadow:0 6px 20px rgba(202,138,4,0.3); }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="card">
+                            <div style="font-size:3.5rem; margin-bottom:12px;">⚠️</div>
+                            <h2 style="color:#ca8a04; margin-bottom:12px; font-size:1.6rem;">You Are Already In A Duo</h2>
+                            <p style="font-size:1rem; line-height:1.6; color:#475569; margin-bottom:24px;">
+                                You are currently paired up with <strong>${target.buddy.username}</strong>. Please unlink from your current partner first if you wish to join a new Duo.
+                            </p>
+                            <a href="/leaderboard.html" class="btn-open">Go to Leaderboard 🏆</a>
+                        </div>
+                    </body>
+                    </html>
+                `);
+            }
+
             target.buddy = { username: sender.username, status: 'accepted' };
             sender.buddy = { username: target.username, status: 'accepted' };
             
@@ -1038,6 +1098,16 @@ app.post('/api/user/buddy/respond', async (req, res) => {
         me.markModified('incomingBuddyRequests');
 
         if (action === 'accept' && sender) {
+            if (sender.buddy && sender.buddy.status === 'accepted' && sender.buddy.username.toLowerCase() !== me.username.toLowerCase()) {
+                await me.save();
+                return res.status(400).json({ error: `⚠️ ${sender.username} is already in an active Hydration Duo with ${sender.buddy.username}.` });
+            }
+
+            if (me.buddy && me.buddy.status === 'accepted' && me.buddy.username.toLowerCase() !== sender.username.toLowerCase()) {
+                await me.save();
+                return res.status(400).json({ error: `⚠️ You are already in an active Hydration Duo with ${me.buddy.username}. Please unlink first.` });
+            }
+
             me.buddy = { username: sender.username, status: 'accepted' };
             sender.buddy = { username: me.username, status: 'accepted' };
             
