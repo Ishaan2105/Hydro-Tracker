@@ -598,9 +598,80 @@ async function updatePassword() {
 }
 
 function clearPassFields() {
-    document.getElementById('curr-pass').value = "";
-    document.getElementById('new-pass').value = "";
-    document.getElementById('conf-pass').value = "";
+    const ids = ['curr-pass', 'new-pass', 'conf-pass'];
+    ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+}
+
+/* ── Password Accordion ── */
+function togglePassAccordion() {
+    const body  = document.getElementById('pass-accordion-body');
+    const arrow = document.getElementById('pass-accordion-arrow');
+    if (!body) return;
+    const isOpen = body.style.display !== 'none';
+    body.style.display = isOpen ? 'none' : 'block';
+    if (arrow) arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+}
+
+function closePassAccordion() {
+    clearPassFields();
+    const body  = document.getElementById('pass-accordion-body');
+    const arrow = document.getElementById('pass-accordion-arrow');
+    if (body)  body.style.display = 'none';
+    if (arrow) arrow.style.transform = 'rotate(0deg)';
+}
+
+/* ── Ideal Water Intake Calculator ── */
+function calcIdealIntake() {
+    const ageInput = document.getElementById('age-val');
+    const resultEl = document.getElementById('ideal-intake-result');
+    if (!ageInput || !resultEl) return;
+
+    const age = parseInt(ageInput.value, 10);
+    if (!age || age < 1 || age > 120) {
+        resultEl.style.display = 'block';
+        resultEl.innerHTML = '❌ Please enter a valid age (1–120).';
+        resultEl.style.color = '#c0392b';
+        return;
+    }
+
+    // Age-based ideal daily water intake (per medical/WHO guidelines)
+    let idealMl, note;
+    if (age <= 3) {
+        idealMl = 1300; note = 'Toddlers (1–3 yrs): ~1.3L/day';
+    } else if (age <= 8) {
+        idealMl = 1700; note = 'Children (4–8 yrs): ~1.7L/day';
+    } else if (age <= 13) {
+        idealMl = 2100; note = 'Pre-teens (9–13 yrs): ~2.1L/day';
+    } else if (age <= 18) {
+        idealMl = 2400; note = 'Teens (14–18 yrs): ~2.4L/day';
+    } else if (age <= 30) {
+        idealMl = 2700; note = 'Young adults (19–30 yrs): ~2.7L/day';
+    } else if (age <= 55) {
+        idealMl = 2500; note = 'Adults (31–55 yrs): ~2.5L/day';
+    } else if (age <= 70) {
+        idealMl = 2300; note = 'Seniors (56–70 yrs): ~2.3L/day';
+    } else {
+        idealMl = 2000; note = 'Elderly (70+ yrs): ~2.0L/day';
+    }
+
+    const idealL = (idealMl / 1000).toFixed(1);
+    resultEl.style.display = 'block';
+    resultEl.style.color = '#1565c0';
+    resultEl.innerHTML = `
+        💧 <strong>Recommended: ${idealL}L / day</strong><br>
+        <span style="font-weight:400; font-size:0.8rem; color:#475569;">${note} &mdash; based on average body weight &amp; activity.</span>
+        <br><button onclick="applyIdealGoal(${idealMl})" style="
+            margin-top:8px; padding:6px 18px; border-radius:20px; border:none;
+            background:var(--accent,#1565c0); color:#fff; font-size:0.8rem;
+            font-weight:700; cursor:pointer; letter-spacing:0.03em;
+        ">✔️ Use ${idealL}L as my goal</button>
+    `;
+}
+
+function applyIdealGoal(ml) {
+    const goalInput = document.getElementById('goal-val');
+    if (goalInput) goalInput.value = (ml / 1000).toFixed(1);
+    showToast('🧮 Goal pre-filled! Hit “Set Target” to save.');
 }
 
 function loadReminders() {

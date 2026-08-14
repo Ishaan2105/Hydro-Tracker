@@ -155,6 +155,25 @@
                 <input type="number" id="goal-val" step="0.1" placeholder="--">
                 <button id="set-target-btn" onclick="saveGlobalGoal()">Set Target</button>
             </div>
+
+            <!-- Age-based Ideal Intake Calculator -->
+            <div class="age-calc-divider"></div>
+            <div class="age-calc-row">
+                <div class="age-calc-label">
+                    <span class="age-calc-icon">🧮</span>
+                    <div>
+                        <strong>Ideal Intake Calculator</strong>
+                        <p style="font-size:0.78rem; color:#64748b; margin:2px 0 0;">Enter your age to get a recommended daily goal</p>
+                    </div>
+                </div>
+                <div class="age-calc-inputs">
+                    <input type="number" id="age-val" min="1" max="120" placeholder="Age" style="width:80px; text-align:center;">
+                    <button onclick="calcIdealIntake()" class="calc-btn">Calculate</button>
+                </div>
+            </div>
+            <div id="ideal-intake-result" style="display:none; margin-top:10px; padding:10px 14px; border-radius:10px;
+                background:rgba(21,101,192,0.08); border:1px solid rgba(21,101,192,0.18);
+                font-size:0.85rem; color:#1565c0; font-weight:600; line-height:1.5;"></div>
         </section>
 
 
@@ -233,23 +252,32 @@
             </div>
         </section>
 
+        <!-- 🔒 Change Password (accordion) -->
         <section class="settings-card">
-            <h3>🔒 Change Password</h3>
-            <div class="pass-box">
-                <input type="password" id="curr-pass" placeholder="Current Password" autocomplete="new-password">
-                <span class="eye" onclick="togglePass('curr-pass')">👁️</span>
+            <div class="pass-accordion-header" onclick="togglePassAccordion()" id="pass-accordion-header">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:1.2rem;">🔒</span>
+                    <span style="font-weight:700; font-size:1rem; color:var(--text-primary,#0c4a6e);">Change Password</span>
+                </div>
+                <span class="pass-accordion-arrow" id="pass-accordion-arrow">▾</span>
             </div>
-            <div class="pass-box">
-                <input type="password" id="new-pass" placeholder="New Password" autocomplete="new-password">
-                <span class="eye" onclick="togglePass('new-pass')">👁️</span>
-            </div>
-            <div class="pass-box">
-                <input type="password" id="conf-pass" placeholder="Confirm New Password" autocomplete="new-password">
-                <span class="eye" onclick="togglePass('conf-pass')">👁️</span>
-            </div>
-            <div class="btn-group">
-                <button class="btn-save" onclick="updatePassword()">Set New Password</button>
-                <button class="btn-cancel" onclick="clearPassFields()">Cancel</button>
+            <div id="pass-accordion-body" style="display:none; margin-top:14px;">
+                <div class="pass-box">
+                    <input type="password" id="curr-pass" placeholder="Current Password" autocomplete="new-password">
+                    <span class="eye" onclick="togglePass('curr-pass')">👁️</span>
+                </div>
+                <div class="pass-box">
+                    <input type="password" id="new-pass" placeholder="New Password" autocomplete="new-password">
+                    <span class="eye" onclick="togglePass('new-pass')">👁️</span>
+                </div>
+                <div class="pass-box">
+                    <input type="password" id="conf-pass" placeholder="Confirm New Password" autocomplete="new-password">
+                    <span class="eye" onclick="togglePass('conf-pass')">👁️</span>
+                </div>
+                <div class="btn-group">
+                    <button class="btn-save" onclick="updatePassword()">Set New Password</button>
+                    <button class="btn-cancel" onclick="closePassAccordion()">Cancel</button>
+                </div>
             </div>
         </section>
 
