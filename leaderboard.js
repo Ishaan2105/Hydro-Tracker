@@ -968,17 +968,20 @@ function handleBuddySearchInput(inputEl) {
 
                 const lowerUser = uname.toLowerCase();
                 const lowerQuery = query.toLowerCase();
-                let innerHtml = '';
+                let matchHtml = '';
 
                 if (lowerUser.startsWith(lowerQuery)) {
                     const matchPart = uname.substring(0, query.length);
                     const restPart = uname.substring(query.length);
-                    innerHtml = `<span class="match-highlight">${escapeHtml(matchPart)}</span><span>${escapeHtml(restPart)}</span>`;
+                    matchHtml = `<span class="match-highlight">${escapeHtml(matchPart)}</span><span class="rest-text">${escapeHtml(restPart)}</span>`;
                 } else {
-                    innerHtml = `<span>${escapeHtml(uname)}</span>`;
+                    matchHtml = `<span>${escapeHtml(uname)}</span>`;
                 }
 
-                item.innerHTML = `👤 ${innerHtml}`;
+                item.innerHTML = `
+                    <div>👤 ${matchHtml}</div>
+                    <span style="font-size:0.7rem; opacity:0.6; font-weight:700;">Select ↵</span>
+                `;
 
                 item.onclick = function() {
                     inputEl.value = uname;
