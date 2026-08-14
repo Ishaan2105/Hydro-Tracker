@@ -484,31 +484,100 @@ function sendCoachMessage() {
     setTimeout(() => processCoachQuery(msg), 400);
 }
 
-/* ── Active alarms store ── */
-var coachAlarms = []; // { id, label, timeoutId, fireAt }
+/* ══════════════════════════════════════════════════════════════
+   ⏰  COACH ALARM ENGINE — localStorage-persisted
+   Survives page refresh / navigation. Fires via sendSystemNotification.
+══════════════════════════════════════════════════════════════ */
+var coachAlarms = [];           // runtime list (timeoutIds)
+var _alarmTimeouts = {};        // id → timeoutId mapping
 
+const ALARM_STORE_KEY = 'hydrotrack_coach_alarms';
+
+/* Save pending alarms to localStorage (without timeoutIds — those can't be serialised) */
+function saveAlarmsToStorage() {
+    const toSave = coachAlarms.map(a => ({
+        id:      a.id,
+        label:   a.label,
+        fireAt:  a.fireAt,          // ISO string
+        fireStr: a.fireStr,
+        pct:     a.pct
+    })).filter(a => new Date(a.fireAt) > new Date()); // only future alarms
+    try { localStorage.setItem(ALARM_STORE_KEY, JSON.stringify(toSave)); } catch(e) {}
+}
+
+/* Fire a single alarm by its record */
+function fireAlarm(alarm) {
+    if (typeof sendSystemNotification === 'function') {
+        sendSystemNotification(
+            '💧 Hydration Reminder',
+            `Coach reminder: "${alarm.label}"\nYou were at ${alarm.pct}% when this was set.`
+        );
+    } else {
+        showToast('⏰ Coach: Time to drink water!');
+    }
+    // Remove from lists
+    coachAlarms = coachAlarms.filter(a => a.id !== alarm.id);
+    delete _alarmTimeouts[alarm.id];
+    saveAlarmsToStorage();
+}
+
+/* Register a single alarm into the runtime (schedules the timeout) */
+function registerAlarm(alarm) {
+    const delayMs = new Date(alarm.fireAt) - Date.now();
+    if (delayMs <= 0) return; // already passed, skip silently
+    const tid = setTimeout(() => fireAlarm(alarm), delayMs);
+    _alarmTimeouts[alarm.id] = tid;
+    // add to runtime list only if not already there
+    if (!coachAlarms.find(a => a.id === alarm.id)) coachAlarms.push(alarm);
+}
+
+/* ── Called once at DOMContentLoaded to restore alarms after refresh ── */
+function restoreCoachAlarms() {
+    try {
+        const raw = localStorage.getItem(ALARM_STORE_KEY);
+        if (!raw) return;
+        const saved = JSON.parse(raw);
+        let restored = 0;
+        saved.forEach(alarm => {
+            if (new Date(alarm.fireAt) > new Date()) {
+                registerAlarm(alarm);
+                restored++;
+            }
+        });
+        if (restored > 0) saveAlarmsToStorage(); // clean expired ones
+    } catch(e) {}
+}
+
+/* ── Schedule a brand-new alarm ── */
 function scheduleCoachAlarm(delayMs, label, pct) {
-    const fireAt = new Date(Date.now() + delayMs);
+    const fireAt  = new Date(Date.now() + delayMs);
     const fireStr = fireAt.toLocaleTimeString('en-IN', {
         hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata'
     });
-
-    const timeoutId = setTimeout(() => {
-        // Fire notification
-        if (Notification.permission === 'granted') {
-            new Notification('💧 Hydration Reminder', {
-                body: `Time to drink water! You were at ${pct}% when this was set.`,
-                icon: 'icon-192.png'
-            });
-        }
-        showToast('⏰ Hydration Coach: Time to drink water!');
-        // Remove from list
-        coachAlarms = coachAlarms.filter(a => a.timeoutId !== timeoutId);
-    }, delayMs);
-
-    const alarm = { id: Date.now(), label, timeoutId, fireAt, fireStr };
-    coachAlarms.push(alarm);
+    const alarm = {
+        id:      Date.now(),
+        label,
+        pct,
+        fireAt:  fireAt.toISOString(),
+        fireStr
+    };
+    registerAlarm(alarm);
+    saveAlarmsToStorage();
     return alarm;
+}
+
+/* ── Cancel all active alarms ── */
+function cancelAllCoachAlarms() {
+    Object.values(_alarmTimeouts).forEach(tid => clearTimeout(tid));
+    _alarmTimeouts = {};
+    coachAlarms    = [];
+    saveAlarmsToStorage();
+}
+
+/* ── List alarms (future only) ── */
+function getPendingAlarms() {
+    const now = Date.now();
+    return coachAlarms.filter(a => new Date(a.fireAt) > now);
 }
 
 /* Parse a natural-language time string → milliseconds delay from now, or null */
@@ -610,22 +679,22 @@ function processCoachQuery(query) {
 
         // Cancel all alarms
         if (q.includes('cancel') || q.includes('stop') || q.includes('clear') || q.includes('remove')) {
-            if (coachAlarms.length === 0) {
+            const pending = getPendingAlarms();
+            if (pending.length === 0) {
                 reply = "You don't have any active alarms to cancel.";
             } else {
-                coachAlarms.forEach(a => clearTimeout(a.timeoutId));
-                const count = coachAlarms.length;
-                coachAlarms = [];
-                reply = `🗑️ Cancelled **${count}** alarm${count > 1 ? 's' : ''}. All clear!`;
+                cancelAllCoachAlarms();
+                reply = `🗑️ Cancelled **${pending.length}** alarm${pending.length > 1 ? 's' : ''}. All clear!`;
             }
 
         // List active alarms
         } else if (q.includes('list') || q.includes('show') || q.includes('what alarms') || q.includes('my alarm')) {
-            if (coachAlarms.length === 0) {
+            const pending = getPendingAlarms();
+            if (pending.length === 0) {
                 reply = "You have no active alarms. Say something like **\"remind me at 5pm\"** or **\"set alarm in 1 hour\"** to set one!";
             } else {
-                const list = coachAlarms.map((a, i) => `  ${i+1}. ⏰ ${a.label} at **${a.fireStr}**`).join('\n');
-                reply = `You have **${coachAlarms.length}** active alarm${coachAlarms.length > 1 ? 's' : ''}:\n${list}`;
+                const list = pending.map((a, i) => `  ${i+1}. ⏰ ${a.label} → **${a.fireStr}**`).join('\n');
+                reply = `You have **${pending.length}** active alarm${pending.length > 1 ? 's' : ''}:\n${list}`;
             }
 
         // Set a new alarm
@@ -1643,9 +1712,11 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         updatePWAInstallButtons();
         if (isIOS() && !isAppStandalone()) setTimeout(showIOSInstallBanner, 1500);
+        restoreCoachAlarms(); // ⏰ Re-register any coach alarms saved before this page refresh
     });
 } else {
     updatePWAInstallButtons();
     if (isIOS() && !isAppStandalone()) setTimeout(showIOSInstallBanner, 1500);
+    restoreCoachAlarms(); // ⏰ Re-register any coach alarms saved before this page refresh
 }
 
