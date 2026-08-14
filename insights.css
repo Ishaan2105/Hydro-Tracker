@@ -963,6 +963,9 @@ input[type="time"] {
 
 /* ── Meals Accordion Dropdown ── */
 .meals-accordion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     cursor: pointer;
     padding: 6px 0;
     border-radius: 10px;
