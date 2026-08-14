@@ -152,7 +152,7 @@ function calculateHydration() {
     totalMl = Math.max(1000, Math.min(totalMl, 6000));
 
     const totalL = (totalMl / 1000).toFixed(1);
-    const genderLabel = gender === 'male' ? 'Male 👨' : 'Female 👩';
+    const genderLabel = gender === 'male' ? 'Male' : 'Female';
 
     if (resultBox)     resultBox.style.display = 'block';
     if (displayLiters) displayLiters.innerText = totalL + ' L (' + totalMl + ' ml)';

@@ -127,15 +127,15 @@
 
         <!-- ⚖️ Personalized Goal Calculator -->
         <section class="calculator-section">
-            <div class="insight-card">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; margin-bottom:6px;">
+            <div class="insight-card calc-card-wrapper">
+                <div class="calc-card-header">
                     <div>
-                        <h3 style="margin-bottom:4px;">⚖️ Personalized Goal</h3>
-                        <p style="margin:0; font-size:0.88rem; color:var(--text-secondary,#546e7a);">Enter your details to calculate your ideal intake.</p>
+                        <h3 class="calc-card-title">⚖️ Personalized Goal</h3>
+                        <p class="calc-card-subtitle">Enter your details to calculate your ideal intake.</p>
                     </div>
-                    <div style="display:flex; align-items:center; gap:6px; background:rgba(255,255,255,0.5); padding:4px 10px; border-radius:10px; border:1px solid rgba(0,0,0,0.08);">
-                        <span style="font-size:0.75rem; font-weight:700; color:var(--text-secondary,#546e7a);">Height Unit:</span>
-                        <select id="calc-height-unit" onchange="toggleHeightUnit()" style="border:none; background:transparent; font-size:0.78rem; font-weight:800; color:var(--accent,#1565c0); outline:none; cursor:pointer;">
+                    <div class="calc-unit-pill">
+                        <span class="calc-unit-label">Height Unit:</span>
+                        <select id="calc-height-unit" onchange="toggleHeightUnit()" class="calc-unit-select">
                             <option value="ft_in" selected>Feet & Inches (ft + in)</option>
                             <option value="cm">Centimeters (cm)</option>
                         </select>
@@ -147,46 +147,46 @@
                     <!-- ROW 1 - LEFT: Height (Feet & Inches together) -->
                     <div class="calc-grid-item" id="height-ft-in-container">
                         <span class="calc-item-label">Height (ft + in)</span>
-                        <div style="display:flex; gap:8px;">
-                            <input type="number" id="height-ft" placeholder="5 ft" min="1" max="8" style="flex:1; text-align:center;">
-                            <input type="number" id="height-in" placeholder="7 in" min="0" max="11" style="flex:1; text-align:center;">
+                        <div class="calc-dual-inputs">
+                            <input type="number" id="height-ft" placeholder="5 ft" min="1" max="8" class="calc-input">
+                            <input type="number" id="height-in" placeholder="7 in" min="0" max="11" class="calc-input">
                         </div>
                     </div>
 
                     <!-- ROW 1 - LEFT FALLBACK: Height (cm) -->
                     <div class="calc-grid-item" id="height-cm-container" style="display:none;">
                         <span class="calc-item-label">Height (cm)</span>
-                        <input type="number" id="height-cm" placeholder="Height (cm)">
+                        <input type="number" id="height-cm" placeholder="Height (cm)" class="calc-input">
                     </div>
 
                     <!-- ROW 1 - RIGHT: Weight (kg) -->
                     <div class="calc-grid-item">
                         <span class="calc-item-label">Weight (kg)</span>
-                        <input type="number" id="weight" placeholder="Weight (kg)">
+                        <input type="number" id="weight" placeholder="Weight (kg)" class="calc-input">
                     </div>
 
                     <!-- ROW 2 - LEFT: Age (yrs) -->
                     <div class="calc-grid-item">
                         <span class="calc-item-label">Age (yrs)</span>
-                        <input type="number" id="age" placeholder="Age (yrs)" min="1" max="120">
+                        <input type="number" id="age" placeholder="Age (yrs)" min="1" max="120" class="calc-input">
                     </div>
 
                     <!-- ROW 2 - RIGHT: Gender (Male / Female) -->
                     <div class="calc-grid-item">
                         <span class="calc-item-label">Gender</span>
                         <select id="gender" class="calc-gender-select">
-                            <option value="male" selected>Male 👨</option>
-                            <option value="female">Female 👩</option>
+                            <option value="male" selected>Male</option>
+                            <option value="female">Female</option>
                         </select>
                     </div>
                 </div>
 
-                <button class="calc-btn" onclick="calculateHydration()" style="margin-top:12px;">Calculate My Goal</button>
+                <button class="calc-submit-btn" onclick="calculateHydration()">Calculate My Goal</button>
 
                 <div id="calc-result" class="result-box" style="display: none;">
-                    <p>Suggested Daily Intake:</p>
+                    <p class="result-box-subtitle">Suggested Daily Intake:</p>
                     <h2 id="suggested-liters">0.0 L</h2>
-                    <div id="calc-breakdown" style="font-size:0.78rem; color:#475569; margin: 4px 0 10px; line-height:1.7;"></div>
+                    <div id="calc-breakdown" class="result-breakdown"></div>
                     <button class="apply-btn" onclick="applyGoal()">Set as My Goal</button>
                 </div>
             </div>
