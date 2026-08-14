@@ -9,6 +9,8 @@ const path = require('path');
 const webpush = require('web-push');
 const cron = require('node-cron');
 
+const JWT_SECRET = process.env.JWT_SECRET || 'hydrotrack_super_secret_jwt_key_2026';
+
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
@@ -203,7 +205,7 @@ app.post('/api/auth/login', async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
 
-    const token = jwt.sign({ id: user._id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '365d' });
+    const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET, { expiresIn: '365d' });
     res.json({ token, user });
 });
 
@@ -215,7 +217,7 @@ app.get('/api/leaderboard', async (req, res) => {
         if (authHeader && authHeader.startsWith('Bearer ')) {
             try {
                 const token = authHeader.split(' ')[1];
-                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                const decoded = jwt.verify(token, JWT_SECRET);
                 currentUserId = decoded.id;
             } catch(e) {}
         }
@@ -394,7 +396,7 @@ app.post('/api/auth/delete-account', async (req, res) => {
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, JWT_SECRET);
         const user = await User.findById(decoded.id);
 
         if (!user) {
@@ -420,7 +422,7 @@ app.post('/api/auth/delete-account', async (req, res) => {
 app.post('/api/user/sync', async (req, res) => {
     const { token, userData } = req.body;
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, JWT_SECRET);
         
         // Use $set to only update the specific fields provided
         // This protects against accidentally deleting fields not sent in the request
@@ -446,7 +448,7 @@ app.post('/api/push/subscribe', async (req, res) => {
         return res.status(400).json({ error: "Invalid subscription" });
     }
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, JWT_SECRET);
         const user = await User.findById(decoded.id);
         if (!user) return res.status(404).json({ error: "User not found" });
 
@@ -474,7 +476,7 @@ app.post('/api/push/subscribe', async (req, res) => {
 app.post('/api/push/test', async (req, res) => {
     const { token } = req.body;
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, JWT_SECRET);
         const user = await User.findById(decoded.id);
         if (!user || !user.pushSubscriptions || user.pushSubscriptions.length === 0) {
             return res.status(400).json({ error: "No active push subscription found for your account. Please click 'Enable Notifications'." });
@@ -521,7 +523,7 @@ app.post('/api/push/test', async (req, res) => {
 app.post('/api/auth/update-password', async (req, res) => {
     const { token, currentPassword, newPassword } = req.body;
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, JWT_SECRET);
         const user = await User.findById(decoded.id);
         if (!user) return res.status(404).json({ error: "User not found." });
 
@@ -542,7 +544,7 @@ app.post('/api/auth/update-password', async (req, res) => {
 app.get('/api/user/data', async (req, res) => {
     const token = req.headers.authorization?.split(' ')[1];
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, JWT_SECRET);
         let user = await User.findById(decoded.id).select('-password');
         
         const todayISO = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
