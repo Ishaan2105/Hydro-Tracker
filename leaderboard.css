@@ -687,17 +687,18 @@ header h1 {
     gap: 10px;
 }
 .btn-nudge-buddy {
-    flex: 2;
+    flex: 1;
     background: linear-gradient(135deg, #0284c7, #0369a1);
     color: #fff;
     border: none;
     border-radius: 14px;
-    padding: 10px;
+    padding: 10px 14px;
     font-weight: 700;
     font-size: 0.85rem;
     cursor: pointer;
     box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
     transition: transform 0.15s ease;
+    white-space: nowrap;
 }
 .btn-unlink-buddy {
     flex: 1;
@@ -705,11 +706,12 @@ header h1 {
     color: #be123c;
     border: 1px solid rgba(244, 63, 94, 0.3);
     border-radius: 14px;
-    padding: 10px;
+    padding: 10px 14px;
     font-weight: 700;
-    font-size: 0.82rem;
+    font-size: 0.85rem;
     cursor: pointer;
     transition: background 0.15s ease;
+    white-space: nowrap;
 }
 .btn-nudge-buddy:hover { transform: scale(1.02); }
 .btn-unlink-buddy:hover { background: rgba(244, 63, 94, 0.2); }
