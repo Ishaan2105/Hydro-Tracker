@@ -130,8 +130,11 @@
         <!-- TOP STATS OVERVIEW -->
         <section class="stats-overview">
             <div class="stat-grid">
-                <div class="stat-card-wide">
-                    <small>🧜‍♂️ Hydration Rank</small>
+                <div class="stat-card-wide rank-card-clickable" onclick="openRanksModal()" title="Click to view all ranks & percentages" style="cursor: pointer;">
+                    <small style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>🧜‍♂️ Hydration Rank</span>
+                        <span style="font-size:0.75rem; color:var(--accent,#0284c7); font-weight:800; background:rgba(2,132,199,0.1); padding:2px 8px; border-radius:10px;">ℹ️ View All</span>
+                    </small>
                     <h2 id="rank-display">Desert Dweller</h2>
                 </div>
                 <div class="stat-card-wide">
@@ -189,6 +192,36 @@
             </section>
         </div>
     </main>
+
+    <!-- 🧜‍♂️ ALL HYDRATION RANKS MODAL -->
+    <div id="ranks-modal" class="ranks-modal-overlay" style="display:none;" onclick="handleModalBackdropClick(event)">
+        <div class="ranks-modal-content">
+            <div class="ranks-modal-header">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:1.6rem;">🧜‍♂️</span>
+                    <div>
+                        <h3 style="margin:0; font-size:1.15rem; color:var(--accent,#0284c7); font-weight:900;">All Hydration Ranks</h3>
+                        <p style="margin:2px 0 0 0; font-size:0.8rem; color:var(--text-secondary,#546e7a);">Daily intake goal completion percentages</p>
+                    </div>
+                </div>
+                <!-- CROSS SYMBOL TO GO BACK / CLOSE -->
+                <button class="ranks-modal-close-btn" onclick="closeRanksModal()" title="Close & Go Back">✖</button>
+            </div>
+
+            <div class="ranks-modal-body">
+                <!-- CURRENT RANK BANNER -->
+                <div id="modal-current-rank-banner" class="modal-current-rank-banner">
+                    <span class="modal-banner-subtitle">YOUR CURRENT RANK FOR SELECTED DATE</span>
+                    <h2 id="modal-current-rank-title" class="modal-banner-title">🌵 Desert Dweller</h2>
+                </div>
+
+                <!-- RANKS LIST GRID -->
+                <div class="ranks-list-grid" id="ranks-list-container">
+                    <!-- Dynamically filled by history.js -->
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- EFFECTS -->
     <div id="waves-bg"></div>

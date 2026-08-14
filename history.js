@@ -366,6 +366,7 @@ function loadDateStats() {
 
     const dailyGoal = data.goal || 2500;
     const dailyPct = Math.round((displayVolume / dailyGoal) * 100);
+    window.currentSelectedDatePct = dailyPct;
 
     /* ============================================================
        2. HYDRATION RANK
@@ -1011,4 +1012,84 @@ function calculateLifetimeStats() {
 
     if (lifetimeLitersEl) lifetimeLitersEl.innerText = `${(totalMl / 1000).toFixed(1)} L`;
     if (perfectDaysEl) perfectDaysEl.innerText = `${perfectDays} Days`;
+}
+
+/* ============================================================
+   7. 🧜‍♂️ ALL HYDRATION RANKS MODAL LOGIC
+============================================================ */
+const ALL_HYDRATION_RANKS = [
+    { minPct: 0,  maxPct: 9,   name: "Desert Dweller",    icon: "🌵", rangeStr: "0% – 9%" },
+    { minPct: 10, maxPct: 19,  name: "Mist Seeker",       icon: "🌫️", rangeStr: "10% – 19%" },
+    { minPct: 20, maxPct: 29,  name: "Dew Dropper",       icon: "🧊", rangeStr: "20% – 29%" },
+    { minPct: 30, maxPct: 39,  name: "Puddle Jumper",     icon: "💧", rangeStr: "30% – 39%" },
+    { minPct: 40, maxPct: 49,  name: "Stream Sailor",     icon: "🛶", rangeStr: "40% – 49%" },
+    { minPct: 50, maxPct: 59,  name: "River Guide",       icon: "🚣", rangeStr: "50% – 59%" },
+    { minPct: 60, maxPct: 69,  name: "Current Commander", icon: "🌊", rangeStr: "60% – 69%" },
+    { minPct: 70, maxPct: 79,  name: "Wave Rider",        icon: "🏄", rangeStr: "70% – 79%" },
+    { minPct: 80, maxPct: 89,  name: "Shield Guardian",   icon: "🛡️", rangeStr: "80% – 89%" },
+    { minPct: 90, maxPct: 999, name: "Ocean Master",      icon: "🔱", rangeStr: "90% – 100%+" }
+];
+
+function openRanksModal() {
+    const modal = document.getElementById('ranks-modal');
+    if (!modal) return;
+
+    renderRanksModalContent();
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeRanksModal() {
+    const modal = document.getElementById('ranks-modal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+function handleModalBackdropClick(e) {
+    if (e.target.id === 'ranks-modal') {
+        closeRanksModal();
+    }
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeRanksModal();
+});
+
+function renderRanksModalContent() {
+    const bannerTitle = document.getElementById('modal-current-rank-title');
+    const container = document.getElementById('ranks-list-container');
+    if (!container) return;
+
+    const pct = typeof window.currentSelectedDatePct !== 'undefined' ? window.currentSelectedDatePct : 0;
+
+    let activeRank = ALL_HYDRATION_RANKS[0];
+    for (let r of ALL_HYDRATION_RANKS) {
+        if (pct >= r.minPct) {
+            activeRank = r;
+        }
+    }
+
+    if (bannerTitle) {
+        bannerTitle.innerHTML = `${activeRank.icon} ${activeRank.name} <small style="font-size:0.85rem; font-weight:700; opacity:0.8;">(${pct}% of daily target)</small>`;
+    }
+
+    container.innerHTML = ALL_HYDRATION_RANKS.map(r => {
+        const isActive = (r.name === activeRank.name);
+        return `
+            <div class="rank-modal-tile ${isActive ? 'active-rank-tile' : ''}">
+                <div class="rank-tile-left">
+                    <span class="rank-tile-icon">${r.icon}</span>
+                    <div class="rank-tile-info">
+                        <strong class="rank-tile-name">${r.name}</strong>
+                        <span class="rank-tile-range">Intake Target: <strong>${r.rangeStr}</strong></span>
+                    </div>
+                </div>
+                <div class="rank-tile-right">
+                    ${isActive 
+                        ? `<span class="rank-active-badge">✓ ACTIVE</span>` 
+                        : `<span class="rank-pct-badge">${r.rangeStr}</span>`}
+                </div>
+            </div>
+        `;
+    }).join('');
 }
