@@ -303,33 +303,40 @@
 
         <section class="meals-section">
             <div class="insight-card">
-                <h3>Meal Times</h3>
-                <p>Set times to receive post-meal reminders.</p>
-                
-                <div class="meal-input-group">
-                    <div class="meal-row">
-                        <label>🍳 Breakfast</label>
-                        <div class="time-container">
-                            <input type="time" id="bfast-time">
-                            <span class="time-label" id="bfast-display">--:-- --</span>
-                        </div>
+                <div class="meals-accordion-header" onclick="toggleMealsAccordion()" id="meals-accordion-header">
+                    <div>
+                        <h3 style="margin:0;">🍽️ Meal Times</h3>
+                        <p style="margin:4px 0 0 0; font-size:0.85rem; color:var(--text-secondary, #475569);">Set times to receive post-meal reminders.</p>
                     </div>
-                    <div class="meal-row">
-                        <label>🥗 Lunch</label>
-                        <div class="time-container">
-                            <input type="time" id="lunch-time">
-                            <span class="time-label" id="lunch-display">--:-- --</span>
-                        </div>
-                    </div>
-                    <div class="meal-row">
-                        <label>🍽️ Dinner</label>
-                        <div class="time-container">
-                            <input type="time" id="dinner-time">
-                            <span class="time-label" id="dinner-display">--:-- --</span>
-                        </div>
-                    </div>
+                    <span class="meals-accordion-arrow" id="meals-accordion-arrow">▾</span>
                 </div>
-                <button class="save-meals-btn" onclick="saveMealSchedule()">Save Schedule</button>
+                
+                <div id="meals-accordion-body" style="display: none; margin-top: 16px;">
+                    <div class="meal-input-group">
+                        <div class="meal-row">
+                            <label>🍳 Breakfast</label>
+                            <div class="time-container">
+                                <input type="time" id="bfast-time">
+                                <span class="time-label" id="bfast-display">--:-- --</span>
+                            </div>
+                        </div>
+                        <div class="meal-row">
+                            <label>🥗 Lunch</label>
+                            <div class="time-container">
+                                <input type="time" id="lunch-time">
+                                <span class="time-label" id="lunch-display">--:-- --</span>
+                            </div>
+                        </div>
+                        <div class="meal-row">
+                            <label>🍽️ Dinner</label>
+                            <div class="time-container">
+                                <input type="time" id="dinner-time">
+                                <span class="time-label" id="dinner-display">--:-- --</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="save-meals-btn" onclick="saveMealSchedule()">Save Schedule</button>
+                </div>
             </div>
         </section>
     </main>

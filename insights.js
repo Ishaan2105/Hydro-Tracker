@@ -186,6 +186,21 @@ async function saveMealSchedule() {
     showToast("🥗 Meal schedule synced to cloud!");
 }
 
+function toggleMealsAccordion() {
+    const body = document.getElementById('meals-accordion-body');
+    const arrow = document.getElementById('meals-accordion-arrow');
+    if (!body) return;
+    const isHidden = body.style.display === 'none' || !body.style.display;
+    if (isHidden) {
+        body.style.display = 'block';
+        if (arrow) arrow.textContent = '▴';
+    } else {
+        body.style.display = 'none';
+        if (arrow) arrow.textContent = '▾';
+    }
+}
+
+
 const RANKS_TIERS = [
     { min: 0,  max: 9,   name: "Desert Dweller",   icon: "🌵", nextReqPct: 10 },
     { min: 10, max: 19,  name: "Mist Seeker",      icon: "🌫️", nextReqPct: 20 },
