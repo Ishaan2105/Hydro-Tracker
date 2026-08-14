@@ -844,3 +844,249 @@ svg { width: 100%; height: 100%; transform: rotate(-90deg); }
     height: 100%;
 }
 
+/* ================================================================
+   ⚠️  STREAK RISK BANNER
+================================================================ */
+.streak-risk-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 12px 16px;
+    padding: 12px 16px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(255,152,0,0.18), rgba(244,67,54,0.15));
+    border: 1.5px solid rgba(255,152,0,0.35);
+    backdrop-filter: blur(10px);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #b45309;
+    line-height: 1.4;
+    animation: slideDown 0.35s ease;
+    position: relative;
+    z-index: 10;
+}
+.streak-risk-banner #streak-risk-icon {
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+.streak-risk-banner #streak-risk-msg {
+    flex: 1;
+}
+.risk-dismiss {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    color: #b45309;
+    opacity: 0.7;
+    padding: 0 4px;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: opacity 0.2s;
+}
+.risk-dismiss:hover { opacity: 1; }
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ================================================================
+   🤖  HYDRATION COACH — Floating Bubble + Chat Panel
+================================================================ */
+#coach-bubble {
+    position: fixed;
+    bottom: 88px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1565c0, #0288d1);
+    box-shadow: 0 6px 24px rgba(21,101,192,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    cursor: pointer;
+    z-index: 9998;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    animation: coachPop 0.5s ease 1.5s both;
+}
+#coach-bubble:hover {
+    transform: scale(1.1) translateY(-2px);
+    box-shadow: 0 10px 32px rgba(21,101,192,0.55);
+}
+@keyframes coachPop {
+    from { opacity: 0; transform: scale(0.5); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+.coach-notif-dot {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #f44336;
+    border: 2px solid white;
+    animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50%       { transform: scale(1.3); }
+}
+
+.coach-panel {
+    position: fixed;
+    bottom: 155px;
+    right: 16px;
+    width: min(360px, calc(100vw - 32px));
+    height: 480px;
+    max-height: calc(100vh - 170px);
+    border-radius: 20px;
+    background: rgba(10, 20, 45, 0.96);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: panelIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes panelIn {
+    from { opacity: 0; transform: translateY(20px) scale(0.95); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.coach-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, rgba(21,101,192,0.6), rgba(2,136,209,0.4));
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    color: white;
+    flex-shrink: 0;
+}
+.coach-close {
+    background: rgba(255,255,255,0.12);
+    border: none;
+    color: white;
+    font-size: 1.2rem;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+.coach-close:hover { background: rgba(255,255,255,0.25); }
+
+.coach-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 12px 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    scroll-behavior: smooth;
+}
+.coach-messages::-webkit-scrollbar { width: 4px; }
+.coach-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+
+.coach-msg-wrap {
+    display: flex;
+    width: 100%;
+}
+.coach-msg-wrap.user  { justify-content: flex-end; }
+.coach-msg-wrap.coach { justify-content: flex-start; }
+
+.coach-msg {
+    max-width: 82%;
+    padding: 9px 13px;
+    border-radius: 16px;
+    font-size: 0.83rem;
+    line-height: 1.5;
+    word-break: break-word;
+}
+.coach-msg.coach {
+    background: rgba(255,255,255,0.1);
+    color: #e2e8f0;
+    border-bottom-left-radius: 4px;
+}
+.coach-msg.user {
+    background: linear-gradient(135deg, #1565c0, #0288d1);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.coach-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px 12px;
+    flex-shrink: 0;
+}
+.coach-chip {
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.07);
+    color: #93c5fd;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s;
+    white-space: nowrap;
+}
+.coach-chip:hover {
+    background: rgba(21,101,192,0.35);
+    color: white;
+}
+
+.coach-input-row {
+    display: flex;
+    gap: 8px;
+    padding: 10px 12px;
+    border-top: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
+}
+.coach-input-row input {
+    flex: 1;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 20px;
+    color: white;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+.coach-input-row input::placeholder { color: rgba(255,255,255,0.35); }
+.coach-input-row input:focus { border-color: rgba(21,101,192,0.7); }
+.coach-send {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1565c0, #0288d1);
+    border: none;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: transform 0.15s;
+}
+.coach-send:hover { transform: scale(1.1); }
+
+/* On desktop (sidebar layout), nudge coach bubble to avoid sidebar */
+@media (min-width: 768px) {
+    #coach-bubble { bottom: 30px; right: 28px; }
+    .coach-panel  { bottom: 100px; right: 24px; }
+}
+

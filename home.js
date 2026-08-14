@@ -310,9 +310,305 @@ function refreshHome() {
     }
 
     /* ============================================================
-       6. SAVE DATA
+       6. STREAK RISK CHECK + COACH NUDGE
     ============================================================ */
-    // syncToCloud()
+    checkStreakRisk();
+}
+
+/* ================================================================
+   ⚠️  STREAK RISK ENGINE
+   Calculates current pace and warns if user is on track to miss goal
+================================================================ */
+function getISTHour() {
+    const now = new Date();
+    const ist = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+    return ist.getUTCHours() + ist.getUTCMinutes() / 60;
+}
+
+function checkStreakRisk() {
+    const banner  = document.getElementById('streak-risk-banner');
+    const msgEl   = document.getElementById('streak-risk-msg');
+    const iconEl  = document.getElementById('streak-risk-icon');
+    if (!banner || !msgEl) return;
+
+    const intake = Number(data.intake) || 0;
+    const goal   = Number(data.goal)   || 2500;
+    const pct    = (intake / goal) * 100;
+
+    // Already done for the day — hide banner
+    if (pct >= 100) { banner.style.display = 'none'; return; }
+
+    const hourNow = getISTHour(); // 0–24 float
+
+    // Don't warn before 9am — user is just starting their day
+    if (hourNow < 9) { banner.style.display = 'none'; return; }
+
+    // Hours remaining until end of day
+    const hoursRemaining = Math.max(0, 23.99 - hourNow);
+    // Pace: ml per hour so far
+    const mlPerHour = hourNow > 0 ? intake / hourNow : 0;
+    // Projected end-of-day total
+    const projected = intake + (mlPerHour * hoursRemaining);
+    const projectedPct = Math.round((projected / goal) * 100);
+
+    const intakeMl   = intake;
+    const timeStr    = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
+    const neededMl   = Math.max(0, goal - intake);
+    const neededL    = (neededMl / 1000).toFixed(1);
+    const streak     = data.streak || calculateStreak();
+
+    let icon, msg;
+
+    if (projectedPct >= 90) {
+        // On track — no warning needed
+        banner.style.display = 'none';
+        return;
+    } else if (projectedPct >= 60) {
+        // Mild warning
+        icon = '⚡';
+        msg  = `You've had ${(intakeMl/1000).toFixed(1)}L by ${timeStr}. At this pace you'll hit ~${projectedPct}% today — need ${neededL}L more to complete your goal!`;
+    } else if (hourNow > 20) {
+        // Late night, critical
+        icon = '🚨';
+        msg  = `Only ${Math.round(pct)}% done with under ${Math.round(hoursRemaining * 60)} mins left! Drink ${neededL}L now to save your ${streak > 0 ? streak + '-day ' : ''}streak!`;
+    } else {
+        // Severe warning
+        icon = '⚠️';
+        msg  = `You've only had ${(intakeMl/1000).toFixed(1)}L by ${timeStr}. At this pace you'll hit ~${projectedPct}% — your${streak > 0 ? ' ' + streak + '-day' : ''} streak is at risk!`;
+    }
+
+    if (iconEl) iconEl.textContent = icon;
+    msgEl.textContent = msg;
+    banner.style.display = 'flex';
+
+    // Also nudge the coach bubble
+    const notifDot = document.getElementById('coach-bubble-notif');
+    if (notifDot && projectedPct < 70) notifDot.style.display = 'block';
+}
+
+/* ================================================================
+   🤖  HYDRATION COACH — Smart Rule-Based NLP Engine
+================================================================ */
+var coachOpen = false;
+var coachInitialized = false;
+
+function toggleCoach() {
+    const panel = document.getElementById('coach-panel');
+    if (!panel) return;
+    coachOpen = !coachOpen;
+    panel.style.display = coachOpen ? 'flex' : 'none';
+
+    // Hide notif dot when opened
+    const dot = document.getElementById('coach-bubble-notif');
+    if (dot) dot.style.display = 'none';
+
+    if (coachOpen && !coachInitialized) {
+        coachInitialized = true;
+        initCoach();
+    }
+}
+
+function initCoach() {
+    const intake  = Number(data.intake) || 0;
+    const goal    = Number(data.goal)   || 2500;
+    const pct     = Math.round((intake / goal) * 100);
+    const streak  = data.streak || calculateStreak();
+    const hourNow = getISTHour();
+    const timeStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
+    const name    = (data.username || 'there').split(' ')[0];
+
+    // Build opening greeting based on context
+    let greeting;
+    if (pct >= 100) {
+        greeting = `🎉 Amazing, ${name}! You've crushed your ${(goal/1000).toFixed(1)}L goal today. Your ${streak}-day streak is safe. How can I help you?`;
+    } else if (hourNow < 12) {
+        greeting = `Good morning, ${name}! ☀️ You've had ${(intake/1000).toFixed(1)}L so far. The day is young — let's build a great habit today!`;
+    } else if (hourNow < 17) {
+        const hoursLeft = Math.round(23.99 - hourNow);
+        const needed = Math.max(0, goal - intake);
+        greeting = `Hey ${name}! 💧 It's ${timeStr} — you're at ${pct}% (${(intake/1000).toFixed(1)}L / ${(goal/1000).toFixed(1)}L). You need ${(needed/1000).toFixed(1)}L more across ~${hoursLeft} hours. You've got this!`;
+    } else if (hourNow < 21) {
+        const needed = Math.max(0, goal - intake);
+        if (needed > 500) {
+            greeting = `Evening check-in, ${name}! 🌆 You're at ${pct}% and still need ${(needed/1000).toFixed(1)}L. The clock is ticking — let's finish strong and protect that streak!`;
+        } else {
+            greeting = `Almost there, ${name}! 🌆 You're at ${pct}% — just ${needed}ml to go. One more glass and you're done!`;
+        }
+    } else {
+        const needed = Math.max(0, goal - intake);
+        if (needed > 200) {
+            greeting = `Late night, ${name}! 🌙 You're at ${pct}% — need ${needed}ml more. A quick glass of water now could save your ${streak > 0 ? streak + '-day ' : ''}streak!`;
+        } else {
+            greeting = `Great work today, ${name}! 🌙 You're at ${pct}% — almost there. Just ${needed}ml to finish the day strong!`;
+        }
+    }
+
+    addCoachMessage(greeting, 'coach');
+    renderCoachChips();
+}
+
+function renderCoachChips() {
+    const chips = document.getElementById('coach-chips');
+    if (!chips) return;
+    const questions = [
+        '📊 How am I doing today?',
+        '⏰ When should I drink next?',
+        '🎯 What's my remaining goal?',
+        '🔥 How's my streak?',
+        '💡 Give me a hydration tip',
+        '⚡ Set a reminder in 30 mins'
+    ];
+    chips.innerHTML = questions.map(q =>
+        `<button class="coach-chip" onclick="handleCoachChip('${q}')">${q}</button>`
+    ).join('');
+}
+
+function handleCoachChip(text) {
+    addCoachMessage(text, 'user');
+    const chips = document.getElementById('coach-chips');
+    if (chips) chips.innerHTML = ''; // hide chips after first tap
+    setTimeout(() => processCoachQuery(text), 400);
+}
+
+function sendCoachMessage() {
+    const input = document.getElementById('coach-input');
+    if (!input || !input.value.trim()) return;
+    const msg = input.value.trim();
+    input.value = '';
+    addCoachMessage(msg, 'user');
+    const chips = document.getElementById('coach-chips');
+    if (chips) chips.innerHTML = '';
+    setTimeout(() => processCoachQuery(msg), 400);
+}
+
+function processCoachQuery(query) {
+    const q = query.toLowerCase();
+    const intake   = Number(data.intake) || 0;
+    const goal     = Number(data.goal)   || 2500;
+    const pct      = Math.round((intake / goal) * 100);
+    const neededMl = Math.max(0, goal - intake);
+    const neededL  = (neededMl / 1000).toFixed(1);
+    const streak   = data.streak || calculateStreak();
+    const hourNow  = getISTHour();
+    const history  = data.history || {};
+
+    // Projected end-of-day
+    const mlPerHour   = hourNow > 0 ? intake / hourNow : 0;
+    const hoursLeft   = Math.max(0, 23.99 - hourNow);
+    const projected   = Math.round(intake + mlPerHour * hoursLeft);
+    const projPct     = Math.min(100, Math.round((projected / goal) * 100));
+
+    // 7-day average
+    const histDates = Object.keys(history).sort().slice(-7);
+    const avg7 = histDates.length > 0
+        ? Math.round(histDates.reduce((s, d) => {
+              const v = history[d];
+              return s + (typeof v === 'object' ? v.total : v);
+          }, 0) / histDates.length)
+        : 0;
+
+    let reply;
+
+    // ── Intent matching ──
+    if (q.includes('how am i') || q.includes('doing today') || q.includes('progress') || q.includes('status')) {
+        if (pct >= 100) {
+            reply = `🎉 You've hit 100% today — ${(intake/1000).toFixed(1)}L done! Your ${streak}-day streak is safe. Amazing discipline!`;
+        } else {
+            const pace = mlPerHour > 0
+                ? `At your current pace of ${Math.round(mlPerHour)}ml/hr, you're projected to reach ~${projPct}% by midnight.`
+                : `You haven't logged anything yet today.`;
+            reply = `📊 You're at **${pct}%** — ${(intake/1000).toFixed(1)}L of ${(goal/1000).toFixed(1)}L. ${pace} You need ${neededL}L more to complete your goal.`;
+        }
+
+    } else if (q.includes('remaining') || q.includes('how much more') || q.includes('left') || q.includes('goal')) {
+        if (neededMl <= 0) {
+            reply = `🏆 Nothing left — you've hit your goal! Goal: ${(goal/1000).toFixed(1)}L. Achieved: ${(intake/1000).toFixed(1)}L.`;
+        } else {
+            const glasses = Math.ceil(neededMl / 250);
+            reply = `🎯 You need **${neededL}L** more (~${glasses} glasses of 250ml) to hit your ${(goal/1000).toFixed(1)}L goal today.`;
+        }
+
+    } else if (q.includes('streak') || q.includes('fire') || q.includes('🔥')) {
+        if (streak === 0) {
+            reply = `Your streak is at 0 right now. No worries — today is a fresh start! Log ${(goal/1000).toFixed(1)}L today to begin a new streak 💪`;
+        } else if (pct >= 100) {
+            reply = `🔥 Your streak is **${streak} days** and it's safe for today — you've already hit your goal!`;
+        } else {
+            reply = `🔥 Current streak: **${streak} days**. You're at ${pct}% today — drink ${neededL}L more to protect it!`;
+        }
+
+    } else if (q.includes('when') || q.includes('remind') || q.includes('next') || q.includes('30 min')) {
+        if (q.includes('30') || q.includes('thirty')) {
+            // Simulate reminder (real notification if permission granted)
+            if (Notification.permission === 'granted') {
+                setTimeout(() => {
+                    new Notification('💧 Hydration Reminder', {
+                        body: `Time to drink water! You're at ${pct}% today.`,
+                        icon: 'icon-192.png'
+                    });
+                }, 30 * 60 * 1000);
+                reply = `⏰ Done! I've set a reminder for 30 minutes from now. You're currently at ${pct}%.`;
+            } else {
+                reply = `⏰ I'd love to set a reminder, but notification permission is off. Go to Settings → Notifications to enable it!`;
+            }
+        } else if (neededMl <= 0) {
+            reply = `✅ You've hit your goal — no more water needed today! Enjoy the rest of your day 🎉`;
+        } else {
+            const mlPerRemainingHour = hoursLeft > 0 ? Math.ceil(neededMl / hoursLeft) : neededMl;
+            reply = `⏰ To finish your goal, aim to drink **~${Math.round(mlPerRemainingHour)}ml every hour** for the next ${Math.round(hoursLeft)} hours. That's just ${Math.ceil(mlPerRemainingHour / 250)} glass(es) per hour!`;
+        }
+
+    } else if (q.includes('tip') || q.includes('advice') || q.includes('help') || q.includes('suggest')) {
+        const tips = [
+            `💡 Start your morning with 500ml right after waking up — it kickstarts your metabolism and rehydrates after 8 hours of sleep.`,
+            `💡 Drink a glass of water before every meal. It also helps you eat less and aids digestion.`,
+            `💡 Keep a water bottle visible on your desk — out of sight often means out of mind!`,
+            `💡 If plain water bores you, try infusing it with lemon, cucumber or mint for a refreshing twist.`,
+            `💡 Thirst is already a sign of mild dehydration. Try drinking on a schedule rather than waiting to feel thirsty.`,
+            `💡 Cold water is absorbed faster. Warm water aids digestion. Both count toward your goal!`,
+            `💡 After exercise, drink an extra 500ml for every 30 minutes of activity to replace what you sweat out.`,
+        ];
+        reply = tips[Math.floor(Math.random() * tips.length)];
+
+    } else if (q.includes('average') || q.includes('week') || q.includes('history') || q.includes('7')) {
+        if (avg7 > 0) {
+            const avgPct = Math.round((avg7 / goal) * 100);
+            reply = `📈 Your 7-day average intake is **${(avg7/1000).toFixed(1)}L/day** (${avgPct}% of your goal). ${avg7 >= goal ? "Excellent consistency! 🏆" : "Keep pushing — consistency is key!"}`;
+        } else {
+            reply = `📈 Not enough history yet to calculate a 7-day average. Keep logging daily and I'll track your trends!`;
+        }
+
+    } else if (q.includes('goal') || q.includes('target') || q.includes('change') || q.includes('set')) {
+        reply = `🎯 Your current daily goal is **${(goal/1000).toFixed(1)}L**. To change it, go to ⚙️ Settings → Daily Goal. You can also use the Ideal Intake Calculator in 💡 Insights to get a personalized recommendation!`;
+
+    } else if (q.includes('hello') || q.includes('hi') || q.includes('hey') || q.includes('what can you')) {
+        reply = `Hey! 👋 I'm your Hydration Coach. I can help with:\n• 📊 Today's progress & pace\n• 🎯 Remaining intake needed\n• 🔥 Streak status\n• ⏰ Reminders & timing advice\n• 💡 Hydration tips\n• 📈 Weekly trends\n\nJust ask me anything or tap a quick chip!`;
+
+    } else {
+        // Fallback — always contextual
+        reply = `I'm not sure about that specific question, but here's your status: **${pct}%** done today (${(intake/1000).toFixed(1)}L / ${(goal/1000).toFixed(1)}L). ${neededMl > 0 ? `Need ${neededL}L more.` : `Goal complete! 🎉`} ${streak > 0 ? `Streak: ${streak} days 🔥` : ''}\n\nTry asking: "How am I doing?", "Give me a tip", or "When should I drink next?"`;
+    }
+
+    addCoachMessage(reply, 'coach');
+}
+
+function addCoachMessage(text, sender) {
+    const container = document.getElementById('coach-messages');
+    if (!container) return;
+
+    const wrap = document.createElement('div');
+    wrap.className = `coach-msg-wrap ${sender}`;
+
+    const bubble = document.createElement('div');
+    bubble.className = `coach-msg ${sender}`;
+    // Support basic **bold** markdown
+    bubble.innerHTML = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+
+    wrap.appendChild(bubble);
+    container.appendChild(wrap);
+
+    // Smooth scroll to bottom
+    container.scrollTop = container.scrollHeight;
 }
 
 // 7. Navigation & Session Logic

@@ -121,6 +121,14 @@
             </div>
         </section>
 
+        <!-- ⚠️ Streak Risk Warning Banner -->
+        <div id="streak-risk-banner" style="display:none;"
+            class="streak-risk-banner">
+            <span id="streak-risk-icon">⚠️</span>
+            <span id="streak-risk-msg">At this pace you might miss your goal today.</span>
+            <button onclick="document.getElementById('streak-risk-banner').style.display='none'" class="risk-dismiss">×</button>
+        </div>
+
         <section class="quick-log">
             <h3>Quick Log ⏱️</h3>
             <div class="log-grid">
@@ -141,6 +149,32 @@
             <div class="stat-card">🏆 Best: <span id="best">0</span></div>
         </section>
     </main>
+
+    <!-- 🤖 Hydration Coach Floating Button -->
+    <div id="coach-bubble" onclick="toggleCoach()" title="Hydration Coach">
+        <span id="coach-bubble-icon">🤖</span>
+        <span id="coach-bubble-notif" class="coach-notif-dot" style="display:none;"></span>
+    </div>
+
+    <!-- Coach Chat Panel -->
+    <div id="coach-panel" class="coach-panel" style="display:none;">
+        <div class="coach-header">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:1.4rem;">🤖</span>
+                <div>
+                    <div style="font-weight:800;font-size:0.95rem;">Hydration Coach</div>
+                    <div style="font-size:0.72rem;opacity:0.7;">Powered by your data</div>
+                </div>
+            </div>
+            <button onclick="toggleCoach()" class="coach-close">×</button>
+        </div>
+        <div class="coach-messages" id="coach-messages"></div>
+        <div class="coach-chips" id="coach-chips"></div>
+        <div class="coach-input-row">
+            <input type="text" id="coach-input" placeholder="Ask me anything..." onkeydown="if(event.key==='Enter')sendCoachMessage()">
+            <button onclick="sendCoachMessage()" class="coach-send">➤</button>
+        </div>
+    </div>
 
 <!-- EFFECTS -->
     <div id="waves-bg"></div>
