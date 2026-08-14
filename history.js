@@ -946,26 +946,9 @@ function renderHeatmapGrid() {
 
     gridContainer.innerHTML = '';
     const today = new Date();
-    const todayISO = getLocalDateString(today);
-
-    // Determine user's registration date or earliest record
-    let startDateStr = data.createdAtDate || data.joinedDate;
-    if (!startDateStr && data.history) {
-        const historyKeys = Object.keys(data.history).sort();
-        if (historyKeys.length > 0) startDateStr = historyKeys[0];
-    }
-    if (!startDateStr) startDateStr = todayISO;
-
-    // Calculate days elapsed since account creation (capped at 30)
-    const startDate = new Date(startDateStr + 'T00:00:00');
-    const todayDate = new Date(todayISO + 'T00:00:00');
-    const diffTime = todayDate - startDate;
-    const elapsedDays = Math.max(1, Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1);
-    const totalTiles = Math.min(30, elapsedDays);
-
     let metCount = 0;
 
-    for (let i = totalTiles - 1; i >= 0; i--) {
+    for (let i = 29; i >= 0; i--) {
         const d = new Date();
         d.setDate(today.getDate() - i);
         const dateStr = getLocalDateString(d);
@@ -997,8 +980,8 @@ function renderHeatmapGrid() {
         gridContainer.appendChild(tile);
     }
 
-    // ── Update Goal Achievement Success Rate (calculated based on active account days up to 30) ──
-    const heatmapSuccessRate = Math.round((metCount / totalTiles) * 100);
+    // ── Update 30-Day Goal Achievement Success Rate ──
+    const heatmapSuccessRate = Math.round((metCount / 30) * 100);
     const successEl = document.getElementById('success-pct');
     if (successEl) {
         successEl.innerText = `${heatmapSuccessRate}%`;
