@@ -515,10 +515,16 @@ function fireAlarm(alarm) {
     } else {
         showToast('⏰ Coach: Time to drink water!');
     }
-    // Remove from lists
+    // Remove from runtime lists
     coachAlarms = coachAlarms.filter(a => a.id !== alarm.id);
     delete _alarmTimeouts[alarm.id];
     saveAlarmsToStorage();
+
+    // ── Also clean up from data.reminders ──
+    if (data && Array.isArray(data.reminders) && alarm.timeKey) {
+        data.reminders = data.reminders.filter(r => !(r.source === 'coach' && r.alarmId === alarm.id));
+        syncToCloud();
+    }
 }
 
 /* Register a single alarm into the runtime (schedules the timeout) */
@@ -554,15 +560,34 @@ function scheduleCoachAlarm(delayMs, label, pct) {
     const fireStr = fireAt.toLocaleTimeString('en-IN', {
         hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata'
     });
+
+    // HH:MM format for data.reminders (24-hr)
+    const hh = String(fireAt.getHours()).padStart(2, '0');
+    const mm = String(fireAt.getMinutes()).padStart(2, '0');
+    const timeKey = `${hh}:${mm}`;
+
     const alarm = {
         id:      Date.now(),
         label,
         pct,
         fireAt:  fireAt.toISOString(),
-        fireStr
+        fireStr,
+        timeKey  // stored so we can remove it from data.reminders later
     };
     registerAlarm(alarm);
     saveAlarmsToStorage();
+
+    // ── Also push into data.reminders so it appears in Settings ──
+    if (data && Array.isArray(data.reminders)) {
+        // Avoid duplicate at same minute
+        const exists = data.reminders.find(r => r.time === timeKey && r.source === 'coach');
+        if (!exists) {
+            data.reminders.push({ time: timeKey, daily: false, active: true, source: 'coach', alarmId: alarm.id });
+            data.reminders.sort((a, b) => a.time.localeCompare(b.time));
+            syncToCloud();
+        }
+    }
+
     return alarm;
 }
 
@@ -572,6 +597,12 @@ function cancelAllCoachAlarms() {
     _alarmTimeouts = {};
     coachAlarms    = [];
     saveAlarmsToStorage();
+
+    // ── Also remove coach reminders from data.reminders ──
+    if (data && Array.isArray(data.reminders)) {
+        data.reminders = data.reminders.filter(r => r.source !== 'coach');
+        syncToCloud();
+    }
 }
 
 /* ── List alarms (future only) ── */

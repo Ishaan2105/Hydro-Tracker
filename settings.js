@@ -775,35 +775,45 @@ function renderCloudReminders() {
     const container = document.querySelector('.dummy-times');
     if (!container || !data.reminders) return;
 
-    container.innerHTML = ""; 
+    container.innerHTML = "";
 
     data.reminders.forEach((rem, index) => {
+        const isCoach = rem.source === 'coach';
         const row = document.createElement('div');
         row.className = 'time-toggle-row';
+        row.style.cssText = isCoach
+            ? 'border-left: 3px solid #0288d1; padding-left: 8px; background: rgba(2,136,209,0.05); border-radius: 8px;'
+            : '';
         row.innerHTML = `
-            <div style="display:flex; align-items:center; gap:10px;">
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
                 <label class="switch small" title="Toggle On/Off">
-                    <input type="checkbox" value="${rem.time}" ${rem.active ? 'checked' : ''} 
-                           onchange="updateReminderStatus(${index}, this.checked)"> 
+                    <input type="checkbox" value="${rem.time}" ${rem.active ? 'checked' : ''}
+                           onchange="updateReminderStatus(${index}, this.checked)">
                     <span class="slider"></span>
                 </label>
-                <span style="font-weight:700; font-size:0.95rem; color:var(--text-primary, #0c4a6e);">🔔 ${formatTo12Hr(rem.time)}</span>
+                <div>
+                    <span style="font-weight:700; font-size:0.95rem; color:var(--text-primary, #0c4a6e);">
+                        🔔 ${formatTo12Hr(rem.time)}
+                    </span>
+                    ${isCoach ? `<span style="margin-left:6px; font-size:0.72rem; background:#0288d1; color:white; padding:2px 7px; border-radius:20px; font-weight:700;">🤖 Coach</span>` : ''}
+                    ${isCoach && rem.label ? `<div style="font-size:0.73rem; opacity:0.65; margin-top:1px;">"${rem.label}"</div>` : ''}
+                </div>
             </div>
             <div class="daily-wrapper">
+                ${isCoach ? '<span style="font-size:0.78rem; opacity:0.6;">One-time</span>' : `
                 <span>Daily</span>
                 <label class="switch small">
-                    <input type="checkbox" class="daily-toggle" ${rem.daily ? 'checked' : ''} 
+                    <input type="checkbox" class="daily-toggle" ${rem.daily ? 'checked' : ''}
                            onchange="updateReminderType(${index}, this.checked)">
                     <span class="slider"></span>
-                </label>
+                </label>`}
                 <button onclick="deleteReminder(${index})" style="background:none; border:none; margin-left:10px; cursor:pointer;" title="Delete Reminder">🗑️</button>
             </div>
         `;
         container.appendChild(row);
     });
 
-    // CRITICAL: Refresh the summary list whenever the main list is rendered
-    loadReminders(); 
+    loadReminders();
 }
 
 // Helper to display human-readable time
