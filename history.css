@@ -419,9 +419,9 @@ body {
 }
 
 .dot.dot-empty, .heatmap-tile.dot-empty {
-    background: rgba(0, 0, 0, 0.06) !important;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    color: var(--text-secondary, #64748b);
+    background: linear-gradient(135deg, #ef4444, #f87171) !important;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
+    color: #ffffff !important;
 }
 
 .heatmap-grid {
