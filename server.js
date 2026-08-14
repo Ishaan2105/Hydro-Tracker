@@ -92,6 +92,7 @@ const UserSchema = new mongoose.Schema({
         default: null // { username: String, status: 'pending'|'accepted' }
     },
     incomingBuddyRequests: { type: Array, default: [] },
+    outgoingBuddyRequests: { type: Array, default: [] },
     coopStreak: { type: Number, default: 0 },
     pendingNudges: { type: Array, default: [] },
     declineAlerts: { type: Array, default: [] },
@@ -827,33 +828,44 @@ app.post('/api/user/buddy/request', async (req, res) => {
         const sender = await User.findById(decoded.id);
         if (!sender) return res.status(404).json({ error: "User not found" });
 
-        const targetName = String(targetUsername || "").trim();
+        const targetName = String(targetUsername || "").replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
         if (!targetName) return res.status(400).json({ error: "Username required" });
 
         if (targetName.toLowerCase() === sender.username.toLowerCase()) {
             return res.status(400).json({ error: "You cannot add yourself as a buddy!" });
         }
 
-        const targetUser = await User.findOne({ username: new RegExp(`^${targetName}$`, 'i') });
+        const escapedTargetName = targetName.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+        const targetUser = await User.findOne({ username: new RegExp(`^${escapedTargetName}$`, 'i') });
         if (!targetUser) return res.status(404).json({ error: `User "${targetName}" not found` });
 
         if (sender.buddy && sender.buddy.status === 'accepted') {
             return res.status(400).json({ error: `You already have a buddy (${sender.buddy.username}). Unlink first to add a new buddy.` });
         }
         if (targetUser.buddy && targetUser.buddy.status === 'accepted') {
-            return res.status(400).json({ error: `${targetUser.username} already has a buddy.` });
+            return res.status(400).json({ error: `${targetUser.username} already has an active buddy.` });
         }
 
-        const exists = targetUser.incomingBuddyRequests.find(r => r.username.toLowerCase() === sender.username.toLowerCase());
-        if (!exists) {
+        if (!sender.outgoingBuddyRequests) sender.outgoingBuddyRequests = [];
+        const alreadySent = sender.outgoingBuddyRequests.some(r => r.username.toLowerCase() === targetUser.username.toLowerCase());
+        if (alreadySent) {
+            return res.status(400).json({ error: `You have already sent a Duo request to ${targetUser.username}.` });
+        }
+
+        sender.outgoingBuddyRequests.push({ username: targetUser.username, date: new Date().toISOString() });
+        sender.buddy = { username: targetUser.username, status: 'pending' };
+        sender.markModified('outgoingBuddyRequests');
+        sender.markModified('buddy');
+
+        if (!targetUser.incomingBuddyRequests) targetUser.incomingBuddyRequests = [];
+        const existsInc = targetUser.incomingBuddyRequests.some(r => r.username.toLowerCase() === sender.username.toLowerCase());
+        if (!existsInc) {
             targetUser.incomingBuddyRequests.push({ username: sender.username, date: new Date().toISOString() });
             targetUser.markModified('incomingBuddyRequests');
-            await targetUser.save();
         }
 
-        sender.buddy = { username: targetUser.username, status: 'pending' };
-        sender.markModified('buddy');
         await sender.save();
+        await targetUser.save();
 
         // ✉️ Send Email Invitation to targetUser.email
         if (targetUser.email) {
@@ -908,7 +920,7 @@ app.post('/api/user/buddy/request', async (req, res) => {
                     message: `📧 Buddy request & email invite sent to ${targetUser.username} (${masked})! 🎉`, 
                     emailSent: true,
                     maskedEmail: masked,
-                    buddy: sender.buddy 
+                    outgoingRequests: sender.outgoingBuddyRequests 
                 });
 
             } catch (emailErr) {
@@ -916,7 +928,7 @@ app.post('/api/user/buddy/request', async (req, res) => {
             }
         }
 
-        res.json({ message: `Buddy request sent to ${targetUser.username}! 🎉`, buddy: sender.buddy });
+        res.json({ message: `Buddy request sent to ${targetUser.username}! 🎉`, outgoingRequests: sender.outgoingBuddyRequests });
     } catch (err) {
         console.error("Buddy request error:", err);
         res.status(500).json({ error: "Failed to send buddy request." });
@@ -936,21 +948,28 @@ app.get('/api/user/buddy/email-respond', async (req, res) => {
             return res.status(400).send("<h2>Link expired or invalid.</h2>");
         }
 
-        const sender = await User.findOne({ username: new RegExp(`^${decoded.senderUsername}$`, 'i') });
-        const target = await User.findOne({ username: new RegExp(`^${decoded.targetUsername}$`, 'i') });
+        const senderName = String(decoded.senderUsername || "").replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+        const targetName = String(decoded.targetUsername || "").replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+
+        const sender = await User.findOne({ username: new RegExp(`^${senderName.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}$`, 'i') });
+        const target = await User.findOne({ username: new RegExp(`^${targetName.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}$`, 'i') });
 
         if (!sender || !target) {
             return res.status(404).send("<h2>User not found.</h2>");
         }
 
-        // Remove incoming request from target
+        // Remove incoming request from target and outgoing from sender
         target.incomingBuddyRequests = (target.incomingBuddyRequests || []).filter(r => r.username.toLowerCase() !== sender.username.toLowerCase());
         target.markModified('incomingBuddyRequests');
+
+        sender.outgoingBuddyRequests = (sender.outgoingBuddyRequests || []).filter(r => r.username.toLowerCase() !== target.username.toLowerCase());
+        sender.markModified('outgoingBuddyRequests');
 
         if (action === 'accept') {
             // Check if sender (inviter) is already in an active duo with someone else
             if (sender.buddy && sender.buddy.status === 'accepted' && sender.buddy.username.toLowerCase() !== target.username.toLowerCase()) {
                 await target.save();
+                await sender.save();
                 return res.send(`
                     <!DOCTYPE html>
                     <html>
@@ -981,6 +1000,7 @@ app.get('/api/user/buddy/email-respond', async (req, res) => {
             // Check if target (recipient) is already in an active duo with someone else
             if (target.buddy && target.buddy.status === 'accepted' && target.buddy.username.toLowerCase() !== sender.username.toLowerCase()) {
                 await target.save();
+                await sender.save();
                 return res.send(`
                     <!DOCTYPE html>
                     <html>
@@ -1000,36 +1020,6 @@ app.get('/api/user/buddy/email-respond', async (req, res) => {
                             <h2 style="color:#ca8a04; margin-bottom:12px; font-size:1.6rem;">You Are Already In A Duo</h2>
                             <p style="font-size:1rem; line-height:1.6; color:#475569; margin-bottom:24px;">
                                 You are currently paired up with <strong>${target.buddy.username}</strong>. Please unlink from your current partner first if you wish to join a new Duo.
-                            </p>
-                            <a href="/leaderboard.html" class="btn-open">Go to Leaderboard 🏆</a>
-                        </div>
-                    </body>
-                    </html>
-                `);
-            }
-
-            // Check if sender (inviter) has withdrawn/cancelled this invitation
-            if (!sender.buddy || sender.buddy.username.toLowerCase() !== target.username.toLowerCase() || sender.buddy.status !== 'pending') {
-                await target.save();
-                return res.send(`
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <title>Invitation Withdrawn 🚫</title>
-                        <meta name="viewport" content="width=device-width, initial-scale=1">
-                        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;800&display=swap" rel="stylesheet">
-                        <style>
-                            body { font-family:'Outfit',sans-serif; text-align:center; padding:40px 20px; background:#fff1f2; color:#be123c; margin:0; }
-                            .card { max-width:480px; margin:40px auto; background:#fff; padding:36px 28px; border-radius:24px; box-shadow:0 12px 36px rgba(244,63,94,0.15); border:1px solid #fecdd3; }
-                            .btn-open { display:inline-block; padding:14px 32px; background:linear-gradient(135deg,#f43f5e,#be123c); color:#fff; text-decoration:none; font-weight:800; border-radius:30px; font-size:0.95rem; box-shadow:0 6px 20px rgba(244,63,94,0.3); }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="card">
-                            <div style="font-size:3.5rem; margin-bottom:12px;">🚫</div>
-                            <h2 style="color:#f43f5e; margin-bottom:12px; font-size:1.6rem;">Invitation Withdrawn</h2>
-                            <p style="font-size:1rem; line-height:1.6; color:#475569; margin-bottom:24px;">
-                                <strong>${sender.username}</strong> has withdrawn this Hydration Duo invitation.
                             </p>
                             <a href="/leaderboard.html" class="btn-open">Go to Leaderboard 🏆</a>
                         </div>
@@ -1137,10 +1127,14 @@ app.post('/api/user/buddy/respond', async (req, res) => {
         const me = await User.findById(decoded.id);
         if (!me) return res.status(404).json({ error: "User not found" });
 
-        const sender = await User.findOne({ username: new RegExp(`^${senderUsername}$`, 'i') });
+        const cleanSenderName = String(senderUsername || "").replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+        const escapedSenderName = cleanSenderName.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+        const sender = await User.findOne({ username: new RegExp(`^${escapedSenderName}$`, 'i') });
 
-        me.incomingBuddyRequests = (me.incomingBuddyRequests || []).filter(r => r.username.toLowerCase() !== String(senderUsername).toLowerCase());
+        me.incomingBuddyRequests = (me.incomingBuddyRequests || []).filter(r => r.username.toLowerCase() !== cleanSenderName.toLowerCase());
+        me.outgoingBuddyRequests = (me.outgoingBuddyRequests || []).filter(r => r.username.toLowerCase() !== cleanSenderName.toLowerCase());
         me.markModified('incomingBuddyRequests');
+        me.markModified('outgoingBuddyRequests');
 
         if (action === 'accept' && sender) {
             if (sender.buddy && sender.buddy.status === 'accepted' && sender.buddy.username.toLowerCase() !== me.username.toLowerCase()) {
@@ -1153,6 +1147,11 @@ app.post('/api/user/buddy/respond', async (req, res) => {
                 return res.status(400).json({ error: `⚠️ You are already in an active Hydration Duo with ${me.buddy.username}. Please unlink first.` });
             }
 
+            if (sender.outgoingBuddyRequests) {
+                sender.outgoingBuddyRequests = sender.outgoingBuddyRequests.filter(r => r.username.toLowerCase() !== me.username.toLowerCase());
+                sender.markModified('outgoingBuddyRequests');
+            }
+
             me.buddy = { username: sender.username, status: 'accepted' };
             sender.buddy = { username: me.username, status: 'accepted' };
             
@@ -1163,6 +1162,10 @@ app.post('/api/user/buddy/respond', async (req, res) => {
             return res.json({ message: `🎉 You and ${sender.username} are now Hydration Buddies!`, status: 'accepted' });
         } else {
             if (sender) {
+                if (sender.outgoingBuddyRequests) {
+                    sender.outgoingBuddyRequests = sender.outgoingBuddyRequests.filter(r => r.username.toLowerCase() !== me.username.toLowerCase());
+                    sender.markModified('outgoingBuddyRequests');
+                }
                 if (sender.buddy && sender.buddy.username.toLowerCase() === me.username.toLowerCase()) {
                     sender.buddy = null;
                     sender.markModified('buddy');
@@ -1190,7 +1193,9 @@ app.post('/api/user/buddy/nudge', async (req, res) => {
             return res.status(400).json({ error: "You don't have an active buddy to nudge." });
         }
 
-        const buddyUser = await User.findOne({ username: new RegExp(`^${me.buddy.username}$`, 'i') });
+        const cleanBuddyName = String(me.buddy.username || "").replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+        const escapedBuddyName = cleanBuddyName.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+        const buddyUser = await User.findOne({ username: new RegExp(`^${escapedBuddyName}$`, 'i') });
         if (!buddyUser) return res.status(404).json({ error: "Buddy user not found." });
 
         const now = new Date();
@@ -1231,7 +1236,9 @@ app.post('/api/user/buddy/remove', async (req, res) => {
         if (!me) return res.status(404).json({ error: "User not found" });
 
         if (me.buddy && me.buddy.username) {
-            const buddyUser = await User.findOne({ username: new RegExp(`^${me.buddy.username}$`, 'i') });
+            const cleanBuddyName = String(me.buddy.username || "").replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+            const escapedBuddyName = cleanBuddyName.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+            const buddyUser = await User.findOne({ username: new RegExp(`^${escapedBuddyName}$`, 'i') });
             if (buddyUser && buddyUser.buddy && buddyUser.buddy.username.toLowerCase() === me.username.toLowerCase()) {
                 buddyUser.buddy = null;
                 buddyUser.markModified('buddy');
@@ -1256,22 +1263,51 @@ app.post('/api/user/buddy/cancel', async (req, res) => {
         const me = await User.findById(decoded.id);
         if (!me) return res.status(404).json({ error: "User not found" });
 
-        if (me.buddy && me.buddy.username) {
-            const targetName = me.buddy.username;
-            const targetUser = await User.findOne({ username: new RegExp(`^${targetName}$`, 'i') });
+        const targetName = String(req.body.targetUsername || req.body.username || "").replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+
+        if (targetName) {
+            const escapedTarget = targetName.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+            const targetUser = await User.findOne({ username: new RegExp(`^${escapedTarget}$`, 'i') });
             
             if (targetUser && targetUser.incomingBuddyRequests) {
                 targetUser.incomingBuddyRequests = targetUser.incomingBuddyRequests.filter(r => r.username.toLowerCase() !== me.username.toLowerCase());
                 targetUser.markModified('incomingBuddyRequests');
                 await targetUser.save();
             }
+
+            if (me.outgoingBuddyRequests) {
+                me.outgoingBuddyRequests = me.outgoingBuddyRequests.filter(r => r.username.toLowerCase() !== targetName.toLowerCase());
+                me.markModified('outgoingBuddyRequests');
+            }
+
+            if (me.buddy && me.buddy.username && me.buddy.username.toLowerCase() === targetName.toLowerCase() && me.buddy.status === 'pending') {
+                me.buddy = null;
+                me.markModified('buddy');
+            }
+
+            await me.save();
+            return res.json({ message: `🚫 Hydration Duo invitation to ${targetName} withdrawn.`, outgoingRequests: me.outgoingBuddyRequests || [] });
+        } else {
+            if (me.outgoingBuddyRequests && me.outgoingBuddyRequests.length > 0) {
+                for (const r of me.outgoingBuddyRequests) {
+                    const esc = r.username.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+                    const tu = await User.findOne({ username: new RegExp(`^${esc}$`, 'i') });
+                    if (tu && tu.incomingBuddyRequests) {
+                        tu.incomingBuddyRequests = tu.incomingBuddyRequests.filter(req => req.username.toLowerCase() !== me.username.toLowerCase());
+                        tu.markModified('incomingBuddyRequests');
+                        await tu.save();
+                    }
+                }
+            }
+
+            me.outgoingBuddyRequests = [];
+            me.buddy = null;
+            me.markModified('outgoingBuddyRequests');
+            me.markModified('buddy');
+            await me.save();
+
+            return res.json({ message: "🚫 All Hydration Duo invitations withdrawn.", outgoingRequests: [] });
         }
-
-        me.buddy = null;
-        me.markModified('buddy');
-        await me.save();
-
-        res.json({ message: "🚫 Hydration Duo invitation withdrawn." });
     } catch (err) {
         console.error("Cancel buddy invite error:", err);
         res.status(500).json({ error: "Failed to cancel invitation." });
@@ -1306,35 +1342,33 @@ app.get('/api/user/buddy/status', async (req, res) => {
         const myGoal   = me.goal || 2500;
         const myPct    = Math.round((myIntake / myGoal) * 100);
 
-        if (!me.buddy || !me.buddy.username) {
+        const outgoing = [...(me.outgoingBuddyRequests || [])];
+        if (me.buddy && me.buddy.status === 'pending' && !outgoing.some(r => r.username.toLowerCase() === me.buddy.username.toLowerCase())) {
+            outgoing.push({ username: me.buddy.username, date: new Date().toISOString() });
+        }
+
+        if (!me.buddy || !me.buddy.username || me.buddy.status === 'pending') {
             return res.json({
                 hasBuddy: false,
-                buddyState: null,
+                buddyState: me.buddy ? { username: me.buddy.username, status: 'pending' } : null,
                 myStatus: { intake: myIntake, goal: myGoal, pct: myPct },
                 incomingRequests: me.incomingBuddyRequests || [],
+                outgoingRequests: outgoing,
                 nudges,
                 declineAlerts
             });
         }
 
-        if (me.buddy.status === 'pending') {
-            return res.json({
-                hasBuddy: false,
-                buddyState: { username: me.buddy.username, status: 'pending' },
-                myStatus: { intake: myIntake, goal: myGoal, pct: myPct },
-                incomingRequests: me.incomingBuddyRequests || [],
-                nudges,
-                declineAlerts
-            });
-        }
-
-        const buddyUser = await User.findOne({ username: new RegExp(`^${me.buddy.username}$`, 'i') });
+        const cleanBuddyName = String(me.buddy.username || "").replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+        const escapedBuddyName = cleanBuddyName.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+        const buddyUser = await User.findOne({ username: new RegExp(`^${escapedBuddyName}$`, 'i') });
         if (!buddyUser) {
             return res.json({
                 hasBuddy: false,
                 buddyState: null,
                 myStatus: { intake: myIntake, goal: myGoal, pct: myPct },
                 incomingRequests: me.incomingBuddyRequests || [],
+                outgoingRequests: outgoing,
                 nudges,
                 declineAlerts
             });
@@ -1384,6 +1418,7 @@ app.get('/api/user/buddy/status', async (req, res) => {
             },
             coopStreak,
             incomingRequests: me.incomingBuddyRequests || [],
+            outgoingRequests: outgoing,
             nudges,
             declineAlerts
         });

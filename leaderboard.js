@@ -823,21 +823,34 @@ async function fetchBuddyStatus() {
             }
         }
 
-        // 3. Render Buddy Cards State
+        // 3. Render Buddy Cards & Outgoing Requests State
         const noPartnerBlock = document.getElementById('buddy-no-partner');
         const activePartnerBlock = document.getElementById('buddy-active-partner');
-        const pendingMsg = document.getElementById('buddy-pending-msg');
-        const pendingName = document.getElementById('pending-buddy-name');
+        const pendingContainer = document.getElementById('buddy-pending-container');
+        const outgoingList = document.getElementById('buddy-outgoing-requests-list');
+        const outgoingCount = document.getElementById('outgoing-req-count');
 
         if (!data.hasBuddy) {
             if (activePartnerBlock) activePartnerBlock.style.display = 'none';
             if (noPartnerBlock) noPartnerBlock.style.display = 'block';
 
-            if (data.buddyState && data.buddyState.status === 'pending') {
-                if (pendingMsg) pendingMsg.style.display = 'block';
-                if (pendingName) pendingName.textContent = data.buddyState.username;
-            } else {
-                if (pendingMsg) pendingMsg.style.display = 'none';
+            const outReqs = data.outgoingRequests || (data.buddyState && data.buddyState.status === 'pending' ? [{ username: data.buddyState.username }] : []);
+
+            if (pendingContainer && outgoingList) {
+                if (outReqs.length > 0) {
+                    pendingContainer.style.display = 'block';
+                    if (outgoingCount) outgoingCount.textContent = outReqs.length;
+
+                    outgoingList.innerHTML = outReqs.map(r => `
+                        <div class="buddy-pending-badge">
+                            <span>⏳ Sent request to <strong>${escapeHtml(r.username)}</strong> <small style="opacity:0.75;">(Waiting for confirmation)</small></span>
+                            <button class="btn-cancel-invite" onclick="cancelBuddyInvite('${escapeHtml(r.username)}')">Withdraw 🚫</button>
+                        </div>
+                    `).join('');
+                } else {
+                    pendingContainer.style.display = 'none';
+                    outgoingList.innerHTML = '';
+                }
             }
             return;
         }
@@ -978,7 +991,7 @@ async function unlinkBuddy() {
     }
 }
 
-async function cancelBuddyInvite() {
+async function cancelBuddyInvite(targetUsername) {
     token = localStorage.getItem('token');
     if (!token) return;
 
@@ -989,7 +1002,7 @@ async function cancelBuddyInvite() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ token })
+            body: JSON.stringify({ token, targetUsername: targetUsername || '' })
         });
         const json = await res.json();
         showToast(json.message || "Invitation withdrawn.");
