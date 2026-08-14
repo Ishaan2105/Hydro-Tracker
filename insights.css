@@ -763,3 +763,202 @@ input[type="time"] {
     }
 }
 
+/* ================================================================
+   🔍 DETAILED ANALYSIS DROPDOWN & PANEL (Weekly Review)
+================================================================ */
+.review-toggle-btn {
+    background: var(--accent-subtle, rgba(2, 132, 199, 0.1));
+    border: 1px solid var(--accent, #0284c7);
+    color: var(--accent-dark, #0369a1);
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 6px 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+.review-toggle-btn:hover, .review-toggle-btn.active {
+    background: var(--accent, #0284c7);
+    color: #ffffff;
+    box-shadow: 0 4px 12px var(--accent-glow, rgba(2, 132, 199, 0.3));
+}
+#review-toggle-arrow {
+    font-size: 0.68rem;
+    transition: transform 0.2s ease;
+}
+
+.detailed-analysis-panel {
+    margin-top: 20px;
+    animation: fadeInSlide 0.3s ease-out;
+}
+@keyframes fadeInSlide {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.detail-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(2, 132, 199, 0.25), transparent);
+    margin: 15px 0 20px;
+}
+
+.detail-header-title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--accent-dark, #0369a1);
+    margin-bottom: 16px;
+}
+
+/* 4-Grid KPI Cards */
+.detail-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+@media (min-width: 640px) {
+    .detail-kpi-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+.detail-kpi-card {
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(2, 132, 199, 0.15);
+    border-radius: 14px;
+    padding: 14px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+.detail-kpi-card .kpi-icon {
+    font-size: 1.4rem;
+    margin-bottom: 4px;
+}
+.detail-kpi-card .kpi-val {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--text-primary, #0c4a6e);
+}
+.detail-kpi-card .kpi-label {
+    font-size: 0.72rem;
+    color: var(--text-secondary, #475569);
+    margin-top: 2px;
+}
+
+/* Detailed Sections */
+.detail-section-block {
+    margin-bottom: 20px;
+}
+.detail-subhead {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text-primary, #0c4a6e);
+    margin-bottom: 10px;
+}
+
+.detail-insight-box {
+    background: rgba(255, 255, 255, 0.45);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 14px;
+    padding: 14px;
+}
+
+.detail-stats-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.82rem;
+    color: var(--text-secondary, #475569);
+}
+.detail-stat-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px dashed rgba(0, 0, 0, 0.06);
+}
+.detail-stat-item:last-child {
+    border-bottom: none;
+}
+
+/* Day-by-Day Breakdown Rows */
+.detail-days-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.detail-day-row {
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 12px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.detail-day-header {
+    flex: 1;
+    min-width: 140px;
+    display: flex;
+    flex-direction: column;
+}
+.detail-day-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-primary, #0c4a6e);
+}
+.detail-day-val {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #475569);
+}
+.detail-day-bar-wrap {
+    flex: 2;
+    min-width: 120px;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+    overflow: hidden;
+}
+.detail-day-bar-fill {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.6s ease;
+}
+
+.detail-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+.detail-badge.success {
+    background: rgba(16, 185, 129, 0.15);
+    color: #047857;
+}
+.detail-badge.warning {
+    background: rgba(245, 158, 11, 0.15);
+    color: #b45309;
+}
+.detail-badge.danger {
+    background: rgba(244, 63, 94, 0.15);
+    color: #be123c;
+}
+
+.detail-recs-list {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 0.84rem;
+    line-height: 1.6;
+    color: var(--text-secondary, #475569);
+}
+.detail-recs-list li {
+    margin-bottom: 6px;
+}
+
+

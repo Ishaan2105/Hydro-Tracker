@@ -552,9 +552,12 @@ async function renderRealTimeTrend() {
         container.appendChild(bar);
     });
 
-    // 5. Update Weekly Review based on 100% Cloud Data
+    // 5. Update Weekly Review & Detailed Analysis based on 100% Cloud Data
     if (typeof updateWeeklyReview === 'function') {
         updateWeeklyReview(totalPct / 7);
+    }
+    if (typeof renderDetailedAnalysis === 'function') {
+        renderDetailedAnalysis(last7DaysData, dailyGoal);
     }
 }
 
@@ -692,6 +695,202 @@ if (avgPercent >= 90) {
         <span class="review-status">${status}</span>
         <p class="review-text">${message}</p>
         <div class="review-tip">${tip}</div>
+    `;
+}
+
+function toggleDetailedAnalysis() {
+    const panel = document.getElementById('detailed-analysis-panel');
+    const arrow = document.getElementById('review-toggle-arrow');
+    const btn = document.getElementById('review-toggle-btn');
+    if (!panel) return;
+
+    const isHidden = panel.style.display === 'none' || !panel.style.display;
+    if (isHidden) {
+        panel.style.display = 'block';
+        if (arrow) arrow.textContent = '▲';
+        if (btn) btn.classList.add('active');
+    } else {
+        panel.style.display = 'none';
+        if (arrow) arrow.textContent = '▼';
+        if (btn) btn.classList.remove('active');
+    }
+}
+
+function renderDetailedAnalysis(daysData, goal) {
+    const panel = document.getElementById('detailed-analysis-panel');
+    if (!panel || !daysData || daysData.length === 0) return;
+
+    goal = goal || 2500;
+    const totalMl = daysData.reduce((acc, d) => acc + d.val, 0);
+    const avgMl = Math.round(totalMl / daysData.length);
+    const totalL = (totalMl / 1000).toFixed(1);
+    const avgL = (avgMl / 1000).toFixed(1);
+    const goalL = (goal / 1000).toFixed(1);
+
+    // Days met target
+    const metCount = daysData.filter(d => d.val >= goal).length;
+    const hitRatePct = Math.round((metCount / daysData.length) * 100);
+
+    // Max and Min days
+    let maxDay = daysData[0];
+    let minDay = daysData[0];
+    daysData.forEach(d => {
+        if (d.val > maxDay.val) maxDay = d;
+        if (d.val < minDay.val) minDay = d;
+    });
+
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    function formatDateFormatted(dateStr) {
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+            const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+            return `${dayNames[d.getDay()]}, ${monthNames[d.getMonth()]} ${d.getDate()}`;
+        }
+        return dateStr;
+    }
+
+    // Trend Direction: Compare first 3 days avg vs last 3 days avg
+    const first3Avg = (daysData[0].val + daysData[1].val + daysData[2].val) / 3;
+    const last3Avg = (daysData[4].val + daysData[5].val + daysData[6].val) / 3;
+    let trendIcon = '➡️';
+    let trendText = 'Stable Hydration Pace';
+    let trendDesc = 'Your water intake has remained consistent over the course of the 7-day period.';
+    if (last3Avg > first3Avg * 1.15) {
+        trendIcon = '📈';
+        trendText = 'Upward Hydration Trajectory';
+        trendDesc = 'Your intake has increased significantly towards recent days. Excellent momentum!';
+    } else if (last3Avg < first3Avg * 0.85) {
+        trendIcon = '📉';
+        trendText = 'Downward Intake Drift';
+        trendDesc = 'Your hydration has dipped recently. Consider scheduling automated coach reminders.';
+    }
+
+    const varianceMl = maxDay.val - minDay.val;
+
+    // Physiological impact rating
+    const avgPct = Math.round((avgMl / goal) * 100);
+    let energyRating = '⚡ High Energy & Focus';
+    let energyDesc = 'Optimal hydration levels support peak cognitive clarity, muscle recovery, and metabolic health.';
+    if (avgPct < 50) {
+        energyRating = '🪫 Dehydration & Low Energy Risk';
+        energyDesc = 'Sub-optimal intake may trigger mild dehydration, brain fog, and midday fatigue.';
+    } else if (avgPct < 80) {
+        energyRating = '🔋 Moderate Energy Level';
+        energyDesc = 'Good baseline hydration! Small steady boosts throughout the day will optimize your focus.';
+    }
+
+    // Table rows
+    let tableRowsHtml = daysData.map(d => {
+        const pct = Math.round((d.val / goal) * 100);
+        const displayVal = (d.val / 1000).toFixed(1) + 'L';
+        let statusBadge = '<span class="detail-badge success">Target Met ✅</span>';
+        if (pct < 50) {
+            statusBadge = '<span class="detail-badge danger">Low Intake 🚨</span>';
+        } else if (pct < 100) {
+            statusBadge = '<span class="detail-badge warning">Near Goal 🟡</span>';
+        }
+        return `
+            <div class="detail-day-row">
+                <div class="detail-day-header">
+                    <span class="detail-day-name">${formatDateFormatted(d.date)}</span>
+                    <span class="detail-day-val">${displayVal} / ${goalL}L (${pct}%)</span>
+                </div>
+                <div class="detail-day-bar-wrap">
+                    <div class="detail-day-bar-fill" style="width: ${Math.min(100, pct)}%; background: ${pct >= 100 ? 'linear-gradient(90deg, #10b981, #059669)' : pct >= 50 ? 'linear-gradient(90deg, #0284c7, #38bdf8)' : 'linear-gradient(90deg, #f43f5e, #fb7185)'}"></div>
+                </div>
+                <div>${statusBadge}</div>
+            </div>
+        `;
+    }).join('');
+
+    panel.innerHTML = `
+        <div class="detail-divider"></div>
+        <div class="detail-header-title">
+            🔍 In-Depth Graph & Hydration Analysis
+        </div>
+
+        <!-- 4-Grid KPI Cards -->
+        <div class="detail-kpi-grid">
+            <div class="detail-kpi-card">
+                <span class="kpi-icon">📊</span>
+                <span class="kpi-val">${totalL} L</span>
+                <span class="kpi-label">7-Day Total Intake</span>
+            </div>
+            <div class="detail-kpi-card">
+                <span class="kpi-icon">💧</span>
+                <span class="kpi-val">${avgL} L/day</span>
+                <span class="kpi-label">Daily Average</span>
+            </div>
+            <div class="detail-kpi-card">
+                <span class="kpi-icon">🎯</span>
+                <span class="kpi-val">${hitRatePct}%</span>
+                <span class="kpi-label">Goal Met Rate (${metCount}/7 days)</span>
+            </div>
+            <div class="detail-kpi-card">
+                <span class="kpi-icon">🏆</span>
+                <span class="kpi-val">${(maxDay.val / 1000).toFixed(1)} L</span>
+                <span class="kpi-label">Peak Intake Day</span>
+            </div>
+        </div>
+
+        <!-- Trend & Variance Analysis -->
+        <div class="detail-section-block">
+            <h4 class="detail-subhead">📈 Trend & Consistency Metrics</h4>
+            <div class="detail-insight-box">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                    <span style="font-size:1.3rem;">${trendIcon}</span>
+                    <strong style="font-size:0.95rem; color:var(--text-primary, #0c4a6e);">${trendText}</strong>
+                </div>
+                <p style="font-size:0.85rem; line-height:1.5; color:var(--text-secondary, #475569); margin:0 0 10px 0;">${trendDesc}</p>
+                <div class="detail-stats-list">
+                    <div class="detail-stat-item">
+                        <span>Intake Variance (Peak vs Low):</span>
+                        <strong>${(varianceMl / 1000).toFixed(1)} L (${minDay.val > 0 ? (maxDay.val / minDay.val).toFixed(1) + 'x' : 'N/A'})</strong>
+                    </div>
+                    <div class="detail-stat-item">
+                        <span>7-Day Target Goal:</span>
+                        <strong>${(goal * 7 / 1000).toFixed(1)} L total</strong>
+                    </div>
+                    <div class="detail-stat-item">
+                        <span>Weekly Overall Completion:</span>
+                        <strong>${Math.round(totalMl / (goal * 7) * 100)}% achieved</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Day-by-Day Breakdown -->
+        <div class="detail-section-block">
+            <h4 class="detail-subhead">📅 7-Day Graph Breakdown</h4>
+            <div class="detail-days-container">
+                ${tableRowsHtml}
+            </div>
+        </div>
+
+        <!-- Physiological Impact -->
+        <div class="detail-section-block">
+            <h4 class="detail-subhead">🧠 Physiological Impact Assessment</h4>
+            <div class="detail-insight-box" style="background: rgba(2, 132, 199, 0.06); border-color: rgba(2, 132, 199, 0.2);">
+                <div style="font-weight:700; font-size:0.92rem; color:var(--accent-dark, #0369a1); margin-bottom:4px;">
+                    ${energyRating}
+                </div>
+                <p style="font-size:0.85rem; line-height:1.5; color:var(--text-secondary, #475569); margin:0;">
+                    ${energyDesc}
+                </p>
+            </div>
+        </div>
+
+        <!-- Actionable Guidance -->
+        <div class="detail-section-block">
+            <h4 class="detail-subhead">💡 Recommendations for Next Week</h4>
+            <ul class="detail-recs-list">
+                ${metCount < 7 ? `<li>🎯 Target 100% completion by setting a fixed reminder 30 mins after waking up.</li>` : `<li>🎉 Excellent job! Keep your bottle filled and maintain this rhythm.</li>`}
+                ${varianceMl > 1000 ? `<li>⚖️ Smooth out daily fluctuations: keep intake steady even on non-workout or rest days.</li>` : `<li>✨ Great consistency! Your daily intake variance is nice and low.</li>`}
+                <li>💧 Drink 250ml before every major meal to easily reach your target.</li>
+            </ul>
+        </div>
     `;
 }
 

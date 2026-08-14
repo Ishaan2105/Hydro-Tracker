@@ -190,9 +190,19 @@
             </div>
 
             <div class="insight-card review-card">
-                <h3>📊 Weekly Performance Review</h3>
-                <div id="review-content" class="review-box">
+                <div class="review-card-header" onclick="toggleDetailedAnalysis()" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <h3 style="margin:0;">📊 Weekly Performance Review</h3>
+                    <button id="review-toggle-btn" class="review-toggle-btn" title="Toggle detailed analysis" onclick="event.stopPropagation(); toggleDetailedAnalysis();">
+                        <span id="review-toggle-text">Detailed Analysis</span>
+                        <span id="review-toggle-arrow">▼</span>
+                    </button>
+                </div>
+                <div id="review-content" class="review-box" style="margin-top: 15px;">
                     <p class="loading-text">Analyzing your hydration patterns...</p>
+                </div>
+
+                <!-- Collapsible Detailed Analysis Container -->
+                <div id="detailed-analysis-panel" class="detailed-analysis-panel" style="display: none;">
                 </div>
             </div>
 
