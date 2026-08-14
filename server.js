@@ -91,7 +91,8 @@ const UserSchema = new mongoose.Schema({
     },
     incomingBuddyRequests: { type: Array, default: [] },
     coopStreak: { type: Number, default: 0 },
-    pendingNudges: { type: Array, default: [] }
+    pendingNudges: { type: Array, default: [] },
+    declineAlerts: { type: Array, default: [] }
 });
 
 const User = mongoose.model('User', UserSchema);
@@ -740,10 +741,152 @@ app.post('/api/user/buddy/request', async (req, res) => {
         sender.markModified('buddy');
         await sender.save();
 
-        res.json({ message: `Buddy request sent to ${targetUser.username}! 🎉`, buddy: sender.buddy });
+        // ✉️ Send Email Invitation to targetUser.email
+        if (targetUser.email) {
+            try {
+                const inviteToken = jwt.sign(
+                    { senderUsername: sender.username, targetUsername: targetUser.username, action: 'buddy-invite' },
+                    JWT_SECRET,
+                    { expiresIn: '7d' }
+                );
+
+                const host = req.get('host') || 'localhost:5000';
+                const protocol = req.protocol || 'http';
+                const acceptUrl = `${protocol}://${host}/api/user/buddy/email-respond?token=${inviteToken}&action=accept`;
+                const declineUrl = `${protocol}://${host}/api/user/buddy/email-respond?token=${inviteToken}&action=decline`;
+
+                const emailHtml = `
+                    <div style="font-family:'Outfit', Arial, sans-serif; background-color:#f0f9ff; padding:30px 15px; color:#0c4a6e;">
+                        <div style="max-width:540px; margin:0 auto; background:#ffffff; border-radius:20px; padding:25px 30px; box-shadow:0 8px 30px rgba(2,132,199,0.12); border:1px solid #e0f2fe;">
+                            <div style="text-align:center; margin-bottom:20px;">
+                                <span style="font-size:2.8rem;">💧</span>
+                                <h2 style="color:#0284c7; margin:6px 0 0 0; font-size:1.5rem; font-weight:800;">Hydration Duo Invitation!</h2>
+                            </div>
+                            <p style="font-size:1rem; line-height:1.6; color:#334155; margin-bottom:20px;">
+                                Hey <strong>${targetUser.username}</strong>,<br><br>
+                                <strong>${sender.username}</strong> wants to pair up with you as a <strong>Hydration Duo Partner</strong> on HydroTracker!
+                            </p>
+                            <div style="background:#e0f2fe; border-left:4px solid #0284c7; padding:12px 16px; border-radius:8px; margin-bottom:24px; font-size:0.9rem; color:#0369a1;">
+                                🔥 <strong>Track a Shared Co-Op Streak:</strong> Compete daily, monitor each other's water goals, and send instant hydration pings!
+                            </div>
+                            <div style="display:flex; justify-content:center; gap:12px; margin-bottom:25px;">
+                                <a href="${acceptUrl}" style="background:linear-gradient(135deg,#0284c7,#0369a1); color:#ffffff; padding:12px 24px; text-decoration:none; border-radius:30px; font-weight:700; font-size:0.92rem; display:inline-block;">Accept Invitation ✅</a>
+                                <a href="${declineUrl}" style="background:#f43f5e; color:#ffffff; padding:12px 24px; text-decoration:none; border-radius:30px; font-weight:700; font-size:0.92rem; display:inline-block;">Decline ❌</a>
+                            </div>
+                            <p style="font-size:0.78rem; color:#94a3b8; text-align:center; margin:0;">
+                                HydroTracker • Stay hydrated together!
+                            </p>
+                        </div>
+                    </div>
+                `;
+
+                sendEmail({
+                    to: targetUser.email,
+                    subject: `💧 Hydration Duo Invite from ${sender.username} on HydroTracker!`,
+                    html: emailHtml
+                }).catch(err => console.warn("Buddy invite email send error:", err.message));
+
+            } catch (emailErr) {
+                console.warn("Failed to construct email invite:", emailErr.message);
+            }
+        }
+
+        res.json({ message: `Buddy request & email invite sent to ${targetUser.username}! 🎉`, buddy: sender.buddy });
     } catch (err) {
         console.error("Buddy request error:", err);
         res.status(500).json({ error: "Failed to send buddy request." });
+    }
+});
+
+// 1-Click Email Response Endpoint (Accept/Decline from inbox)
+app.get('/api/user/buddy/email-respond', async (req, res) => {
+    try {
+        const { token, action } = req.query;
+        if (!token || !action) return res.status(400).send("Invalid response link.");
+
+        let decoded;
+        try {
+            decoded = jwt.verify(token, JWT_SECRET);
+        } catch (e) {
+            return res.status(400).send("<h2>Link expired or invalid.</h2>");
+        }
+
+        const sender = await User.findOne({ username: new RegExp(`^${decoded.senderUsername}$`, 'i') });
+        const target = await User.findOne({ username: new RegExp(`^${decoded.targetUsername}$`, 'i') });
+
+        if (!sender || !target) {
+            return res.status(404).send("<h2>User not found.</h2>");
+        }
+
+        // Remove incoming request from target
+        target.incomingBuddyRequests = (target.incomingBuddyRequests || []).filter(r => r.username.toLowerCase() !== sender.username.toLowerCase());
+        target.markModified('incomingBuddyRequests');
+
+        if (action === 'accept') {
+            target.buddy = { username: sender.username, status: 'accepted' };
+            sender.buddy = { username: target.username, status: 'accepted' };
+            
+            target.markModified('buddy');
+            sender.markModified('buddy');
+            await target.save();
+            await sender.save();
+
+            return res.send(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Hydration Duo Accepted</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1">
+                    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;800&display=swap" rel="stylesheet">
+                </head>
+                <body style="font-family:'Outfit',sans-serif; text-align:center; padding:40px 20px; background:#f0f9ff; color:#0c4a6e; margin:0;">
+                    <div style="max-width:480px; margin:40px auto; background:#fff; padding:36px 28px; border-radius:24px; box-shadow:0 12px 36px rgba(2,132,199,0.15);">
+                        <div style="font-size:3.5rem; margin-bottom:12px;">🎉</div>
+                        <h2 style="color:#0284c7; margin-bottom:12px; font-size:1.6rem;">Hydration Duo Activated!</h2>
+                        <p style="font-size:1rem; line-height:1.6; color:#475569; margin-bottom:24px;">
+                            Awesome! You and <strong>${sender.username}</strong> are now official <strong>Hydration Duo</strong> partners!
+                        </p>
+                        <a href="/leaderboard.html" style="display:inline-block; padding:14px 32px; background:linear-gradient(135deg,#0284c7,#0369a1); color:#fff; text-decoration:none; font-weight:800; border-radius:30px; font-size:0.95rem;">Go to Leaderboard 🏆</a>
+                    </div>
+                </body>
+                </html>
+            `);
+        } else {
+            // Decline
+            if (sender.buddy && sender.buddy.username.toLowerCase() === target.username.toLowerCase()) {
+                sender.buddy = null;
+            }
+            sender.declineAlerts.push({ username: target.username, date: new Date().toISOString() });
+            sender.markModified('declineAlerts');
+            sender.markModified('buddy');
+            await sender.save();
+            await target.save();
+
+            return res.send(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Invitation Declined</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1">
+                    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;800&display=swap" rel="stylesheet">
+                </head>
+                <body style="font-family:'Outfit',sans-serif; text-align:center; padding:40px 20px; background:#fff1f2; color:#be123c; margin:0;">
+                    <div style="max-width:480px; margin:40px auto; background:#fff; padding:36px 28px; border-radius:24px; box-shadow:0 12px 36px rgba(244,63,94,0.15);">
+                        <div style="font-size:3.5rem; margin-bottom:12px;">❌</div>
+                        <h2 style="color:#f43f5e; margin-bottom:12px; font-size:1.6rem;">Invitation Declined</h2>
+                        <p style="font-size:1rem; line-height:1.6; color:#475569; margin-bottom:24px;">
+                            You have declined the Hydration Duo invite from <strong>${sender.username}</strong>.
+                        </p>
+                        <a href="/leaderboard.html" style="display:inline-block; padding:14px 32px; background:#475569; color:#fff; text-decoration:none; font-weight:800; border-radius:30px; font-size:0.95rem;">Return to App 🏠</a>
+                    </div>
+                </body>
+                </html>
+            `);
+        }
+
+    } catch (err) {
+        console.error("Email respond error:", err);
+        res.status(500).send("Error processing response.");
     }
 });
 
@@ -771,9 +914,13 @@ app.post('/api/user/buddy/respond', async (req, res) => {
             await sender.save();
             return res.json({ message: `🎉 You and ${sender.username} are now Hydration Buddies!`, status: 'accepted' });
         } else {
-            if (sender && sender.buddy && sender.buddy.username.toLowerCase() === me.username.toLowerCase()) {
-                sender.buddy = null;
-                sender.markModified('buddy');
+            if (sender) {
+                if (sender.buddy && sender.buddy.username.toLowerCase() === me.username.toLowerCase()) {
+                    sender.buddy = null;
+                    sender.markModified('buddy');
+                }
+                sender.declineAlerts.push({ username: me.username, date: new Date().toISOString() });
+                sender.markModified('declineAlerts');
                 await sender.save();
             }
             await me.save();
@@ -868,6 +1015,15 @@ app.get('/api/user/buddy/status', async (req, res) => {
         if (nudges.length > 0) {
             me.pendingNudges = [];
             me.markModified('pendingNudges');
+        }
+
+        const declineAlerts = [...(me.declineAlerts || [])];
+        if (declineAlerts.length > 0) {
+            me.declineAlerts = [];
+            me.markModified('declineAlerts');
+        }
+
+        if (nudges.length > 0 || declineAlerts.length > 0) {
             await me.save();
         }
 
@@ -881,7 +1037,8 @@ app.get('/api/user/buddy/status', async (req, res) => {
                 buddyState: null,
                 myStatus: { intake: myIntake, goal: myGoal, pct: myPct },
                 incomingRequests: me.incomingBuddyRequests || [],
-                nudges
+                nudges,
+                declineAlerts
             });
         }
 
@@ -891,7 +1048,8 @@ app.get('/api/user/buddy/status', async (req, res) => {
                 buddyState: { username: me.buddy.username, status: 'pending' },
                 myStatus: { intake: myIntake, goal: myGoal, pct: myPct },
                 incomingRequests: me.incomingBuddyRequests || [],
-                nudges
+                nudges,
+                declineAlerts
             });
         }
 
@@ -902,7 +1060,8 @@ app.get('/api/user/buddy/status', async (req, res) => {
                 buddyState: null,
                 myStatus: { intake: myIntake, goal: myGoal, pct: myPct },
                 incomingRequests: me.incomingBuddyRequests || [],
-                nudges
+                nudges,
+                declineAlerts
             });
         }
 
@@ -950,7 +1109,8 @@ app.get('/api/user/buddy/status', async (req, res) => {
             },
             coopStreak,
             incomingRequests: me.incomingBuddyRequests || [],
-            nudges
+            nudges,
+            declineAlerts
         });
 
     } catch (err) {

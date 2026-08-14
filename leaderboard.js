@@ -751,6 +751,13 @@ async function fetchBuddyStatus() {
             });
         }
 
+        // Show Decline Alerts if any pending
+        if (data.declineAlerts && data.declineAlerts.length > 0) {
+            data.declineAlerts.forEach(a => {
+                showToast(`❌ ${a.username} declined your Hydration Duo invitation.`);
+            });
+        }
+
         // 2. Render Incoming Requests
         const incBox = document.getElementById('incoming-requests-container');
         const incList = document.getElementById('incoming-requests-list');
