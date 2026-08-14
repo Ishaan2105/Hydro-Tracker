@@ -869,6 +869,138 @@ function addCoachMessage(text, sender) {
 
     // Smooth scroll to bottom
     container.scrollTop = container.scrollHeight;
+
+    // Speak the reply if voice mode is on
+    if (sender === 'coach') speakCoachReply(text);
+}
+
+/* ================================================================
+   🎤  COACH VOICE ENGINE
+   Speech-to-Text (mic input) + Text-to-Speech (spoken replies)
+================================================================ */
+var voiceRecognition   = null;
+var voiceListening     = false;
+var coachVoiceEnabled  = false; // TTS toggle
+
+/* ── Speech-to-Text ── */
+function toggleVoiceInput() {
+    if (voiceListening) {
+        stopVoiceInput();
+    } else {
+        startVoiceInput();
+    }
+}
+
+function startVoiceInput() {
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRec) {
+        addCoachMessage("⚠️ Your browser doesn't support voice input. Try Chrome on Android or desktop.", 'coach');
+        return;
+    }
+
+    voiceRecognition = new SpeechRec();
+    voiceRecognition.lang = 'en-IN';
+    voiceRecognition.continuous = false;
+    voiceRecognition.interimResults = true;
+    voiceRecognition.maxAlternatives = 1;
+
+    const micBtn     = document.getElementById('coach-mic-btn');
+    const statusBar  = document.getElementById('coach-voice-status');
+    const label      = document.getElementById('coach-voice-label');
+    const inputBox   = document.getElementById('coach-input');
+
+    // Show animated status bar
+    voiceListening = true;
+    if (micBtn)    { micBtn.classList.add('listening'); micBtn.textContent = '🔴'; }
+    if (statusBar) statusBar.style.display = 'flex';
+    if (label)     label.textContent = 'Listening...';
+
+    voiceRecognition.onresult = (event) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+        }
+        // Show interim result in input box for visual feedback
+        if (inputBox) inputBox.value = transcript;
+        if (label)    label.textContent = `"${transcript}"`;
+    };
+
+    voiceRecognition.onend = () => {
+        const finalText = inputBox ? inputBox.value.trim() : '';
+        stopVoiceInput();
+        if (finalText) {
+            // Small delay so user can see what was captured
+            setTimeout(() => {
+                addCoachMessage(finalText, 'user');
+                if (inputBox) inputBox.value = '';
+                const chips = document.getElementById('coach-chips');
+                if (chips) chips.innerHTML = '';
+                setTimeout(() => processCoachQuery(finalText), 400);
+            }, 200);
+        }
+    };
+
+    voiceRecognition.onerror = (event) => {
+        stopVoiceInput();
+        const errMap = {
+            'not-allowed':  '❌ Microphone access denied. Please allow mic permission in your browser settings.',
+            'no-speech':    '🔇 No speech detected. Tap the mic and try again.',
+            'network':      '🌐 Network error during voice recognition. Check your connection.',
+            'aborted':      null,  // user cancelled — no message needed
+        };
+        const msg = errMap[event.error] || `⚠️ Voice error: ${event.error}`;
+        if (msg) addCoachMessage(msg, 'coach');
+    };
+
+    voiceRecognition.start();
+}
+
+function stopVoiceInput() {
+    voiceListening = false;
+    if (voiceRecognition) { try { voiceRecognition.stop(); } catch(e) {} voiceRecognition = null; }
+
+    const micBtn    = document.getElementById('coach-mic-btn');
+    const statusBar = document.getElementById('coach-voice-status');
+    if (micBtn)    { micBtn.classList.remove('listening'); micBtn.textContent = '🎤'; }
+    if (statusBar) statusBar.style.display = 'none';
+}
+
+/* ── Text-to-Speech ── */
+function toggleCoachVoice() {
+    coachVoiceEnabled = !coachVoiceEnabled;
+    const btn = document.getElementById('coach-voice-toggle');
+    if (btn) btn.textContent = coachVoiceEnabled ? '🔊' : '🔇';
+    if (!coachVoiceEnabled && window.speechSynthesis) window.speechSynthesis.cancel();
+    if (coachVoiceEnabled) addCoachMessage('🔊 Voice responses enabled. I\'ll speak my replies!', 'coach');
+}
+
+function speakCoachReply(text) {
+    if (!coachVoiceEnabled) return;
+    if (!window.speechSynthesis) return;
+
+    // Strip markdown bold and emojis for cleaner TTS
+    const clean = text
+        .replace(/\*\*(.+?)\*\*/g, '$1')
+        .replace(/[\u{1F300}-\u{1FAD6}]/gu, '')
+        .replace(/•/g, '')
+        .replace(/\n/g, '. ')
+        .trim();
+
+    window.speechSynthesis.cancel(); // cancel any ongoing speech
+    const utter = new SpeechSynthesisUtterance(clean);
+    utter.lang  = 'en-IN';
+    utter.rate  = 1.05;
+    utter.pitch = 1.0;
+    utter.volume = 1.0;
+
+    // Pick a good English voice if available
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find(v =>
+        (v.lang === 'en-IN' || v.lang.startsWith('en')) && !v.name.includes('Google')
+    ) || voices.find(v => v.lang.startsWith('en')) || null;
+    if (preferred) utter.voice = preferred;
+
+    window.speechSynthesis.speak(utter);
 }
 
 // 7. Navigation & Session Logic

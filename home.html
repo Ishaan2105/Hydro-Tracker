@@ -167,12 +167,19 @@
                 </div>
             </div>
             <button onclick="toggleCoach()" class="coach-close">×</button>
+            <button onclick="toggleCoachVoice()" id="coach-voice-toggle" class="coach-voice-toggle" title="Toggle voice responses">🔊</button>
         </div>
         <div class="coach-messages" id="coach-messages"></div>
         <div class="coach-chips" id="coach-chips"></div>
         <div class="coach-input-row">
-            <input type="text" id="coach-input" placeholder="Ask me anything..." onkeydown="if(event.key==='Enter')sendCoachMessage()">
+            <input type="text" id="coach-input" placeholder="Ask me anything or tap 🎤..." onkeydown="if(event.key==='Enter')sendCoachMessage()">
+            <button id="coach-mic-btn" onclick="toggleVoiceInput()" class="coach-mic" title="Speak to coach">🎤</button>
             <button onclick="sendCoachMessage()" class="coach-send">➤</button>
+        </div>
+        <div id="coach-voice-status" class="coach-voice-status" style="display:none;">
+            <span class="voice-wave"></span><span class="voice-wave"></span><span class="voice-wave"></span>
+            <span id="coach-voice-label">Listening...</span>
+            <button onclick="stopVoiceInput()" class="voice-cancel">×</button>
         </div>
     </div>
 
