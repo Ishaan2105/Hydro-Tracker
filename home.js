@@ -536,15 +536,17 @@ function fireAlarm(alarm) {
     } else {
         showToast('⏰ Coach: Time to drink water!');
     }
-    // Remove from runtime lists
+    // Remove from runtime lists & storage
     coachAlarms = coachAlarms.filter(a => a.id !== alarm.id);
     delete _alarmTimeouts[alarm.id];
     saveAlarmsToStorage();
 
-    // ── Also clean up from data.reminders ──
-    if (data && Array.isArray(data.reminders) && alarm.timeKey) {
-        data.reminders = data.reminders.filter(r => !(r.source === 'coach' && r.alarmId === alarm.id));
+    // ── Completely DELETE coach alarm from data.reminders & sync to cloud ──
+    if (data && Array.isArray(data.reminders)) {
+        data.reminders = data.reminders.filter(r => !(r.source === 'coach' && (r.alarmId === alarm.id || r.time === alarm.timeKey)));
         syncToCloud();
+        if (typeof renderCloudReminders === 'function') renderCloudReminders();
+        if (typeof loadReminders === 'function') loadReminders();
     }
 }
 
@@ -554,7 +556,6 @@ function registerAlarm(alarm) {
     if (delayMs <= 0) return; // already passed, skip silently
     const tid = setTimeout(() => fireAlarm(alarm), delayMs);
     _alarmTimeouts[alarm.id] = tid;
-    // add to runtime list only if not already there
     if (!coachAlarms.find(a => a.id === alarm.id)) coachAlarms.push(alarm);
 }
 
@@ -564,14 +565,23 @@ function restoreCoachAlarms() {
         const raw = localStorage.getItem(ALARM_STORE_KEY);
         if (!raw) return;
         const saved = JSON.parse(raw);
-        let restored = 0;
+        let updated = false;
         saved.forEach(alarm => {
             if (new Date(alarm.fireAt) > new Date()) {
                 registerAlarm(alarm);
-                restored++;
+            } else {
+                // Expired while app/browser was closed — delete from data.reminders
+                if (data && Array.isArray(data.reminders)) {
+                    data.reminders = data.reminders.filter(r => !(r.source === 'coach' && (r.alarmId === alarm.id || r.time === alarm.timeKey)));
+                }
+                updated = true;
             }
         });
-        if (restored > 0) saveAlarmsToStorage(); // clean expired ones
+        saveAlarmsToStorage(); // clean expired ones from localStorage
+        if (updated) {
+            syncToCloud();
+            if (typeof renderCloudReminders === 'function') renderCloudReminders();
+        }
     } catch(e) {}
 }
 
@@ -1288,22 +1298,26 @@ setInterval(() => {
        routes through SW controller for the actual popup.
     ============================================================ */
     if (data && Array.isArray(data.reminders)) {
+        let changed = false;
         data.reminders.forEach((r) => {
             if (r && r.active !== false && r.time === currentTime) {
                 if (r.lastFiredMinute !== currentTime) {
                     r.lastFiredMinute = currentTime;
                     const randomMsg = typeof getRandomReminder === 'function' ? getRandomReminder() : "Time to stay hydrated!";
                     sendSystemNotification("💧 Hydration Reminder", `🔔 ${r.time} — ${randomMsg}`);
-
-                    // Deactivate one-time alarms after firing
-                    if (r.daily === false) {
-                        r.active = false;
-                        if (typeof loadReminders === 'function') loadReminders();
-                        if (typeof syncToCloud === 'function') syncToCloud();
-                    }
+                    if (r.daily === false && r.source !== 'coach') r.active = false;
+                    changed = true;
                 }
             }
         });
+        // Permanently delete coach alarms after they fire
+        const initialLen = data.reminders.length;
+        data.reminders = data.reminders.filter(r => !(r.source === 'coach' && r.lastFiredMinute === currentTime));
+        if (data.reminders.length !== initialLen || changed) {
+            if (typeof renderCloudReminders === 'function') renderCloudReminders();
+            if (typeof loadReminders === 'function') loadReminders();
+            if (typeof syncToCloud === 'function') syncToCloud();
+        }
     }
 
     /* ============================================================

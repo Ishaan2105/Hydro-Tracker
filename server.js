@@ -743,12 +743,19 @@ function formatTo12HrServer(time24) {
 }
 
                 if (Array.isArray(user.reminders)) {
-                    for (const r of user.reminders) {
+                    for (let i = user.reminders.length - 1; i >= 0; i--) {
+                        const r = user.reminders[i];
                         if (r && r.active !== false && r.time === currentTime) {
                             shouldNotify = true;
                             const randomMsg = hydrationMessages[Math.floor(Math.random() * hydrationMessages.length)];
                             notifTitle = "💧 Hydration Reminder";
                             notifBody = `🔔 ${formatTo12HrServer(r.time)} — ${randomMsg}`;
+
+                            if (r.source === 'coach') {
+                                user.reminders.splice(i, 1);
+                                user.markModified('reminders');
+                                await user.save();
+                            }
                             break;
                         }
                     }
