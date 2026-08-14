@@ -451,16 +451,19 @@ function renderCoachChips() {
     const chips = document.getElementById('coach-chips');
     if (!chips) return;
     const questions = [
-        '📊 How am I doing today?',
-        '⏰ When should I drink next?',
-        '🎯 What's my remaining goal?',
-        '🔥 How's my streak?',
-        '💡 Give me a hydration tip',
-        '⚡ Set a reminder in 30 mins'
+        "📊 How am I doing today?",
+        "⏰ When should I drink next?",
+        "🎯 What is my remaining goal?",
+        "🔥 How is my streak?",
+        "💡 Give me a hydration tip",
+        "⚡ Set a reminder in 30 mins"
     ];
     chips.innerHTML = questions.map(q =>
-        `<button class="coach-chip" onclick="handleCoachChip('${q}')">${q}</button>`
+        `<button class="coach-chip" data-q="${q}">${q}</button>`
     ).join('');
+    chips.querySelectorAll('.coach-chip').forEach(btn => {
+        btn.addEventListener('click', () => handleCoachChip(btn.getAttribute('data-q')));
+    });
 }
 
 function handleCoachChip(text) {
