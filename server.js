@@ -836,7 +836,7 @@ app.post('/api/user/buddy/request', async (req, res) => {
         }
 
         const escapedTargetName = targetName.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
-        const targetUser = await User.findOne({ username: new RegExp(`^${escapedTargetName}$`, 'i') });
+        const targetUser = await User.findOne({ username: new RegExp(`^${escapedTargetName}\\s*$`, 'i') });
         if (!targetUser) return res.status(404).json({ error: `User "${targetName}" not found` });
 
         if (sender.buddy && sender.buddy.status === 'accepted') {
