@@ -479,7 +479,6 @@ function formatTo12Hr(time24) {
     }
 
     renderHeatmapGrid();
-    renderVisualCalendar();
     calculateLifetimeStats();
 }
 
@@ -976,59 +975,6 @@ function renderHeatmapGrid() {
             <span class="heatmap-pct-val">${pct}%</span>
         `;
         tile.onclick = () => selectSpecificDate(dateStr);
-        gridContainer.appendChild(tile);
-    }
-}
-
-function renderVisualCalendar() {
-    const calDaysGrid = document.getElementById('cal-days-grid');
-    const monthYearTitle = document.getElementById('cal-month-year');
-    if (!calDaysGrid || !monthYearTitle) return;
-
-    const monthNames = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-    ];
-
-    monthYearTitle.innerText = `${monthNames[activeCalMonth]} ${activeCalYear}`;
-    calDaysGrid.innerHTML = '';
-
-    const firstDay = new Date(activeCalYear, activeCalMonth, 1).getDay();
-    const totalDays = new Date(activeCalYear, activeCalMonth + 1, 0).getDate();
-
-    for (let p = 0; p < firstDay; p++) {
-        const padCell = document.createElement('div');
-        padCell.className = 'cal-day-cell pad';
-        calDaysGrid.appendChild(padCell);
-    }
-
-    const todayLocal = getLocalDateString();
-
-    for (let day = 1; day <= totalDays; day++) {
-        const dStr = activeCalYear + '-' + String(activeCalMonth + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
-        const { pct } = getVolumeForDate(dStr);
-
-        let dotClass = 'dot-empty';
-        if (pct >= 100) dotClass = 'dot-met';
-        else if (pct >= 50) dotClass = 'dot-partial';
-        else if (pct > 0) dotClass = 'dot-low';
-
-        const isSelected = dStr === selectedDate;
-        const isToday = dStr === todayLocal;
-        const isFuture = dStr > todayLocal;
-
-        const dayCell = document.createElement('div');
-        dayCell.className = `cal-day-cell ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''} ${isFuture ? 'disabled' : ''}`;
-        dayCell.innerHTML = `
-            <span class="cal-day-num">${day}</span>
-            <span class="cal-status-dot ${dotClass}"></span>
-        `;
-
-        if (!isFuture) {
-            dayCell.onclick = () => selectSpecificDate(dStr);
-        }
-
-        calDaysGrid.appendChild(dayCell);
     }
 }
 

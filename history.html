@@ -178,30 +178,12 @@
             </div>
         </section>
 
-        <!-- 📅 VISUAL MONTHLY CALENDAR & TIMELINE -->
+        <!-- 📅 DATE SELECTION & TIMELINE -->
         <div class="history-flex-container">
             <section class="calendar-section">
-                <div class="cal-card-container">
-                    <div class="calendar-header-bar">
-                        <h3>Visual Calendar 🗓️</h3>
-                        <div class="month-nav">
-                            <button class="cal-nav-btn" onclick="changeCalendarMonth(-1)" title="Previous Month">‹</button>
-                            <span id="cal-month-year" class="cal-month-title">August 2026</span>
-                            <button class="cal-nav-btn" onclick="changeCalendarMonth(1)" title="Next Month">›</button>
-                        </div>
-                    </div>
-                    <div class="visual-calendar-body">
-                        <div class="cal-weekdays">
-                            <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
-                        </div>
-                        <div class="cal-days-grid" id="cal-days-grid">
-                            <!-- Dynamically generated month days with status dots -->
-                        </div>
-                    </div>
-                    <div class="cal-picker-bar">
-                        <label for="calendar-picker">Pick Date:</label>
-                        <input type="date" id="calendar-picker" onchange="onDateInputChange()">
-                    </div>
+                <h3>Select Date 🗓️</h3>
+                <div class="calendar-card">
+                    <input type="date" id="calendar-picker" onchange="onDateInputChange()">
                 </div>
             </section>
 
