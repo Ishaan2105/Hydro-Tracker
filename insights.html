@@ -304,11 +304,13 @@
         <section class="meals-section">
             <div class="insight-card">
                 <div class="meals-accordion-header" onclick="toggleMealsAccordion()" id="meals-accordion-header">
-                    <div>
-                        <h3 style="margin:0;">🍽️ Meal Times</h3>
-                        <p style="margin:4px 0 0 0; font-size:0.85rem; color:var(--text-secondary, #475569);">Set times to receive post-meal reminders.</p>
+                    <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <h3 style="margin:0;">🍽️ Meal Times</h3>
+                            <span class="meals-accordion-arrow" id="meals-accordion-arrow">▾</span>
+                        </div>
                     </div>
-                    <span class="meals-accordion-arrow" id="meals-accordion-arrow">▾</span>
+                    <p style="margin:4px 0 0 0; font-size:0.85rem; color:var(--text-secondary, #475569);">Set times to receive post-meal reminders.</p>
                 </div>
                 
                 <div id="meals-accordion-body" style="display: none; margin-top: 16px;">

@@ -961,4 +961,26 @@ input[type="time"] {
     margin-bottom: 6px;
 }
 
+/* ── Meals Accordion Dropdown ── */
+.meals-accordion-header {
+    cursor: pointer;
+    padding: 6px 0;
+    border-radius: 10px;
+    transition: background 0.18s ease, padding 0.18s ease;
+    user-select: none;
+}
+.meals-accordion-header:hover {
+    background: rgba(2, 132, 199, 0.05);
+    padding-left: 6px;
+    padding-right: 6px;
+}
+.meals-accordion-arrow {
+    font-size: 1.15rem;
+    color: var(--accent, #0284c7);
+    transition: transform 0.25s ease;
+    display: inline-block;
+    line-height: 1;
+}
+
+
 
