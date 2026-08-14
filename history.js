@@ -470,13 +470,17 @@ function formatTo12Hr(time24) {
     }
 
     /* ============================================================
-       7. LOAD NOTES
+       7. LOAD NOTES & HEATMAP & VISUAL CALENDAR
     ============================================================ */
     const savedNotes = data.notes || {}; 
     const noteArea = document.getElementById('daily-note-area');
     if (noteArea) {
         noteArea.value = savedNotes[selectedDate] || "";
     }
+
+    renderHeatmapGrid();
+    renderVisualCalendar();
+    calculateLifetimeStats();
 }
 
 async function loadHistoryData() {
@@ -883,4 +887,172 @@ if (document.readyState === 'loading') {
 } else {
     updatePWAInstallButtons();
     if (isIOS() && !isAppStandalone()) setTimeout(showIOSInstallBanner, 1500);
+}
+
+/* ── CALENDAR & HEATMAP STATE & HELPERS ── */
+var activeCalDate = new Date();
+var activeCalMonth = activeCalDate.getMonth();
+var activeCalYear  = activeCalDate.getFullYear();
+
+function selectSpecificDate(dateStr) {
+    selectedDate = dateStr;
+    const picker = document.getElementById('calendar-picker');
+    if (picker) picker.value = dateStr;
+
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+        activeCalYear = parseInt(parts[0], 10);
+        activeCalMonth = parseInt(parts[1], 10) - 1;
+    }
+
+    loadDateStats();
+}
+
+function onDateInputChange() {
+    const picker = document.getElementById('calendar-picker');
+    if (picker && picker.value) {
+        selectSpecificDate(picker.value);
+    }
+}
+
+function changeCalendarMonth(delta) {
+    activeCalMonth += delta;
+    if (activeCalMonth > 11) {
+        activeCalMonth = 0;
+        activeCalYear++;
+    } else if (activeCalMonth < 0) {
+        activeCalMonth = 11;
+        activeCalYear--;
+    }
+    renderVisualCalendar();
+}
+
+function getVolumeForDate(dateStr) {
+    const todayLocal = getLocalDateString();
+    let vol = 0;
+    let goal = data.goal || 2500;
+
+    if (dateStr === todayLocal) {
+        vol = Number(data.intake) || 0;
+    } else if (data.history && data.history[dateStr]) {
+        const entry = data.history[dateStr];
+        if (typeof entry === 'object') {
+            vol = Number(entry.total) || 0;
+        } else {
+            vol = Number(entry) || 0;
+        }
+    }
+    return { vol, goal, pct: Math.min(100, Math.round((vol / goal) * 100)) };
+}
+
+function renderHeatmapGrid() {
+    const gridContainer = document.getElementById('heatmap-grid');
+    if (!gridContainer) return;
+
+    gridContainer.innerHTML = '';
+    const today = new Date();
+
+    for (let i = 29; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(today.getDate() - i);
+        const dateStr = getLocalDateString(d);
+
+        const { vol, goal, pct } = getVolumeForDate(dateStr);
+
+        let statusClass = 'dot-empty';
+        if (pct >= 100) statusClass = 'dot-met';
+        else if (pct >= 50) statusClass = 'dot-partial';
+        else if (pct > 0) statusClass = 'dot-low';
+
+        const isSelected = dateStr === selectedDate;
+        const dayNum = d.getDate();
+        const monthShort = d.toLocaleDateString('en-IN', { month: 'short' });
+
+        const tile = document.createElement('div');
+        tile.className = `heatmap-tile ${statusClass} ${isSelected ? 'active-selected' : ''}`;
+        tile.setAttribute('title', `${monthShort} ${dayNum}: ${vol}ml / ${goal}ml (${pct}%)`);
+        tile.innerHTML = `
+            <span class="heatmap-day-lbl">${monthShort} ${dayNum}</span>
+            <span class="heatmap-pct-val">${pct}%</span>
+        `;
+        tile.onclick = () => selectSpecificDate(dateStr);
+        gridContainer.appendChild(tile);
+    }
+}
+
+function renderVisualCalendar() {
+    const calDaysGrid = document.getElementById('cal-days-grid');
+    const monthYearTitle = document.getElementById('cal-month-year');
+    if (!calDaysGrid || !monthYearTitle) return;
+
+    const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ];
+
+    monthYearTitle.innerText = `${monthNames[activeCalMonth]} ${activeCalYear}`;
+    calDaysGrid.innerHTML = '';
+
+    const firstDay = new Date(activeCalYear, activeCalMonth, 1).getDay();
+    const totalDays = new Date(activeCalYear, activeCalMonth + 1, 0).getDate();
+
+    for (let p = 0; p < firstDay; p++) {
+        const padCell = document.createElement('div');
+        padCell.className = 'cal-day-cell pad';
+        calDaysGrid.appendChild(padCell);
+    }
+
+    const todayLocal = getLocalDateString();
+
+    for (let day = 1; day <= totalDays; day++) {
+        const dStr = activeCalYear + '-' + String(activeCalMonth + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+        const { pct } = getVolumeForDate(dStr);
+
+        let dotClass = 'dot-empty';
+        if (pct >= 100) dotClass = 'dot-met';
+        else if (pct >= 50) dotClass = 'dot-partial';
+        else if (pct > 0) dotClass = 'dot-low';
+
+        const isSelected = dStr === selectedDate;
+        const isToday = dStr === todayLocal;
+        const isFuture = dStr > todayLocal;
+
+        const dayCell = document.createElement('div');
+        dayCell.className = `cal-day-cell ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''} ${isFuture ? 'disabled' : ''}`;
+        dayCell.innerHTML = `
+            <span class="cal-day-num">${day}</span>
+            <span class="cal-status-dot ${dotClass}"></span>
+        `;
+
+        if (!isFuture) {
+            dayCell.onclick = () => selectSpecificDate(dStr);
+        }
+
+        calDaysGrid.appendChild(dayCell);
+    }
+}
+
+function calculateLifetimeStats() {
+    let totalMl = Number(data.intake) || 0;
+    let perfectDays = (data.intake || 0) >= (data.goal || 2500) ? 1 : 0;
+
+    if (data.history) {
+        const todayLocal = getLocalDateString();
+        Object.keys(data.history).forEach(dKey => {
+            if (dKey === todayLocal) return;
+            const entry = data.history[dKey];
+            let v = 0;
+            if (typeof entry === 'object') v = Number(entry.total) || 0;
+            else v = Number(entry) || 0;
+
+            totalMl += v;
+            if (v >= (data.goal || 2500)) perfectDays++;
+        });
+    }
+
+    const lifetimeLitersEl = document.getElementById('total-lifetime-volume');
+    const perfectDaysEl = document.getElementById('perfect-days-count');
+
+    if (lifetimeLitersEl) lifetimeLitersEl.innerText = `${(totalMl / 1000).toFixed(1)} L`;
+    if (perfectDaysEl) perfectDaysEl.innerText = `${perfectDays} Days`;
 }

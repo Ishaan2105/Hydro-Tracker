@@ -123,9 +123,11 @@
 
     <main class="content">
         <header>
-            <h1>Activity History</h1>
+            <h1>Activity & History 📅</h1>
+            <p class="subtitle">Track your hydration journey over time, view activity heatmaps & monthly logs!</p>
         </header>
 
+        <!-- TOP STATS OVERVIEW -->
         <section class="stats-overview">
             <div class="stat-grid">
                 <div class="stat-card-wide">
@@ -133,11 +135,19 @@
                     <h2 id="rank-display">Desert Dweller</h2>
                 </div>
                 <div class="stat-card-wide">
-                    <small>🎯 Goal Met</small>
+                    <small>🎯 Selected Date Goal</small>
                     <h2 id="goals-met">❌ Incomplete</h2>
                 </div>
                 <div class="stat-card-wide">
-                    <small>🏆 Success Rate</small>
+                    <small>💧 Total Volume Logged</small>
+                    <h2 id="total-lifetime-volume">0 L</h2>
+                </div>
+                <div class="stat-card-wide">
+                    <small>🏆 Perfect Days (100%+)</small>
+                    <h2 id="perfect-days-count">0 Days</h2>
+                </div>
+                <div class="stat-card-wide">
+                    <small>📈 Success Rate</small>
                     <h2 id="success-pct">0%</h2>
                 </div>
                 <div class="stat-card-wide">
@@ -147,26 +157,53 @@
             </div>
         </section>
 
-        <div class="history-flex-container">
-            <section class="calendar-section">
-                <h3>Select Date 🗓️</h3>
-                <div class="calendar-card">
-                    <input type="date" id="calendar-picker" onchange="loadDateStats()">
-                </div>
-                
-            </section>
-
-            <!-- <section class="notes-section">
-                <h3>Daily Notes 📝</h3>
-                <p id="current-note-date" style="opacity:0.7; font-size: 0.9em; margin-bottom: 10px;"></p>
-                <div class="notepad-container">
-                    <textarea id="daily-note-area" placeholder="Write about your day..."></textarea>
-                    <div class="note-btns">
-                        <button class="save-btn" onclick="saveNote()">Save</button>
-                        <button class="delete-btn" onclick="deleteNote()">Delete</button>
+        <!-- 🔥 30-DAY HYDRATION HEATMAP GRID -->
+        <section class="heatmap-section">
+            <div class="heatmap-card">
+                <div class="heatmap-header">
+                    <div>
+                        <h3>🔥 30-Day Activity Heatmap</h3>
+                        <p class="heatmap-subtitle">Click any day tile below to inspect that day's intake!</p>
+                    </div>
+                    <div class="heatmap-legend">
+                        <span class="legend-item"><span class="dot dot-met"></span> 100%+</span>
+                        <span class="legend-item"><span class="dot dot-partial"></span> 50-99%</span>
+                        <span class="legend-item"><span class="dot dot-low"></span> 1-49%</span>
+                        <span class="legend-item"><span class="dot dot-empty"></span> 0%</span>
                     </div>
                 </div>
-            </section> -->
+                <div class="heatmap-grid" id="heatmap-grid">
+                    <!-- Dynamically generated 30 days tiles -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 📅 VISUAL MONTHLY CALENDAR & TIMELINE -->
+        <div class="history-flex-container">
+            <section class="calendar-section">
+                <div class="cal-card-container">
+                    <div class="calendar-header-bar">
+                        <h3>Visual Calendar 🗓️</h3>
+                        <div class="month-nav">
+                            <button class="cal-nav-btn" onclick="changeCalendarMonth(-1)" title="Previous Month">‹</button>
+                            <span id="cal-month-year" class="cal-month-title">August 2026</span>
+                            <button class="cal-nav-btn" onclick="changeCalendarMonth(1)" title="Next Month">›</button>
+                        </div>
+                    </div>
+                    <div class="visual-calendar-body">
+                        <div class="cal-weekdays">
+                            <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                        </div>
+                        <div class="cal-days-grid" id="cal-days-grid">
+                            <!-- Dynamically generated month days with status dots -->
+                        </div>
+                    </div>
+                    <div class="cal-picker-bar">
+                        <label for="calendar-picker">Pick Date:</label>
+                        <input type="date" id="calendar-picker" onchange="onDateInputChange()">
+                    </div>
+                </div>
+            </section>
 
             <section class="timeline-section">
                 <h3>Daily Log Timeline 🕒</h3>
@@ -174,7 +211,6 @@
                     <p style="opacity:0.6; padding: 20px;">Select a date to see logs...</p>
                 </div>
             </section>
-
         </div>
     </main>
 
