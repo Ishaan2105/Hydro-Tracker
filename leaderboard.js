@@ -245,11 +245,18 @@ function updatePodiumCard(cardId, item) {
         if (nameEl) nameEl.innerText = item.username.toUpperCase();
         if (pctEl) pctEl.innerText = `🔥 ${item.streak}d • ${item.pct}%`;
         if (titleEl) titleEl.innerText = item.rankTitle;
-        if (avatarEl) avatarEl.innerText = item.username[0].toUpperCase();
+        if (avatarEl) {
+            if (currentLbMode === 'duo') {
+                avatarEl.innerText = "👥";
+            } else {
+                avatarEl.innerText = item.username ? item.username[0].toUpperCase() : '';
+            }
+        }
     } else {
         if (nameEl) nameEl.innerText = '--';
         if (pctEl) pctEl.innerText = '0%';
         if (titleEl) titleEl.innerText = 'Empty';
+        if (avatarEl) avatarEl.innerText = '';
     }
 }
 
@@ -316,11 +323,11 @@ function renderLeaderboardList(list, todayKey) {
         div.className = `leaderboard-item ${item.isCurrent ? 'current-user' : ''}`;
 
         const cappedPct = Math.min(100, item.pct);
-        const intakeDisplay = item.intake > 0 ? `${item.intake}ml` : '0ml';
+        const avatarDisplay = currentLbMode === 'duo' ? '👥' : (item.username ? item.username[0].toUpperCase() : '?');
 
         div.innerHTML = `
             <div class="rank-number">#${item.rank}</div>
-            <div class="item-avatar">${item.username[0].toUpperCase()}</div>
+            <div class="item-avatar">${avatarDisplay}</div>
             <div class="item-details">
                 <div class="item-header">
                     <span class="item-name">${item.username.toUpperCase()}</span>
