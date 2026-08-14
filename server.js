@@ -95,7 +95,8 @@ const UserSchema = new mongoose.Schema({
     coopStreak: { type: Number, default: 0 },
     pendingNudges: { type: Array, default: [] },
     declineAlerts: { type: Array, default: [] },
-    duoLeaderboardOptIn: { type: Boolean, default: false }
+    duoLeaderboardOptIn: { type: Boolean, default: false },
+    createdAtDate: { type: String, default: () => new Date().toISOString().substring(0, 10) }
 });
 
 const User = mongoose.model('User', UserSchema);
@@ -570,6 +571,18 @@ app.get('/api/user/data', async (req, res) => {
             // Ensure lastLogDate matches todayISO without wiping current intake or logs
             user = await User.findByIdAndUpdate(decoded.id, {
                 $set: { lastLogDate: todayISO }
+            }, { new: true }).select('-password');
+        }
+
+        if (!user.createdAtDate) {
+            let earliest = todayISO;
+            if (user.history) {
+                const keys = Array.from(user.history.keys ? user.history.keys() : Object.keys(user.history)).sort();
+                if (keys.length > 0 && keys[0] < earliest) earliest = keys[0];
+            }
+            if (user.lastLogDate && user.lastLogDate < earliest) earliest = user.lastLogDate;
+            user = await User.findByIdAndUpdate(decoded.id, {
+                $set: { createdAtDate: earliest }
             }, { new: true }).select('-password');
         }
 
