@@ -872,18 +872,29 @@ app.post('/api/user/buddy/request', async (req, res) => {
                     </div>
                 `;
 
-                sendEmail({
+                const masked = maskEmail(targetUser.email);
+                console.log(`[Buddy Invite] Dispatching email to ${masked}...`);
+
+                await sendEmail({
                     to: targetUser.email,
                     subject: `💧 Hydration Duo Invite from ${sender.username} on HydroTracker!`,
                     html: emailHtml
-                }).catch(err => console.warn("Buddy invite email send error:", err.message));
+                });
+
+                console.log(`[Buddy Invite] Sent email to ${masked} OK`);
+                return res.json({ 
+                    message: `📧 Buddy request & email invite sent to ${targetUser.username} (${masked})! 🎉`, 
+                    emailSent: true,
+                    maskedEmail: masked,
+                    buddy: sender.buddy 
+                });
 
             } catch (emailErr) {
-                console.warn("Failed to construct email invite:", emailErr.message);
+                console.error("[Buddy Invite] Email send failed:", emailErr.message);
             }
         }
 
-        res.json({ message: `Buddy request & email invite sent to ${targetUser.username}! 🎉`, buddy: sender.buddy });
+        res.json({ message: `Buddy request sent to ${targetUser.username}! 🎉`, buddy: sender.buddy });
     } catch (err) {
         console.error("Buddy request error:", err);
         res.status(500).json({ error: "Failed to send buddy request." });
