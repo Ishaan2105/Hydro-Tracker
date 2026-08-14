@@ -196,9 +196,10 @@
 
                 <!-- STATE 1: NO BUDDY / SEARCH INVITATION -->
                 <div id="buddy-no-partner" class="buddy-sub-block">
-                    <div class="buddy-search-wrap">
-                        <input type="text" id="buddy-search-input" placeholder="Enter friend's username..." autocomplete="off">
+                    <div class="buddy-search-wrap" style="position: relative;">
+                        <input type="text" id="buddy-search-input" placeholder="Enter friend's username..." autocomplete="off" oninput="handleBuddySearchInput(this)">
                         <button class="btn-buddy-invite" onclick="sendBuddyInvite()">🤝 Invite Buddy</button>
+                        <div id="buddy-search-dropdown" class="buddy-suggestions-dropdown" style="display:none;"></div>
                     </div>
                     <div id="buddy-pending-msg" style="display:none;" class="buddy-pending-badge">
                         ⏳ Sent request to <strong id="pending-buddy-name">...</strong> (Waiting for confirmation)

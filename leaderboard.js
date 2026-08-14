@@ -926,6 +926,93 @@ async function unlinkBuddy() {
     }
 }
 
+/* ── BUDDY AUTOCOMPLETE SUGGESTIONS ── */
+let _buddySearchDebounce = null;
+
+function handleBuddySearchInput(inputEl) {
+    const query = inputEl.value.trim();
+    const dropdown = document.getElementById('buddy-search-dropdown');
+    if (!dropdown) return;
+
+    if (_buddySearchDebounce) clearTimeout(_buddySearchDebounce);
+
+    if (!query) {
+        dropdown.style.display = 'none';
+        dropdown.innerHTML = '';
+        return;
+    }
+
+    _buddySearchDebounce = setTimeout(async () => {
+        try {
+            const res = await fetch(`${API_URL}/api/auth/predict-username?q=${encodeURIComponent(query)}`);
+            if (!res.ok) {
+                dropdown.style.display = 'none';
+                return;
+            }
+            const json = await res.json();
+            let suggestions = json.suggestions || [];
+
+            const myUsername = (data && data.username) ? data.username.toLowerCase() : '';
+            suggestions = suggestions.filter(u => u.toLowerCase() !== myUsername);
+
+            if (suggestions.length === 0) {
+                dropdown.style.display = 'none';
+                dropdown.innerHTML = '';
+                return;
+            }
+
+            dropdown.innerHTML = '';
+            suggestions.forEach(uname => {
+                const item = document.createElement('div');
+                item.className = 'buddy-suggestion-item';
+
+                const lowerUser = uname.toLowerCase();
+                const lowerQuery = query.toLowerCase();
+                let innerHtml = '';
+
+                if (lowerUser.startsWith(lowerQuery)) {
+                    const matchPart = uname.substring(0, query.length);
+                    const restPart = uname.substring(query.length);
+                    innerHtml = `<span class="match-highlight">${escapeHtml(matchPart)}</span><span>${escapeHtml(restPart)}</span>`;
+                } else {
+                    innerHtml = `<span>${escapeHtml(uname)}</span>`;
+                }
+
+                item.innerHTML = `👤 ${innerHtml}`;
+
+                item.onclick = function() {
+                    inputEl.value = uname;
+                    dropdown.style.display = 'none';
+                    dropdown.innerHTML = '';
+                    sendBuddyInvite();
+                };
+
+                dropdown.appendChild(item);
+            });
+
+            dropdown.style.display = 'block';
+        } catch (e) {
+            dropdown.style.display = 'none';
+        }
+    }, 150);
+}
+
+function escapeHtml(str) {
+    return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+document.addEventListener('click', function(e) {
+    const wrap = document.querySelector('.buddy-search-wrap');
+    const dropdown = document.getElementById('buddy-search-dropdown');
+    if (wrap && dropdown && !wrap.contains(e.target)) {
+        dropdown.style.display = 'none';
+    }
+});
+
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         fetchBuddyStatus();

@@ -670,3 +670,43 @@ header h1 {
 .btn-nudge-buddy:hover { transform: scale(1.02); }
 .btn-unlink-buddy:hover { background: rgba(244, 63, 94, 0.2); }
 
+/* ── Buddy Autocomplete Suggestion Dropdown ── */
+.buddy-suggestions-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 140px;
+    margin-top: 6px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid var(--accent, #0284c7);
+    border-radius: 14px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    z-index: 99;
+    max-height: 180px;
+    overflow-y: auto;
+}
+.buddy-suggestion-item {
+    padding: 10px 14px;
+    font-size: 0.88rem;
+    color: var(--text-primary, #0c4a6e);
+    cursor: pointer;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.15s ease;
+}
+.buddy-suggestion-item:last-child {
+    border-bottom: none;
+}
+.buddy-suggestion-item:hover {
+    background: rgba(2, 132, 199, 0.12);
+}
+.buddy-suggestion-item .match-highlight {
+    font-weight: 800;
+    color: var(--accent, #0284c7);
+}
+
+
