@@ -69,32 +69,65 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 function calculateHydration() {
+    const ageInput    = document.getElementById('age');
     const weightInput = document.getElementById('weight');
     const heightInput = document.getElementById('height');
-    const resultBox = document.getElementById('calc-result');
+    const resultBox   = document.getElementById('calc-result');
     const displayLiters = document.getElementById('suggested-liters');
+    const breakdown   = document.getElementById('calc-breakdown');
 
     if (!weightInput || !heightInput) return;
 
-    const w = parseFloat(weightInput.value);
-    const h = parseFloat(heightInput.value);
+    const age    = parseInt(ageInput ? ageInput.value : '', 10);
+    const weight = parseFloat(weightInput.value);
+    const height = parseFloat(heightInput.value);
 
-    if (w > 0 && h > 0) {
-        // Standard formula: 0.033 Liters per kg
-        let suggestion = w * 0.033;
-        if (h > 180) suggestion += 0.3; 
-        
-        if (resultBox) resultBox.style.display = 'block';
-        if (displayLiters) {
-            displayLiters.innerText = suggestion.toFixed(1) + " L";
-        }
-        
-        // FIX: Store directly in your 'data' object instead of window
-        // This keeps the temporary value tied to your app state
-        data.tempGoal = Math.round(suggestion * 1000); 
-    } else {
-        showToast("❌ Enter valid weight and height.");
+    const errors = [];
+    if (!age    || age < 1    || age > 120)    errors.push('age (1–120 yrs)');
+    if (!weight || weight < 5  || weight > 300) errors.push('weight (5–300 kg)');
+    if (!height || height < 30 || height > 250) errors.push('height (30–250 cm)');
+
+    if (errors.length > 0) {
+        showToast('❌ Enter valid: ' + errors.join(', ') + '.');
+        return;
     }
+
+    // ── Formula (EFSA / WHO dietary reference values) ──
+    // Step 1: Age-adjusted ml/kg rate
+    let mlPerKg;
+    if      (age <= 3)  mlPerKg = 100;
+    else if (age <= 8)  mlPerKg = 75;
+    else if (age <= 13) mlPerKg = 55;
+    else if (age <= 18) mlPerKg = 45;
+    else if (age <= 30) mlPerKg = 38;
+    else if (age <= 55) mlPerKg = 35;
+    else if (age <= 70) mlPerKg = 30;
+    else                mlPerKg = 27;
+
+    // Step 2: Weight base
+    const base = weight * mlPerKg;
+
+    // Step 3: Height correction (+6ml per cm above 160cm)
+    const heightBonus = Math.max(0, (height - 160) * 6);
+
+    // Step 4: Total, rounded to nearest 50ml, clamped 1–6L
+    let totalMl = Math.round((base + heightBonus) / 50) * 50;
+    totalMl = Math.max(1000, Math.min(totalMl, 6000));
+
+    const totalL  = (totalMl / 1000).toFixed(1);
+    const baseL   = (base / 1000).toFixed(2);
+    const bonusL  = (heightBonus / 1000).toFixed(2);
+    const diffCm  = Math.round(height - 160);
+    const diffStr = diffCm >= 0 ? '+' + diffCm : '' + diffCm;
+
+    if (resultBox)     resultBox.style.display = 'block';
+    if (displayLiters) displayLiters.innerText = totalL + ' L';
+    if (breakdown) breakdown.innerHTML =
+        `🧔 ${weight}kg × ${mlPerKg}ml/kg = <strong>${baseL}L</strong> &nbsp;|&nbsp; ` +
+        `📏 Height ${diffStr}cm → <strong>+${bonusL}L</strong>`;
+
+    // Store for applyGoal
+    data.tempGoal = totalMl;
 }
 
 

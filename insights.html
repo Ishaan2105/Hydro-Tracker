@@ -130,6 +130,7 @@
                 <h3>⚖️ Personalized Goal </h3>
                 <p>Enter your details to calculate your ideal intake.</p>
                 <div class="input-row">
+                    <input type="number" id="age" placeholder="Age (yrs)" min="1" max="120">
                     <input type="number" id="weight" placeholder="Weight (kg)">
                     <input type="number" id="height" placeholder="Height (cm)">
                 </div>
@@ -137,6 +138,7 @@
                 <div id="calc-result" class="result-box" style="display: none;">
                     <p>Suggested Daily Intake:</p>
                     <h2 id="suggested-liters">0.0 L</h2>
+                    <div id="calc-breakdown" style="font-size:0.78rem; color:#475569; margin: 4px 0 10px; line-height:1.7;"></div>
                     <button class="apply-btn" onclick="applyGoal()">Set as My Goal</button>
                 </div>
             </div>
