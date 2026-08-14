@@ -156,13 +156,37 @@ function logout() {
 }
 
 /* ── LOAD LEADERBOARD FROM API ── */
+var currentLbMode = 'solo';
+
+function switchLeaderboardMode(mode) {
+    currentLbMode = mode;
+    const tabSolo = document.getElementById('lb-tab-solo');
+    const tabDuo  = document.getElementById('lb-tab-duo');
+    const mainHeading = document.getElementById('lb-main-heading');
+    const subHeading  = document.getElementById('lb-sub-heading');
+
+    if (mode === 'duo') {
+        if (tabSolo) tabSolo.classList.remove('active');
+        if (tabDuo)  tabDuo.classList.add('active');
+        if (mainHeading) mainHeading.textContent = "👥 Duo Team Leaderboard";
+        if (subHeading)  subHeading.textContent  = "Rankings of active Hydration Duo Teams based on Shared Co-Op Streaks & Combined Intake!";
+    } else {
+        if (tabDuo)  tabDuo.classList.remove('active');
+        if (tabSolo) tabSolo.classList.add('active');
+        if (mainHeading) mainHeading.textContent = "Global Leaderboard 🏆";
+        if (subHeading)  subHeading.textContent  = "Rankings based on daily goal completion, streaks, and hydration consistency!";
+    }
+
+    loadLeaderboard();
+}
+
 async function loadLeaderboard() {
     if (!token) return window.location.href = 'index.html';
 
     const listEl = document.getElementById('leaderboard-list');
 
     try {
-        const response = await fetch(`${API_URL}/api/leaderboard`, {
+        const response = await fetch(`${API_URL}/api/leaderboard?mode=${currentLbMode}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 

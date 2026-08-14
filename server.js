@@ -92,7 +92,8 @@ const UserSchema = new mongoose.Schema({
     incomingBuddyRequests: { type: Array, default: [] },
     coopStreak: { type: Number, default: 0 },
     pendingNudges: { type: Array, default: [] },
-    declineAlerts: { type: Array, default: [] }
+    declineAlerts: { type: Array, default: [] },
+    duoLeaderboardOptIn: { type: Boolean, default: false }
 });
 
 const User = mongoose.model('User', UserSchema);
@@ -222,23 +223,96 @@ app.get('/api/leaderboard', async (req, res) => {
         // Today's date key in IST — same format the app uses for lastLogDate
         const todayKey = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
 
-        // Fetch users who have opted into the leaderboard
-        // Must include 'intake' — today's live intake is stored there until midnight reset
+        const mode = String(req.query.mode || 'solo').toLowerCase();
+
+        if (mode === 'duo') {
+            // DUO LEADERBOARD
+            const duoUsers = await User.find({
+                "buddy.status": "accepted",
+                duoLeaderboardOptIn: true
+            }).select('username goal streak lastLogDate intake history buddy duoLeaderboardOptIn');
+
+            const duoMap = new Map();
+
+            for (const u of duoUsers) {
+                if (!u.buddy || !u.buddy.username) continue;
+                
+                const pairKey = [u.username.toLowerCase(), u.buddy.username.toLowerCase()].sort().join('::');
+                
+                if (!duoMap.has(pairKey)) {
+                    const partner = await User.findOne({ username: new RegExp(`^${u.buddy.username}$`, 'i') })
+                        .select('username goal streak lastLogDate intake history duoLeaderboardOptIn');
+                    
+                    if (partner) {
+                        const u1Goal = u.goal || 2500;
+                        const u2Goal = partner.goal || 2500;
+                        
+                        let u1Intake = (u.lastLogDate === todayKey) ? (u.intake || 0) : 0;
+                        let u2Intake = (partner.lastLogDate === todayKey) ? (partner.intake || 0) : 0;
+
+                        const u1Pct = Math.min(100, Math.round((u1Intake / u1Goal) * 100));
+                        const u2Pct = Math.min(100, Math.round((u2Intake / u2Goal) * 100));
+
+                        const avgPct = Math.round((u1Pct + u2Pct) / 2);
+                        const totalMl = u1Intake + u2Intake;
+
+                        const historyMe = u.history || new Map();
+                        const historyB  = partner.history || new Map();
+                        let coopStreak  = (u1Pct >= 100 && u2Pct >= 100) ? 1 : 0;
+
+                        for (let i = 1; i <= 30; i++) {
+                            let d = new Date();
+                            d.setDate(d.getDate() - i);
+                            let dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+                            const eMe = historyMe.get ? historyMe.get(dateStr) : historyMe[dateStr];
+                            const eB  = historyB.get ? historyB.get(dateStr) : historyB[dateStr];
+                            const vMe = (eMe && typeof eMe === 'object') ? (eMe.total || 0) : (Number(eMe) || 0);
+                            const vB  = (eB && typeof eB === 'object')  ? (eB.total || 0)  : (Number(eB)  || 0);
+                            if (vMe >= u1Goal && vB >= u2Goal) coopStreak++;
+                            else break;
+                        }
+
+                        const isCurrentDuo = currentUserId ? (u._id.toString() === currentUserId.toString() || partner._id.toString() === currentUserId.toString()) : false;
+
+                        duoMap.set(pairKey, {
+                            id: pairKey,
+                            username: `${u.username} & ${partner.username}`,
+                            pct: avgPct,
+                            streak: coopStreak,
+                            totalMl: totalMl,
+                            rankTitle: `🔥 ${coopStreak}d Shared Streak`,
+                            isCurrent: isCurrentDuo
+                        });
+                    }
+                }
+            }
+
+            let duoList = Array.from(duoMap.values());
+
+            duoList.sort((a, b) => {
+                if (b.streak !== a.streak) return b.streak - a.streak;
+                if (b.pct !== a.pct) return b.pct - a.pct;
+                return b.totalMl - a.totalMl;
+            });
+
+            duoList.forEach((item, index) => {
+                item.rank = index + 1;
+            });
+
+            return res.json({ mode: 'duo', leaderboard: duoList, date: todayKey });
+        }
+
+        // SOLO LEADERBOARD
         const users = await User.find({ leaderboardOptIn: { $ne: false } })
             .select('username goal streak lastLogDate intake history');
 
         const rankedList = users.map(u => {
             const goal = u.goal || 2500;
 
-            // Today's intake:
-            // - If lastLogDate === today → user.intake is the live current-day value
-            // - Otherwise → user hasn't opened the app today yet, so intake is stale; use 0
-            //   (also check history[todayKey] as a fallback for edge cases)
             let todayIntake = 0;
             if (u.lastLogDate === todayKey) {
                 todayIntake = u.intake || 0;
             } else if (u.history) {
-                // Fallback: history map may have today's entry in rare edge cases
                 const todayData = u.history.get ? u.history.get(todayKey) : u.history[todayKey];
                 if (todayData) todayIntake = todayData.total || todayData.intake || 0;
             }
@@ -269,7 +343,6 @@ app.get('/api/leaderboard', async (req, res) => {
             };
         });
 
-        // Sort: Streak desc (1st), today's completion % desc (2nd), today's intake ml desc (3rd)
         rankedList.sort((a, b) => {
             if (b.streak !== a.streak) return b.streak - a.streak;
             if (b.pct !== a.pct) return b.pct - a.pct;
@@ -281,10 +354,29 @@ app.get('/api/leaderboard', async (req, res) => {
             ...item
         }));
 
-        res.json({ leaderboard: finalLeaderboard, date: todayKey });
+        res.json({ mode: 'solo', leaderboard: finalLeaderboard, date: todayKey });
     } catch (err) {
-        console.error('[leaderboard]', err.message);
-        res.status(500).json({ error: "Failed to load leaderboard." });
+        console.error("Leaderboard error:", err);
+        res.status(500).json({ error: "Failed to fetch leaderboard." });
+    }
+});
+
+// Update Duo Leaderboard Opt-In Preference
+app.post('/api/user/duo-optin', async (req, res) => {
+    try {
+        const { token, enabled } = req.body;
+        const decoded = verifyUserToken(token);
+        if (!decoded) return res.status(401).json({ error: "Unauthorized" });
+
+        const user = await User.findById(decoded.id);
+        if (!user) return res.status(404).json({ error: "User not found" });
+
+        user.duoLeaderboardOptIn = Boolean(enabled);
+        await user.save();
+
+        res.json({ message: `Duo Leaderboard set to ${user.duoLeaderboardOptIn ? 'ENABLED ✅' : 'DISABLED ❌'}`, duoLeaderboardOptIn: user.duoLeaderboardOptIn });
+    } catch (err) {
+        res.status(500).json({ error: "Failed to update Duo Leaderboard setting." });
     }
 });
 

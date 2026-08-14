@@ -771,6 +771,32 @@ async function toggleLeaderboardOptIn() {
     showToast(data.leaderboardOptIn ? "🏆 Joined Community Leaderboard!" : "Hidden from Leaderboard");
 }
 
+async function toggleDuoLeaderboardOptIn() {
+    const toggle = document.getElementById('duo-leaderboard-toggle');
+    if (!toggle) return;
+
+    const enabled = toggle.checked;
+    data.duoLeaderboardOptIn = enabled;
+    saveLocalCache(data);
+    await syncToCloud();
+
+    token = localStorage.getItem('token');
+    if (token) {
+        try {
+            await fetch(`${API_URL}/api/user/duo-optin`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ token, enabled })
+            });
+        } catch (e) {}
+    }
+
+    showToast(enabled ? "👥 Joined Duo Team Leaderboard!" : "Hidden from Duo Leaderboard");
+}
+
 function renderCloudReminders() {
     const container = document.querySelector('.dummy-times');
     if (!container || !data.reminders) return;
@@ -864,6 +890,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     const leaderboardToggle = document.getElementById('leaderboard-toggle');
     if (leaderboardToggle) {
         leaderboardToggle.checked = (data.leaderboardOptIn !== false);
+    }
+
+    const duoLeaderboardToggle = document.getElementById('duo-leaderboard-toggle');
+    if (duoLeaderboardToggle) {
+        duoLeaderboardToggle.checked = (data.duoLeaderboardOptIn === true);
     }
 
     // 3. Goal Input Initialization

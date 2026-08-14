@@ -127,9 +127,19 @@
 
     <main class="content">
         <header>
-            <h1>Global Leaderboard 🏆</h1>
-            <p class="subtitle">Rankings based on daily goal completion, streaks, and hydration consistency!</p>
+            <h1 id="lb-main-heading">Global Leaderboard 🏆</h1>
+            <p class="subtitle" id="lb-sub-heading">Rankings based on daily goal completion, streaks, and hydration consistency!</p>
         </header>
+
+        <!-- LEADERBOARD MODE TABS (SOLO VS DUO) -->
+        <div class="leaderboard-tabs-wrap">
+            <button class="lb-tab-btn active" id="lb-tab-solo" onclick="switchLeaderboardMode('solo')">
+                <span>👤 Solo Rankings</span>
+            </button>
+            <button class="lb-tab-btn" id="lb-tab-duo" onclick="switchLeaderboardMode('duo')">
+                <span>👥 Duo Team Rankings</span>
+            </button>
+        </div>
 
         <!-- MY RANK BANNER -->
         <section class="my-rank-banner" id="my-rank-banner" style="display:none;">

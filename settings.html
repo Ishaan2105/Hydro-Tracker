@@ -220,14 +220,24 @@
         </section>
 
         <section class="settings-card">
-            <h3>🏆 Community Leaderboard</h3>
-            <div class="post-meal-row">
+            <h3>🏆 Community Leaderboards</h3>
+            <div class="post-meal-row" style="margin-bottom: 16px;">
                 <div>
-                    <strong>Participate in Global Leaderboard</strong>
-                    <p style="font-size: 0.82rem; color: #64748b; margin: 4px 0 0 0;">Show your rank, streak, and completion rate on the community leaderboard (On by default).</p>
+                    <strong>Participate in Solo Leaderboard</strong>
+                    <p style="font-size: 0.82rem; color: #64748b; margin: 4px 0 0 0;">Show your rank, streak, and completion rate on the individual leaderboard (On by default).</p>
                 </div>
                 <label class="switch">
                     <input type="checkbox" id="leaderboard-toggle" checked onchange="toggleLeaderboardOptIn()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="post-meal-row">
+                <div>
+                    <strong>Participate in Duo Team Leaderboard</strong>
+                    <p style="font-size: 0.82rem; color: #64748b; margin: 4px 0 0 0;">Show your Duo Team & Co-Op streak on the Duo Leaderboard (Off by default for privacy).</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="duo-leaderboard-toggle" onchange="toggleDuoLeaderboardOptIn()">
                     <span class="slider"></span>
                 </label>
             </div>
