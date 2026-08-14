@@ -769,16 +769,43 @@ app.get('/settings', (req, res) => res.sendFile(path.join(__dirname, 'settings.h
 
 // --- 6. BUDDY & CO-OP DUEL ROUTES ---
 
-function verifyUserToken(tokenStr) {
-    if (!tokenStr) return null;
-    try { return jwt.verify(tokenStr, JWT_SECRET); } catch (e) { return null; }
+function extractToken(reqOrToken) {
+    if (!reqOrToken) return null;
+    if (typeof reqOrToken === 'string') {
+        let str = reqOrToken.trim();
+        if (str.startsWith('Bearer ')) str = str.slice(7).trim();
+        return str;
+    }
+    const req = reqOrToken;
+    let token = (req.body && req.body.token) ? req.body.token : null;
+    if (!token && req.headers && req.headers.authorization) {
+        token = req.headers.authorization;
+    }
+    if (!token && req.query && req.query.token) {
+        token = req.query.token;
+    }
+    if (typeof token === 'string') {
+        token = token.trim();
+        if (token.startsWith('Bearer ')) token = token.slice(7).trim();
+    }
+    return token;
+}
+
+function verifyUserToken(reqOrToken) {
+    const tokenStr = extractToken(reqOrToken);
+    if (!tokenStr || tokenStr === 'null' || tokenStr === 'undefined') return null;
+    try { 
+        return jwt.verify(tokenStr, JWT_SECRET); 
+    } catch (e) { 
+        return null; 
+    }
 }
 
 app.post('/api/user/buddy/request', async (req, res) => {
     try {
-        const { token, targetUsername } = req.body;
-        const decoded = verifyUserToken(token);
-        if (!decoded) return res.status(401).json({ error: "Unauthorized" });
+        const { targetUsername } = req.body;
+        const decoded = verifyUserToken(req);
+        if (!decoded) return res.status(401).json({ error: "Unauthorized — please log in again." });
 
         const sender = await User.findById(decoded.id);
         if (!sender) return res.status(404).json({ error: "User not found" });
@@ -973,8 +1000,8 @@ app.get('/api/user/buddy/email-respond', async (req, res) => {
 
 app.post('/api/user/buddy/respond', async (req, res) => {
     try {
-        const { token, senderUsername, action } = req.body;
-        const decoded = verifyUserToken(token);
+        const { senderUsername, action } = req.body;
+        const decoded = verifyUserToken(req);
         if (!decoded) return res.status(401).json({ error: "Unauthorized" });
 
         const me = await User.findById(decoded.id);
@@ -1015,8 +1042,7 @@ app.post('/api/user/buddy/respond', async (req, res) => {
 
 app.post('/api/user/buddy/nudge', async (req, res) => {
     try {
-        const { token } = req.body;
-        const decoded = verifyUserToken(token);
+        const decoded = verifyUserToken(req);
         if (!decoded) return res.status(401).json({ error: "Unauthorized" });
 
         const me = await User.findById(decoded.id);
@@ -1058,8 +1084,7 @@ app.post('/api/user/buddy/nudge', async (req, res) => {
 
 app.post('/api/user/buddy/remove', async (req, res) => {
     try {
-        const { token } = req.body;
-        const decoded = verifyUserToken(token);
+        const decoded = verifyUserToken(req);
         if (!decoded) return res.status(401).json({ error: "Unauthorized" });
 
         const me = await User.findById(decoded.id);
@@ -1085,8 +1110,7 @@ app.post('/api/user/buddy/remove', async (req, res) => {
 
 app.get('/api/user/buddy/status', async (req, res) => {
     try {
-        const token = req.headers.authorization ? req.headers.authorization.split(' ')[1] : req.query.token;
-        const decoded = verifyUserToken(token);
+        const decoded = verifyUserToken(req);
         if (!decoded) return res.status(401).json({ error: "Unauthorized" });
 
         const me = await User.findById(decoded.id);
