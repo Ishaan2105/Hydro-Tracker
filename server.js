@@ -620,10 +620,12 @@ async function sendViaGmailAPI({ to, subject, html }) {
 
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
+    const encodedSubject = /^[\x00-\x7F]*$/.test(subject) ? subject : `=?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`;
+
     const messageParts = [
         `From: HydroTracker <${EMAIL_USER}>`,
         `To: ${to}`,
-        `Subject: ${subject}`,
+        `Subject: ${encodedSubject}`,
         'MIME-Version: 1.0',
         'Content-Type: text/html; charset=utf-8',
         '',
@@ -680,8 +682,8 @@ app.get('/api/test-email', async (req, res) => {
     try {
         const result = await sendEmail({
             to: process.env.EMAIL_USER || 'ishaanhingway@gmail.com',
-            subject: '✅ HydroTracker Email Test',
-            html: '<h2>✅ It works!</h2><p>Email delivery from Render is working correctly via Gmail API.</p>'
+            subject: 'HydroTracker Email Test',
+            html: '<h2>It works!</h2><p>Email delivery from Render is working correctly via Gmail API.</p>'
         });
         res.json({ ok: true, method: result.method });
     } catch (err) {
@@ -897,7 +899,7 @@ app.post('/api/user/buddy/request', async (req, res) => {
 
                 await sendEmail({
                     to: targetUser.email,
-                    subject: `💧 Hydration Duo Invite from ${sender.username} on HydroTracker!`,
+                    subject: `Hydration Duo Invite from ${sender.username} on HydroTracker!`,
                     html: emailHtml
                 });
 
