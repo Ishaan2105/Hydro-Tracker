@@ -175,6 +175,78 @@
             </div>
         </section>
 
+        <!-- 👥 HYDRATION DUO & BUDDY CO-OP DUEL -->
+        <section class="buddy-coop-section" id="buddy-coop-section">
+            <div class="buddy-card">
+                <div class="buddy-card-header">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:1.5rem;">👥</span>
+                        <div>
+                            <h3 style="margin:0; font-weight:800;">Hydration Duo & Co-Op Duel</h3>
+                            <p style="margin:2px 0 0 0; font-size:0.82rem; color:var(--text-secondary,#475569);">Pair up with a buddy, compete in real-time, & build a shared streak!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- INCOMING REQUESTS NOTIFICATION -->
+                <div id="incoming-requests-container" style="display:none;" class="incoming-req-box">
+                    <div style="font-weight:700; font-size:0.88rem; margin-bottom:8px; color:var(--accent-dark,#0369a1);">📩 Incoming Buddy Invites:</div>
+                    <div id="incoming-requests-list"></div>
+                </div>
+
+                <!-- STATE 1: NO BUDDY / SEARCH INVITATION -->
+                <div id="buddy-no-partner" class="buddy-sub-block">
+                    <div class="buddy-search-wrap">
+                        <input type="text" id="buddy-search-input" placeholder="Enter friend's username..." autocomplete="off">
+                        <button class="btn-buddy-invite" onclick="sendBuddyInvite()">🤝 Invite Buddy</button>
+                    </div>
+                    <div id="buddy-pending-msg" style="display:none;" class="buddy-pending-badge">
+                        ⏳ Sent request to <strong id="pending-buddy-name">...</strong> (Waiting for confirmation)
+                    </div>
+                </div>
+
+                <!-- STATE 2: ACTIVE BUDDY DUO -->
+                <div id="buddy-active-partner" class="buddy-sub-block" style="display:none;">
+                    <div class="coop-streak-banner">
+                        <span class="coop-flame">🔥</span>
+                        <div>
+                            <div class="coop-streak-val" id="coop-streak-val">0 Days</div>
+                            <div class="coop-streak-lbl">Shared Co-Op Streak</div>
+                        </div>
+                    </div>
+
+                    <div class="buddy-versus-grid">
+                        <!-- YOU -->
+                        <div class="versus-card me">
+                            <div class="versus-name">You</div>
+                            <div class="versus-val" id="versus-my-val">0 / 2.5L</div>
+                            <div class="versus-bar-wrap">
+                                <div class="versus-bar-fill me" id="versus-my-bar" style="width:0%;"></div>
+                            </div>
+                            <div class="versus-pct" id="versus-my-pct">0%</div>
+                        </div>
+
+                        <div class="versus-vs">VS</div>
+
+                        <!-- BUDDY -->
+                        <div class="versus-card buddy">
+                            <div class="versus-name" id="versus-buddy-name">Buddy</div>
+                            <div class="versus-val" id="versus-buddy-val">0 / 2.5L</div>
+                            <div class="versus-bar-wrap">
+                                <div class="versus-bar-fill buddy" id="versus-buddy-bar" style="width:0%;"></div>
+                            </div>
+                            <div class="versus-pct" id="versus-buddy-pct">0%</div>
+                        </div>
+                    </div>
+
+                    <div class="buddy-actions">
+                        <button class="btn-nudge-buddy" onclick="nudgeBuddy()">💧 Send "Nudge" Alert</button>
+                        <button class="btn-unlink-buddy" onclick="unlinkBuddy()">❌ Unlink Buddy</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- HYDRATION RANKS & TIER GUIDE -->
         <section class="ranks-guide-section">
             <div class="ranks-guide-card">

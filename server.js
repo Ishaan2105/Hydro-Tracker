@@ -84,7 +84,14 @@ const UserSchema = new mongoose.Schema({
     postMealEnabled: { type: Boolean, default: false },
     notes: { type: Map, of: String, default: {} },
     pushSubscriptions: { type: Array, default: [] },
-    leaderboardOptIn: { type: Boolean, default: true }
+    leaderboardOptIn: { type: Boolean, default: true },
+    buddy: {
+        type: Object,
+        default: null // { username: String, status: 'pending'|'accepted' }
+    },
+    incomingBuddyRequests: { type: Array, default: [] },
+    coopStreak: { type: Number, default: 0 },
+    pendingNudges: { type: Array, default: [] }
 });
 
 const User = mongoose.model('User', UserSchema);
@@ -688,6 +695,270 @@ app.listen(PORT, () => {
     console.log(`🚀 HydroTracker Server live on port ${PORT}`);
     startServerPushCron();
 });
+
+// --- 6. BUDDY & CO-OP DUEL ROUTES ---
+
+function verifyUserToken(tokenStr) {
+    if (!tokenStr) return null;
+    try { return jwt.verify(tokenStr, JWT_SECRET); } catch (e) { return null; }
+}
+
+app.post('/api/user/buddy/request', async (req, res) => {
+    try {
+        const { token, targetUsername } = req.body;
+        const decoded = verifyUserToken(token);
+        if (!decoded) return res.status(401).json({ error: "Unauthorized" });
+
+        const sender = await User.findById(decoded.id);
+        if (!sender) return res.status(404).json({ error: "User not found" });
+
+        const targetName = String(targetUsername || "").trim();
+        if (!targetName) return res.status(400).json({ error: "Username required" });
+
+        if (targetName.toLowerCase() === sender.username.toLowerCase()) {
+            return res.status(400).json({ error: "You cannot add yourself as a buddy!" });
+        }
+
+        const targetUser = await User.findOne({ username: new RegExp(`^${targetName}$`, 'i') });
+        if (!targetUser) return res.status(404).json({ error: `User "${targetName}" not found` });
+
+        if (sender.buddy && sender.buddy.status === 'accepted') {
+            return res.status(400).json({ error: `You already have a buddy (${sender.buddy.username}). Unlink first to add a new buddy.` });
+        }
+        if (targetUser.buddy && targetUser.buddy.status === 'accepted') {
+            return res.status(400).json({ error: `${targetUser.username} already has a buddy.` });
+        }
+
+        const exists = targetUser.incomingBuddyRequests.find(r => r.username.toLowerCase() === sender.username.toLowerCase());
+        if (!exists) {
+            targetUser.incomingBuddyRequests.push({ username: sender.username, date: new Date().toISOString() });
+            targetUser.markModified('incomingBuddyRequests');
+            await targetUser.save();
+        }
+
+        sender.buddy = { username: targetUser.username, status: 'pending' };
+        sender.markModified('buddy');
+        await sender.save();
+
+        res.json({ message: `Buddy request sent to ${targetUser.username}! 🎉`, buddy: sender.buddy });
+    } catch (err) {
+        console.error("Buddy request error:", err);
+        res.status(500).json({ error: "Failed to send buddy request." });
+    }
+});
+
+app.post('/api/user/buddy/respond', async (req, res) => {
+    try {
+        const { token, senderUsername, action } = req.body;
+        const decoded = verifyUserToken(token);
+        if (!decoded) return res.status(401).json({ error: "Unauthorized" });
+
+        const me = await User.findById(decoded.id);
+        if (!me) return res.status(404).json({ error: "User not found" });
+
+        const sender = await User.findOne({ username: new RegExp(`^${senderUsername}$`, 'i') });
+
+        me.incomingBuddyRequests = (me.incomingBuddyRequests || []).filter(r => r.username.toLowerCase() !== String(senderUsername).toLowerCase());
+        me.markModified('incomingBuddyRequests');
+
+        if (action === 'accept' && sender) {
+            me.buddy = { username: sender.username, status: 'accepted' };
+            sender.buddy = { username: me.username, status: 'accepted' };
+            
+            me.markModified('buddy');
+            sender.markModified('buddy');
+            await me.save();
+            await sender.save();
+            return res.json({ message: `🎉 You and ${sender.username} are now Hydration Buddies!`, status: 'accepted' });
+        } else {
+            if (sender && sender.buddy && sender.buddy.username.toLowerCase() === me.username.toLowerCase()) {
+                sender.buddy = null;
+                sender.markModified('buddy');
+                await sender.save();
+            }
+            await me.save();
+            return res.json({ message: "Buddy request declined." });
+        }
+    } catch (err) {
+        console.error("Buddy respond error:", err);
+        res.status(500).json({ error: "Failed to respond to request." });
+    }
+});
+
+app.post('/api/user/buddy/nudge', async (req, res) => {
+    try {
+        const { token } = req.body;
+        const decoded = verifyUserToken(token);
+        if (!decoded) return res.status(401).json({ error: "Unauthorized" });
+
+        const me = await User.findById(decoded.id);
+        if (!me || !me.buddy || me.buddy.status !== 'accepted') {
+            return res.status(400).json({ error: "You don't have an active buddy to nudge." });
+        }
+
+        const buddyUser = await User.findOne({ username: new RegExp(`^${me.buddy.username}$`, 'i') });
+        if (!buddyUser) return res.status(404).json({ error: "Buddy user not found." });
+
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+        buddyUser.pendingNudges.push({
+            from: me.username,
+            message: `💧 ${me.username} sent you a hydration nudge! Time to drink water!`,
+            time: timeStr
+        });
+        buddyUser.markModified('pendingNudges');
+        await buddyUser.save();
+
+        if (buddyUser.pushSubscriptions && buddyUser.pushSubscriptions.length > 0) {
+            const payload = JSON.stringify({
+                title: "💧 Buddy Hydration Nudge!",
+                body: `Hey! ${me.username} is asking you to drink water now!`,
+                icon: 'icon-192x192.png'
+            });
+            for (const sub of buddyUser.pushSubscriptions) {
+                try { await webpush.sendNotification(sub, payload); } catch (e) {}
+            }
+        }
+
+        res.json({ message: `💧 Nudge sent to ${me.buddy.username}!` });
+    } catch (err) {
+        console.error("Buddy nudge error:", err);
+        res.status(500).json({ error: "Failed to send nudge." });
+    }
+});
+
+app.post('/api/user/buddy/remove', async (req, res) => {
+    try {
+        const { token } = req.body;
+        const decoded = verifyUserToken(token);
+        if (!decoded) return res.status(401).json({ error: "Unauthorized" });
+
+        const me = await User.findById(decoded.id);
+        if (!me) return res.status(404).json({ error: "User not found" });
+
+        if (me.buddy && me.buddy.username) {
+            const buddyUser = await User.findOne({ username: new RegExp(`^${me.buddy.username}$`, 'i') });
+            if (buddyUser && buddyUser.buddy && buddyUser.buddy.username.toLowerCase() === me.username.toLowerCase()) {
+                buddyUser.buddy = null;
+                buddyUser.markModified('buddy');
+                await buddyUser.save();
+            }
+        }
+        me.buddy = null;
+        me.markModified('buddy');
+        await me.save();
+
+        res.json({ message: "Buddy unlinked." });
+    } catch (err) {
+        res.status(500).json({ error: "Failed to remove buddy." });
+    }
+});
+
+app.get('/api/user/buddy/status', async (req, res) => {
+    try {
+        const token = req.headers.authorization ? req.headers.authorization.split(' ')[1] : req.query.token;
+        const decoded = verifyUserToken(token);
+        if (!decoded) return res.status(401).json({ error: "Unauthorized" });
+
+        const me = await User.findById(decoded.id);
+        if (!me) return res.status(404).json({ error: "User not found" });
+
+        const nudges = [...(me.pendingNudges || [])];
+        if (nudges.length > 0) {
+            me.pendingNudges = [];
+            me.markModified('pendingNudges');
+            await me.save();
+        }
+
+        const myIntake = me.intake || 0;
+        const myGoal   = me.goal || 2500;
+        const myPct    = Math.round((myIntake / myGoal) * 100);
+
+        if (!me.buddy || !me.buddy.username) {
+            return res.json({
+                hasBuddy: false,
+                buddyState: null,
+                myStatus: { intake: myIntake, goal: myGoal, pct: myPct },
+                incomingRequests: me.incomingBuddyRequests || [],
+                nudges
+            });
+        }
+
+        if (me.buddy.status === 'pending') {
+            return res.json({
+                hasBuddy: false,
+                buddyState: { username: me.buddy.username, status: 'pending' },
+                myStatus: { intake: myIntake, goal: myGoal, pct: myPct },
+                incomingRequests: me.incomingBuddyRequests || [],
+                nudges
+            });
+        }
+
+        const buddyUser = await User.findOne({ username: new RegExp(`^${me.buddy.username}$`, 'i') });
+        if (!buddyUser) {
+            return res.json({
+                hasBuddy: false,
+                buddyState: null,
+                myStatus: { intake: myIntake, goal: myGoal, pct: myPct },
+                incomingRequests: me.incomingBuddyRequests || [],
+                nudges
+            });
+        }
+
+        const bIntake = buddyUser.intake || 0;
+        const bGoal   = buddyUser.goal || 2500;
+        const bPct    = Math.round((bIntake / bGoal) * 100);
+
+        const historyMe = me.history || new Map();
+        const historyB  = buddyUser.history || new Map();
+        let coopStreak  = (myPct >= 100 && bPct >= 100) ? 1 : 0;
+
+        for (let i = 1; i <= 30; i++) {
+            let d = new Date();
+            d.setDate(d.getDate() - i);
+            let dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            
+            const eMe = historyMe.get ? historyMe.get(dateStr) : historyMe[dateStr];
+            const eB  = historyB.get ? historyB.get(dateStr) : historyB[dateStr];
+
+            const vMe = (eMe && typeof eMe === 'object') ? (eMe.total || 0) : (Number(eMe) || 0);
+            const vB  = (eB && typeof eB === 'object')  ? (eB.total || 0)  : (Number(eB)  || 0);
+
+            if (vMe >= myGoal && vB >= bGoal) {
+                coopStreak++;
+            } else {
+                break;
+            }
+        }
+
+        res.json({
+            hasBuddy: true,
+            buddyState: {
+                username: buddyUser.username,
+                status: 'accepted',
+                intake: bIntake,
+                goal: bGoal,
+                pct: bPct,
+                metGoalToday: bPct >= 100
+            },
+            myStatus: {
+                intake: myIntake,
+                goal: myGoal,
+                pct: myPct,
+                metGoalToday: myPct >= 100
+            },
+            coopStreak,
+            incomingRequests: me.incomingBuddyRequests || [],
+            nudges
+        });
+
+    } catch (err) {
+        console.error("Buddy status error:", err);
+        res.status(500).json({ error: "Failed to fetch buddy status." });
+    }
+});
+
 
 // --- SERVER-SIDE PUSH ALARM CRON JOB ---
 // Runs every minute to send Push Notifications to users' devices (PC / Android)

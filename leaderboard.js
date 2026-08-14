@@ -729,3 +729,210 @@ new WaterWaves('waves-bg', {
     xGap: 12,
     yGap: 36
 });
+
+/* ── HYDRATION DUO & BUDDY CO-OP DUEL LOGIC ── */
+
+async function fetchBuddyStatus() {
+    token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+        const res = await fetch(`${API_URL}/api/user/buddy/status`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+
+        const data = await res.json();
+
+        // 1. Show Nudges Popup if any pending
+        if (data.nudges && data.nudges.length > 0) {
+            data.nudges.forEach(n => {
+                showToast(n.message || `💧 ${n.from} nudged you to drink water!`);
+            });
+        }
+
+        // 2. Render Incoming Requests
+        const incBox = document.getElementById('incoming-requests-container');
+        const incList = document.getElementById('incoming-requests-list');
+        if (incBox && incList) {
+            if (data.incomingRequests && data.incomingRequests.length > 0) {
+                incBox.style.display = 'block';
+                incList.innerHTML = data.incomingRequests.map(r => `
+                    <div class="inc-req-item">
+                        <span><strong>${r.username}</strong> wants to be your Hydration Buddy!</span>
+                        <div class="inc-req-btns">
+                            <button class="btn-acc" onclick="respondBuddyRequest('${r.username}', 'accept')">Accept ✅</button>
+                            <button class="btn-dec" onclick="respondBuddyRequest('${r.username}', 'decline')">Decline ❌</button>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                incBox.style.display = 'none';
+            }
+        }
+
+        // 3. Render Buddy Cards State
+        const noPartnerBlock = document.getElementById('buddy-no-partner');
+        const activePartnerBlock = document.getElementById('buddy-active-partner');
+        const pendingMsg = document.getElementById('buddy-pending-msg');
+        const pendingName = document.getElementById('pending-buddy-name');
+
+        if (!data.hasBuddy) {
+            if (activePartnerBlock) activePartnerBlock.style.display = 'none';
+            if (noPartnerBlock) noPartnerBlock.style.display = 'block';
+
+            if (data.buddyState && data.buddyState.status === 'pending') {
+                if (pendingMsg) pendingMsg.style.display = 'block';
+                if (pendingName) pendingName.textContent = data.buddyState.username;
+            } else {
+                if (pendingMsg) pendingMsg.style.display = 'none';
+            }
+            return;
+        }
+
+        // Active Buddy state!
+        if (noPartnerBlock) noPartnerBlock.style.display = 'none';
+        if (activePartnerBlock) activePartnerBlock.style.display = 'block';
+
+        // Render Streak
+        const streakVal = document.getElementById('coop-streak-val');
+        if (streakVal) streakVal.textContent = `${data.coopStreak || 0} Day${(data.coopStreak === 1) ? '' : 's'}`;
+
+        // Render My Stats
+        const myVal = document.getElementById('versus-my-val');
+        const myBar = document.getElementById('versus-my-bar');
+        const myPct = document.getElementById('versus-my-pct');
+        if (myVal) myVal.textContent = `${(data.myStatus.intake / 1000).toFixed(1)} / ${(data.myStatus.goal / 1000).toFixed(1)}L`;
+        if (myBar) myBar.style.width = `${Math.min(100, data.myStatus.pct)}%`;
+        if (myPct) myPct.textContent = `${data.myStatus.pct}%`;
+
+        // Render Buddy Stats
+        const bName = document.getElementById('versus-buddy-name');
+        const bVal  = document.getElementById('versus-buddy-val');
+        const bBar  = document.getElementById('versus-buddy-bar');
+        const bPct  = document.getElementById('versus-buddy-pct');
+        if (bName) bName.textContent = data.buddyState.username;
+        if (bVal)  bVal.textContent  = `${(data.buddyState.intake / 1000).toFixed(1)} / ${(data.buddyState.goal / 1000).toFixed(1)}L`;
+        if (bBar)  bBar.style.width  = `${Math.min(100, data.buddyState.pct)}%`;
+        if (bPct)  bPct.textContent  = `${data.buddyState.pct}%`;
+
+    } catch (err) {
+        console.error("fetchBuddyStatus error:", err);
+    }
+}
+
+async function sendBuddyInvite() {
+    const input = document.getElementById('buddy-search-input');
+    if (!input) return;
+    const targetUsername = input.value.trim();
+    if (!targetUsername) {
+        showToast("Please enter a friend's username.");
+        return;
+    }
+
+    token = localStorage.getItem('token');
+    if (!token) {
+        showToast("Please log in to add a buddy.");
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/api/user/buddy/request`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ token, targetUsername })
+        });
+        const json = await res.json();
+        if (!res.ok) {
+            showToast(`⚠️ ${json.error || "Failed to send request."}`);
+            return;
+        }
+
+        showToast(json.message);
+        input.value = '';
+        fetchBuddyStatus();
+    } catch (e) {
+        showToast("⚠️ Network error sending request.");
+    }
+}
+
+async function respondBuddyRequest(senderUsername, action) {
+    token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+        const res = await fetch(`${API_URL}/api/user/buddy/respond`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ token, senderUsername, action })
+        });
+        const json = await res.json();
+        showToast(json.message || "Updated request.");
+        fetchBuddyStatus();
+    } catch (e) {
+        showToast("⚠️ Error updating request.");
+    }
+}
+
+async function nudgeBuddy() {
+    token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+        const res = await fetch(`${API_URL}/api/user/buddy/nudge`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ token })
+        });
+        const json = await res.json();
+        if (!res.ok) {
+            showToast(`⚠️ ${json.error || "Failed to send nudge."}`);
+            return;
+        }
+        showToast(json.message);
+    } catch (e) {
+        showToast("⚠️ Error sending nudge.");
+    }
+}
+
+async function unlinkBuddy() {
+    if (!confirm("Are you sure you want to unlink your Hydration Buddy?")) return;
+    token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+        const res = await fetch(`${API_URL}/api/user/buddy/remove`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ token })
+        });
+        const json = await res.json();
+        showToast(json.message || "Buddy unlinked.");
+        fetchBuddyStatus();
+    } catch (e) {
+        showToast("⚠️ Error unlinking buddy.");
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchBuddyStatus();
+        setInterval(fetchBuddyStatus, 15000);
+    });
+} else {
+    fetchBuddyStatus();
+    setInterval(fetchBuddyStatus, 15000);
+}
+
