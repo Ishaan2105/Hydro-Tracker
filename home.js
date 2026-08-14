@@ -484,6 +484,97 @@ function sendCoachMessage() {
     setTimeout(() => processCoachQuery(msg), 400);
 }
 
+/* ── Active alarms store ── */
+var coachAlarms = []; // { id, label, timeoutId, fireAt }
+
+function scheduleCoachAlarm(delayMs, label, pct) {
+    const fireAt = new Date(Date.now() + delayMs);
+    const fireStr = fireAt.toLocaleTimeString('en-IN', {
+        hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata'
+    });
+
+    const timeoutId = setTimeout(() => {
+        // Fire notification
+        if (Notification.permission === 'granted') {
+            new Notification('💧 Hydration Reminder', {
+                body: `Time to drink water! You were at ${pct}% when this was set.`,
+                icon: 'icon-192.png'
+            });
+        }
+        showToast('⏰ Hydration Coach: Time to drink water!');
+        // Remove from list
+        coachAlarms = coachAlarms.filter(a => a.timeoutId !== timeoutId);
+    }, delayMs);
+
+    const alarm = { id: Date.now(), label, timeoutId, fireAt, fireStr };
+    coachAlarms.push(alarm);
+    return alarm;
+}
+
+/* Parse a natural-language time string → milliseconds delay from now, or null */
+function parseTimeToMs(q) {
+    const now = new Date();
+    const istNow = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+    const currentH = istNow.getUTCHours();
+    const currentM = istNow.getUTCMinutes();
+
+    // ── Relative: "in X minutes/hours" ──
+    const relMin  = q.match(/in\s+(\d+(?:\.\d+)?)\s*(min(?:ute)?s?|m\b)/i);
+    const relHour = q.match(/in\s+(\d+(?:\.\d+)?)\s*(hour?s?|hr?s?)\b/i);
+    const relSec  = q.match(/in\s+(\d+)\s*(sec(?:ond)?s?)\b/i);
+
+    if (relSec)  return Math.round(parseFloat(relSec[1]) * 1000);
+    if (relMin)  return Math.round(parseFloat(relMin[1]) * 60 * 1000);
+    if (relHour) return Math.round(parseFloat(relHour[1]) * 3600 * 1000);
+
+    // Combined "in X hours Y minutes"
+    const relComb = q.match(/in\s+(\d+)\s*(?:hour?s?|hr?s?)\s*(?:and\s*)?(\d+)\s*(?:min(?:ute)?s?)/i);
+    if (relComb) return (parseInt(relComb[1]) * 3600 + parseInt(relComb[2]) * 60) * 1000;
+
+    // ── Absolute: "at 5pm", "at 8:30", "at 14:30", "at 8:30am" ──
+    const absMatch = q.match(/at\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
+    if (absMatch) {
+        let h = parseInt(absMatch[1]);
+        const m = parseInt(absMatch[2] || '0');
+        const ampm = (absMatch[3] || '').toLowerCase();
+
+        if (ampm === 'pm' && h < 12) h += 12;
+        if (ampm === 'am' && h === 12) h = 0;
+        // If no am/pm and hour < 12 and before that hour, assume later today
+        // If no am/pm and hour could be am or pm, prefer the next occurrence
+        if (!ampm) {
+            if (h < currentH || (h === currentH && m <= currentM)) {
+                h += 12; // assume pm if time has passed
+            }
+        }
+
+        // Build target IST time today
+        let targetMs = ((h - currentH) * 60 + (m - currentM)) * 60 * 1000;
+        // If negative (already passed), schedule for tomorrow
+        if (targetMs <= 0) targetMs += 24 * 3600 * 1000;
+        return targetMs;
+    }
+
+    // ── Named quick times ──
+    const named = {
+        'half hour': 30 * 60000, 'half an hour': 30 * 60000,
+        'an hour': 3600000, 'one hour': 3600000,
+        'fifteen minutes': 15 * 60000, '15 minutes': 15 * 60000,
+        'ten minutes': 10 * 60000, '10 minutes': 10 * 60000,
+        'two hours': 2 * 3600000, '2 hours': 2 * 3600000,
+    };
+    for (const [phrase, ms] of Object.entries(named)) {
+        if (q.includes(phrase)) return ms;
+    }
+
+    return null;
+}
+
+function isReminderIntent(q) {
+    return /\b(remind|reminder|alarm|alert|notify|wake|ping|set|schedule)\b/.test(q) ||
+           /\bin\s+\d/.test(q) || /\bat\s+\d/.test(q);
+}
+
 function processCoachQuery(query) {
     const q = query.toLowerCase();
     const intake   = Number(data.intake) || 0;
@@ -496,10 +587,10 @@ function processCoachQuery(query) {
     const history  = data.history || {};
 
     // Projected end-of-day
-    const mlPerHour   = hourNow > 0 ? intake / hourNow : 0;
-    const hoursLeft   = Math.max(0, 23.99 - hourNow);
-    const projected   = Math.round(intake + mlPerHour * hoursLeft);
-    const projPct     = Math.min(100, Math.round((projected / goal) * 100));
+    const mlPerHour = hourNow > 0 ? intake / hourNow : 0;
+    const hoursLeft = Math.max(0, 23.99 - hourNow);
+    const projected = Math.round(intake + mlPerHour * hoursLeft);
+    const projPct   = Math.min(100, Math.round((projected / goal) * 100));
 
     // 7-day average
     const histDates = Object.keys(history).sort().slice(-7);
@@ -512,8 +603,70 @@ function processCoachQuery(query) {
 
     let reply;
 
-    // ── Intent matching ──
-    if (q.includes('how am i') || q.includes('doing today') || q.includes('progress') || q.includes('status')) {
+    // ══════════════════════════════════════════════════
+    //  ⏰ ALARM / REMINDER — highest priority intent
+    // ══════════════════════════════════════════════════
+    if (isReminderIntent(q)) {
+
+        // Cancel all alarms
+        if (q.includes('cancel') || q.includes('stop') || q.includes('clear') || q.includes('remove')) {
+            if (coachAlarms.length === 0) {
+                reply = "You don't have any active alarms to cancel.";
+            } else {
+                coachAlarms.forEach(a => clearTimeout(a.timeoutId));
+                const count = coachAlarms.length;
+                coachAlarms = [];
+                reply = `🗑️ Cancelled **${count}** alarm${count > 1 ? 's' : ''}. All clear!`;
+            }
+
+        // List active alarms
+        } else if (q.includes('list') || q.includes('show') || q.includes('what alarms') || q.includes('my alarm')) {
+            if (coachAlarms.length === 0) {
+                reply = "You have no active alarms. Say something like **\"remind me at 5pm\"** or **\"set alarm in 1 hour\"** to set one!";
+            } else {
+                const list = coachAlarms.map((a, i) => `  ${i+1}. ⏰ ${a.label} at **${a.fireStr}**`).join('\n');
+                reply = `You have **${coachAlarms.length}** active alarm${coachAlarms.length > 1 ? 's' : ''}:\n${list}`;
+            }
+
+        // Set a new alarm
+        } else {
+            const delayMs = parseTimeToMs(q);
+
+            if (delayMs === null) {
+                reply = `I couldn't figure out the time from that. Try:\n• **"remind me at 5pm"**\n• **"set alarm in 30 minutes"**\n• **"notify me in 2 hours"**\n• **"alert me at 8:30am"**`;
+            } else if (delayMs < 5000) {
+                reply = `⚠️ That's less than 5 seconds — please set a longer reminder!`;
+            } else {
+                if (Notification.permission !== 'granted') {
+                    // Ask for permission first
+                    Notification.requestPermission().then(permission => {
+                        if (permission === 'granted') {
+                            const alarm = scheduleCoachAlarm(delayMs, query, pct);
+                            const mins = Math.round(delayMs / 60000);
+                            addCoachMessage(`✅ Alarm set! I'll remind you at **${alarm.fireStr}** (in ${mins > 60 ? Math.round(mins/60*10)/10+'h' : mins+'min'}). You're currently at **${pct}%**.`, 'coach');
+                        } else {
+                            addCoachMessage(`❌ Notifications are blocked. Please go to **Settings → Notifications** and enable them, then try again.`, 'coach');
+                        }
+                    });
+                    return; // async — message will be added in callback
+                }
+
+                const alarm = scheduleCoachAlarm(delayMs, query, pct);
+                const mins  = Math.round(delayMs / 60000);
+                const durStr = delayMs < 60000
+                    ? `${Math.round(delayMs/1000)}s`
+                    : mins < 60
+                        ? `${mins} min`
+                        : `${Math.round(mins/6)/10}h`;
+
+                reply = `✅ Alarm set! I'll remind you at **${alarm.fireStr}** (in ${durStr}).\n\nYou have **${coachAlarms.length}** active alarm${coachAlarms.length > 1 ? 's' : ''}. Say **"list alarms"** or **"cancel alarms"** to manage them.`;
+            }
+        }
+
+    // ══════════════════════════════════════════════════
+    //  📊 Progress / Status
+    // ══════════════════════════════════════════════════
+    } else if (q.includes('how am i') || q.includes('doing today') || q.includes('progress') || q.includes('status')) {
         if (pct >= 100) {
             reply = `🎉 You've hit 100% today — ${(intake/1000).toFixed(1)}L done! Your ${streak}-day streak is safe. Amazing discipline!`;
         } else {
@@ -523,73 +676,77 @@ function processCoachQuery(query) {
             reply = `📊 You're at **${pct}%** — ${(intake/1000).toFixed(1)}L of ${(goal/1000).toFixed(1)}L. ${pace} You need ${neededL}L more to complete your goal.`;
         }
 
-    } else if (q.includes('remaining') || q.includes('how much more') || q.includes('left') || q.includes('goal')) {
+    // ══════════════════════════════════════════════════
+    //  🎯 Remaining goal
+    // ══════════════════════════════════════════════════
+    } else if (q.includes('remaining') || q.includes('how much more') || q.includes('left') || q.includes('what is my remaining')) {
         if (neededMl <= 0) {
-            reply = `🏆 Nothing left — you've hit your goal! Goal: ${(goal/1000).toFixed(1)}L. Achieved: ${(intake/1000).toFixed(1)}L.`;
+            reply = `🏆 Nothing left — you've hit your goal! Goal: ${(goal/1000).toFixed(1)}L, Achieved: ${(intake/1000).toFixed(1)}L.`;
         } else {
             const glasses = Math.ceil(neededMl / 250);
             reply = `🎯 You need **${neededL}L** more (~${glasses} glasses of 250ml) to hit your ${(goal/1000).toFixed(1)}L goal today.`;
         }
 
-    } else if (q.includes('streak') || q.includes('fire') || q.includes('🔥')) {
+    // ══════════════════════════════════════════════════
+    //  🔥 Streak
+    // ══════════════════════════════════════════════════
+    } else if (q.includes('streak') || q.includes('how is my streak') || q.includes('🔥')) {
         if (streak === 0) {
-            reply = `Your streak is at 0 right now. No worries — today is a fresh start! Log ${(goal/1000).toFixed(1)}L today to begin a new streak 💪`;
+            reply = `Your streak is at 0. No worries — today is a fresh start! Log ${(goal/1000).toFixed(1)}L today to begin a new one 💪`;
         } else if (pct >= 100) {
-            reply = `🔥 Your streak is **${streak} days** and it's safe for today — you've already hit your goal!`;
+            reply = `🔥 Your streak is **${streak} days** and it's safe — you've already hit your goal today!`;
         } else {
             reply = `🔥 Current streak: **${streak} days**. You're at ${pct}% today — drink ${neededL}L more to protect it!`;
         }
 
-    } else if (q.includes('when') || q.includes('remind') || q.includes('next') || q.includes('30 min')) {
-        if (q.includes('30') || q.includes('thirty')) {
-            // Simulate reminder (real notification if permission granted)
-            if (Notification.permission === 'granted') {
-                setTimeout(() => {
-                    new Notification('💧 Hydration Reminder', {
-                        body: `Time to drink water! You're at ${pct}% today.`,
-                        icon: 'icon-192.png'
-                    });
-                }, 30 * 60 * 1000);
-                reply = `⏰ Done! I've set a reminder for 30 minutes from now. You're currently at ${pct}%.`;
-            } else {
-                reply = `⏰ I'd love to set a reminder, but notification permission is off. Go to Settings → Notifications to enable it!`;
-            }
-        } else if (neededMl <= 0) {
-            reply = `✅ You've hit your goal — no more water needed today! Enjoy the rest of your day 🎉`;
+    // ══════════════════════════════════════════════════
+    //  ⏰ When to drink (schedule advice)
+    // ══════════════════════════════════════════════════
+    } else if (q.includes('when') || q.includes('next drink') || q.includes('schedule')) {
+        if (neededMl <= 0) {
+            reply = `✅ You've hit your goal — no more water needed today! 🎉`;
         } else {
             const mlPerRemainingHour = hoursLeft > 0 ? Math.ceil(neededMl / hoursLeft) : neededMl;
             reply = `⏰ To finish your goal, aim to drink **~${Math.round(mlPerRemainingHour)}ml every hour** for the next ${Math.round(hoursLeft)} hours. That's just ${Math.ceil(mlPerRemainingHour / 250)} glass(es) per hour!`;
         }
 
-    } else if (q.includes('tip') || q.includes('advice') || q.includes('help') || q.includes('suggest')) {
+    // ══════════════════════════════════════════════════
+    //  💡 Tips
+    // ══════════════════════════════════════════════════
+    } else if (q.includes('tip') || q.includes('advice') || q.includes('suggest')) {
         const tips = [
-            `💡 Start your morning with 500ml right after waking up — it kickstarts your metabolism and rehydrates after 8 hours of sleep.`,
-            `💡 Drink a glass of water before every meal. It also helps you eat less and aids digestion.`,
-            `💡 Keep a water bottle visible on your desk — out of sight often means out of mind!`,
-            `💡 If plain water bores you, try infusing it with lemon, cucumber or mint for a refreshing twist.`,
-            `💡 Thirst is already a sign of mild dehydration. Try drinking on a schedule rather than waiting to feel thirsty.`,
-            `💡 Cold water is absorbed faster. Warm water aids digestion. Both count toward your goal!`,
-            `💡 After exercise, drink an extra 500ml for every 30 minutes of activity to replace what you sweat out.`,
+            `💡 Start your morning with 500ml right after waking up — it kickstarts your metabolism.`,
+            `💡 Drink a glass of water before every meal. It also aids digestion.`,
+            `💡 Keep a water bottle visible on your desk — out of sight, out of mind!`,
+            `💡 If plain water bores you, try infusing it with lemon, cucumber or mint.`,
+            `💡 Thirst is already a sign of mild dehydration. Drink on a schedule, not when thirsty.`,
+            `💡 Cold water is absorbed faster. Warm water aids digestion. Both count!`,
+            `💡 After exercise, drink 500ml for every 30 minutes of activity.`,
         ];
         reply = tips[Math.floor(Math.random() * tips.length)];
 
-    } else if (q.includes('average') || q.includes('week') || q.includes('history') || q.includes('7')) {
+    // ══════════════════════════════════════════════════
+    //  📈 Weekly average
+    // ══════════════════════════════════════════════════
+    } else if (q.includes('average') || q.includes('week') || q.includes('history')) {
         if (avg7 > 0) {
             const avgPct = Math.round((avg7 / goal) * 100);
-            reply = `📈 Your 7-day average intake is **${(avg7/1000).toFixed(1)}L/day** (${avgPct}% of your goal). ${avg7 >= goal ? "Excellent consistency! 🏆" : "Keep pushing — consistency is key!"}`;
+            reply = `📈 Your 7-day average is **${(avg7/1000).toFixed(1)}L/day** (${avgPct}% of goal). ${avg7 >= goal ? "Excellent consistency! 🏆" : "Keep pushing — consistency is key!"}`;
         } else {
-            reply = `📈 Not enough history yet to calculate a 7-day average. Keep logging daily and I'll track your trends!`;
+            reply = `📈 Not enough history yet. Keep logging daily and I'll track your trends!`;
         }
 
-    } else if (q.includes('goal') || q.includes('target') || q.includes('change') || q.includes('set')) {
-        reply = `🎯 Your current daily goal is **${(goal/1000).toFixed(1)}L**. To change it, go to ⚙️ Settings → Daily Goal. You can also use the Ideal Intake Calculator in 💡 Insights to get a personalized recommendation!`;
-
+    // ══════════════════════════════════════════════════
+    //  👋 Greeting
+    // ══════════════════════════════════════════════════
     } else if (q.includes('hello') || q.includes('hi') || q.includes('hey') || q.includes('what can you')) {
-        reply = `Hey! 👋 I'm your Hydration Coach. I can help with:\n• 📊 Today's progress & pace\n• 🎯 Remaining intake needed\n• 🔥 Streak status\n• ⏰ Reminders & timing advice\n• 💡 Hydration tips\n• 📈 Weekly trends\n\nJust ask me anything or tap a quick chip!`;
+        reply = `Hey! 👋 I'm your Hydration Coach. I can:\n• ⏰ **Set alarms** — "remind me at 5pm" / "set alarm in 2 hours"\n• 📊 **Track progress** — "how am I doing?"\n• 🎯 **Show remaining goal** — "how much left?"\n• 🔥 **Check streak** — "how is my streak?"\n• 💡 **Give tips** — "give me a tip"\n• 📈 **Weekly trends** — "show my average"\n\nJust tell me what to do!`;
 
+    // ══════════════════════════════════════════════════
+    //  Fallback
+    // ══════════════════════════════════════════════════
     } else {
-        // Fallback — always contextual
-        reply = `I'm not sure about that specific question, but here's your status: **${pct}%** done today (${(intake/1000).toFixed(1)}L / ${(goal/1000).toFixed(1)}L). ${neededMl > 0 ? `Need ${neededL}L more.` : `Goal complete! 🎉`} ${streak > 0 ? `Streak: ${streak} days 🔥` : ''}\n\nTry asking: "How am I doing?", "Give me a tip", or "When should I drink next?"`;
+        reply = `I'm not sure about that. Here's your current status: **${pct}%** done (${(intake/1000).toFixed(1)}L / ${(goal/1000).toFixed(1)}L). ${neededMl > 0 ? `Need ${neededL}L more.` : `Goal complete! 🎉`}\n\nTry: **"remind me at 6pm"**, **"how am I doing?"**, or **"give me a tip"**.`;
     }
 
     addCoachMessage(reply, 'coach');
