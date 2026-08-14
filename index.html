@@ -42,7 +42,7 @@
                     </div>
                     <div class="password-box">
                         <input type="password" id="loginPass" placeholder="Password" required oninput="updateBottle()">
-                        <span class="toggle-eye" onclick="togglePass('loginPass')">👁️</span>
+                        <span class="toggle-eye" onclick="togglePass('loginPass', this)">👁️</span>
                     </div>
                     <button type="submit" class="btn-main">Dive In</button>
                 </form>
@@ -66,11 +66,11 @@
                     <input type="text" id="regUser" placeholder="Username" required oninput="updateBottle()">
                     <div class="password-box">
                         <input type="password" id="regPass" placeholder="Password" required oninput="updateBottle()">
-                        <span class="toggle-eye" onclick="togglePass('regPass')">👁️</span>
+                        <span class="toggle-eye" onclick="togglePass('regPass', this)">👁️</span>
                     </div>
                     <div class="password-box">
                         <input type="password" id="regConfirm" placeholder="Confirm Password" required oninput="updateBottle()">
-                        <span class="toggle-eye" onclick="togglePass('regConfirm')">👁️</span>
+                        <span class="toggle-eye" onclick="togglePass('regConfirm', this)">👁️</span>
                     </div>
                     <button type="submit" class="btn-main">Create Account</button>
                 </form>

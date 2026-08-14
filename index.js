@@ -159,9 +159,18 @@ function toggleForm() {
     updateBottle();
 }
 
-function togglePass(id) {
+function togglePass(id, btn) {
     const input = document.getElementById(id);
-    input.type = input.type === 'password' ? 'text' : 'password';
+    if (!input) return;
+    const eye = btn || (typeof event !== 'undefined' && event ? event.currentTarget : null);
+
+    if (input.type === 'password') {
+        input.type = 'text';
+        if (eye) eye.innerText = '🔒';
+    } else {
+        input.type = 'password';
+        if (eye) eye.innerText = '👁️';
+    }
 }
 
 // 5. LocalStorage Auth
