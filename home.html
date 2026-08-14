@@ -172,7 +172,24 @@
             </div>
         </div>
         <div class="coach-messages" id="coach-messages"></div>
-        <div class="coach-chips" id="coach-chips"></div>
+        
+        <!-- Quick Options Drop-Up Menu -->
+        <div id="coach-quick-menu" class="coach-quick-menu" style="display:none;">
+            <button class="coach-menu-item" onclick="sendQuickQuestion('📊 How am I doing today?')">📊 How am I doing today?</button>
+            <button class="coach-menu-item" onclick="sendQuickQuestion('⏰ When should I drink next?')">⏰ When should I drink next?</button>
+            <button class="coach-menu-item" onclick="sendQuickQuestion('🎯 What is my remaining goal?')">🎯 What is my remaining goal?</button>
+            <button class="coach-menu-item" onclick="sendQuickQuestion('🔥 How is my streak?')">🔥 How is my streak?</button>
+            <button class="coach-menu-item" onclick="sendQuickQuestion('💡 Give me a hydration tip')">💡 Give me a hydration tip</button>
+            <button class="coach-menu-item" onclick="sendQuickQuestion('⚡ Set a reminder in 30 mins')">⚡ Set a reminder in 30 mins</button>
+        </div>
+
+        <!-- Drop-up Arrow Toggle Bar -->
+        <div class="coach-dropup-bar">
+            <button id="coach-dropup-btn" onclick="toggleCoachQuickMenu()" class="coach-dropup-btn" title="Quick Options">
+                <span id="coach-dropup-arrow">▲</span> Quick Options
+            </button>
+        </div>
+
         <div class="coach-input-row">
             <input type="text" id="coach-input" placeholder="Ask me anything or tap 🎤..." onkeydown="if(event.key==='Enter')sendCoachMessage()">
             <button id="coach-mic-btn" onclick="toggleVoiceInput()" class="coach-mic" title="Speak to coach">🎤</button>

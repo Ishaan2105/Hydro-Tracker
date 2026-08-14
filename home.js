@@ -466,10 +466,32 @@ function renderCoachChips() {
     });
 }
 
-function handleCoachChip(text) {
+function toggleCoachQuickMenu() {
+    const menu = document.getElementById('coach-quick-menu');
+    const arrow = document.getElementById('coach-dropup-arrow');
+    const btn = document.getElementById('coach-dropup-btn');
+    if (!menu) return;
+    const isHidden = menu.style.display === 'none' || !menu.style.display;
+    if (isHidden) {
+        menu.style.display = 'flex';
+        if (arrow) arrow.textContent = '▼';
+        if (btn) btn.classList.add('active');
+    } else {
+        menu.style.display = 'none';
+        if (arrow) arrow.textContent = '▲';
+        if (btn) btn.classList.remove('active');
+    }
+}
+
+function sendQuickQuestion(text) {
+    const menu = document.getElementById('coach-quick-menu');
+    const arrow = document.getElementById('coach-dropup-arrow');
+    const btn = document.getElementById('coach-dropup-btn');
+    if (menu) menu.style.display = 'none';
+    if (arrow) arrow.textContent = '▲';
+    if (btn) btn.classList.remove('active');
+
     addCoachMessage(text, 'user');
-    const chips = document.getElementById('coach-chips');
-    if (chips) chips.innerHTML = ''; // hide chips after first tap
     setTimeout(() => processCoachQuery(text), 400);
 }
 
@@ -479,10 +501,9 @@ function sendCoachMessage() {
     const msg = input.value.trim();
     input.value = '';
     addCoachMessage(msg, 'user');
-    const chips = document.getElementById('coach-chips');
-    if (chips) chips.innerHTML = '';
     setTimeout(() => processCoachQuery(msg), 400);
 }
+
 
 /* ══════════════════════════════════════════════════════════════
    ⏰  COACH ALARM ENGINE — localStorage-persisted
