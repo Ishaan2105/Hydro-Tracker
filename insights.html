@@ -125,21 +125,82 @@
             <h1>Health Insights</h1>
         </header>
 
+        <!-- ⚖️ Personalized Goal & Hydration Calculator -->
         <section class="calculator-section">
-            <div class="insight-card">
-                <h3>⚖️ Personalized Goal </h3>
-                <p>Enter your details to calculate your ideal intake.</p>
-                <div class="input-row">
-                    <input type="number" id="age" placeholder="Age (yrs)" min="1" max="120">
-                    <input type="number" id="weight" placeholder="Weight (kg)">
-                    <input type="number" id="height" placeholder="Height (cm)">
-                </div>
-                <button class="calc-btn" onclick="calculateHydration()">Calculate My Goal</button>
-                <div id="calc-result" class="result-box" style="display: none;">
-                    <p>Suggested Daily Intake:</p>
-                    <h2 id="suggested-liters">0.0 L</h2>
-                    <div id="calc-breakdown" style="font-size:0.78rem; color:#475569; margin: 4px 0 10px; line-height:1.7;"></div>
-                    <button class="apply-btn" onclick="applyGoal()">Set as My Goal</button>
+            <div class="insight-card" id="personalized-goal-card">
+                <h3>⚖️ Personalized Hydration Goal & Calculator</h3>
+                <p style="margin-bottom: 18px; font-size: 0.88rem; opacity: 0.8;">Enter your body metrics to calculate your scientifically personalized daily intake goal!</p>
+                
+                <div class="vertical-fields-container">
+                    <!-- FIELD 1: AGE & WEIGHT (below label) -->
+                    <div class="calc-field-group">
+                        <label class="calc-field-label">1. Age & Weight ⚖️</label>
+                        <div class="calc-input-dual-row" style="margin-bottom: 8px;">
+                            <div class="dual-input-item">
+                                <input type="number" id="calc-age" placeholder="Age (yrs)" min="1" max="120" value="25" oninput="calculateHydration()">
+                                <span class="unit-badge">yrs</span>
+                            </div>
+                        </div>
+                        <div class="calc-input-unit-row">
+                            <input type="number" id="calc-weight" placeholder="Weight" step="0.5" value="70" oninput="calculateHydration()">
+                            <select id="calc-weight-unit" onchange="calculateHydration()">
+                                <option value="kg" selected>kg (Kilograms)</option>
+                                <option value="lbs">lbs (Pounds)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- FIELD 2: HEIGHT WITH CONVERSION UNIT TYPE (below Weight) -->
+                    <div class="calc-field-group">
+                        <label class="calc-field-label">2. Height 📏 (Conversion Unit Type)</label>
+                        <div class="calc-input-unit-row" style="margin-bottom: 8px;">
+                            <select id="calc-height-unit" onchange="onHeightUnitChange()">
+                                <option value="cm" selected>Centimeters (cm)</option>
+                                <option value="ft_in">Feet & Inches (ft + in)</option>
+                                <option value="ft">Feet (ft)</option>
+                                <option value="in">Inches (in)</option>
+                            </select>
+                        </div>
+
+                        <!-- Single input wrapper (cm / ft / in) -->
+                        <div id="height-single-wrap" class="calc-input-unit-row">
+                            <input type="number" id="calc-height-single" placeholder="e.g. 175" step="0.1" value="175" oninput="calculateHydration()">
+                            <span id="height-single-unit-label" class="unit-badge">cm</span>
+                        </div>
+
+                        <!-- Dual input wrapper (ft + in) -->
+                        <div id="height-ft-in-wrap" class="calc-input-dual-row" style="display:none;">
+                            <div class="dual-input-item">
+                                <input type="number" id="calc-height-ft" placeholder="Feet (e.g. 5)" step="1" value="5" oninput="calculateHydration()">
+                                <span class="unit-badge">ft</span>
+                            </div>
+                            <div class="dual-input-item">
+                                <input type="number" id="calc-height-in" placeholder="Inches (e.g. 9)" step="0.5" value="9" oninput="calculateHydration()">
+                                <span class="unit-badge">in</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FIELD 3: GENDER (MALE AND FEMALE ONLY - below Height) -->
+                    <div class="calc-field-group">
+                        <label class="calc-field-label">3. Gender 👤</label>
+                        <select id="calc-gender" onchange="calculateHydration()" class="calc-select-full">
+                            <option value="male" selected>Male 👨 (+250ml baseline)</option>
+                            <option value="female">Female 👩 (Standard baseline)</option>
+                        </select>
+                    </div>
+
+                    <!-- FIELD 4: PERSONALIZED GOAL RESULT & SET AS MY GOAL (below Gender) -->
+                    <div class="calc-field-group calc-result-box">
+                        <label class="calc-field-label" style="color: var(--accent); font-weight: 800;">4. Recommended Daily Goal 💧</label>
+                        <div class="calc-result-display">
+                            <h2 id="suggested-liters" style="font-size:1.8rem; font-weight:900; color:var(--accent,#0284c7); margin:6px 0 2px 0;">2.7 L <small style="font-size:1rem; opacity:0.7;">(2700 ml)</small></h2>
+                            <div id="calc-breakdown" style="font-size:0.8rem; color:var(--text-secondary, #475569); margin: 4px 0 14px; line-height:1.6;">
+                                Based on 25 yrs, 70kg weight, 175cm height & Male baseline.
+                            </div>
+                        </div>
+                        <button class="apply-btn" onclick="applyGoal()" style="width:100%; padding:14px; border-radius:14px; background:linear-gradient(135deg, var(--accent,#0284c7), #0369a1); color:#fff; font-weight:800; font-size:1rem; border:none; cursor:pointer; box-shadow:0 6px 20px rgba(2,132,199,0.25);">🎯 Set as My Daily Goal</button>
+                    </div>
                 </div>
             </div>
         </section>

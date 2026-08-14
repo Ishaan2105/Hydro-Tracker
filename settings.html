@@ -147,83 +147,13 @@
             </div>
         </section>
 
-        <!-- 🎯 Daily Goal & Personalized Calculator -->
-        <section class="settings-card" id="personalized-goal-card">
-            <h3>🎯 Daily Hydration Goal & Personalized Calculator</h3>
-            <p style="margin-bottom: 18px; font-size: 0.88rem; opacity: 0.8;">Calculate your recommended daily intake based on your body metrics or set a custom goal!</p>
-            
-            <div class="vertical-fields-container">
-                <!-- FIELD 1: WEIGHT (below label) -->
-                <div class="calc-field-group">
-                    <label class="calc-field-label">1. Weight ⚖️</label>
-                    <div class="calc-input-unit-row">
-                        <input type="number" id="calc-weight" placeholder="e.g. 70" step="0.5" value="70" oninput="calculatePersonalizedGoal()">
-                        <select id="calc-weight-unit" onchange="calculatePersonalizedGoal()">
-                            <option value="kg" selected>kg (Kilograms)</option>
-                            <option value="lbs">lbs (Pounds)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- FIELD 2: HEIGHT WITH CONVERSION UNIT TYPE (below Weight) -->
-                <div class="calc-field-group">
-                    <label class="calc-field-label">2. Height 📏 (Conversion Unit Type)</label>
-                    <div class="calc-input-unit-row" style="margin-bottom: 8px;">
-                        <select id="calc-height-unit" onchange="onHeightUnitChange()">
-                            <option value="cm" selected>Centimeters (cm)</option>
-                            <option value="ft_in">Feet & Inches (ft + in)</option>
-                            <option value="ft">Feet (ft)</option>
-                            <option value="in">Inches (in)</option>
-                        </select>
-                    </div>
-
-                    <!-- Single input wrapper (cm / ft / in) -->
-                    <div id="height-single-wrap" class="calc-input-unit-row">
-                        <input type="number" id="calc-height-single" placeholder="e.g. 175" step="0.1" value="175" oninput="calculatePersonalizedGoal()">
-                        <span id="height-single-unit-label" class="unit-badge">cm</span>
-                    </div>
-
-                    <!-- Dual input wrapper (ft + in) -->
-                    <div id="height-ft-in-wrap" class="calc-input-dual-row" style="display:none;">
-                        <div class="dual-input-item">
-                            <input type="number" id="calc-height-ft" placeholder="Feet (e.g. 5)" step="1" value="5" oninput="calculatePersonalizedGoal()">
-                            <span class="unit-badge">ft</span>
-                        </div>
-                        <div class="dual-input-item">
-                            <input type="number" id="calc-height-in" placeholder="Inches (e.g. 9)" step="0.5" value="9" oninput="calculatePersonalizedGoal()">
-                            <span class="unit-badge">in</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- FIELD 3: GENDER (below Height) -->
-                <div class="calc-field-group">
-                    <label class="calc-field-label">3. Gender 👤</label>
-                    <select id="calc-gender" onchange="calculatePersonalizedGoal()" class="calc-select-full">
-                        <option value="male" selected>Male 👨 (+250ml baseline)</option>
-                        <option value="female">Female 👩 (Standard baseline)</option>
-                        <option value="other">Non-binary / Other 🧑 (+100ml baseline)</option>
-                    </select>
-                </div>
-
-                <!-- FIELD 4: PERSONALIZED GOAL RESULT & SET TARGET (below Gender) -->
-                <div class="calc-field-group calc-result-box">
-                    <label class="calc-field-label" style="color: var(--accent); font-weight: 800;">4. Recommended Daily Goal 💧</label>
-                    <div class="calc-result-display">
-                        <h2 id="calc-recommendation-display">2.70 L <small style="font-size:1rem; opacity:0.7;">(2700 ml)</small></h2>
-                        <p class="calc-formula-note" id="calc-formula-note">Based on 70kg weight & 175cm height.</p>
-                    </div>
-                    <button class="btn-apply-personalized" onclick="applyPersonalizedGoal()">🎯 Set as My Daily Goal</button>
-                </div>
-            </div>
-
-            <!-- MANUAL GOAL INPUT ROW -->
-            <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid rgba(0,0,0,0.08);">
-                <label style="font-size:0.85rem; font-weight:700; color:var(--text-secondary,#64748b); display:block; margin-bottom:8px;">Or enter custom daily target directly in Liters:</label>
-                <div class="goal-input-row">
-                    <input type="number" id="goal-val" step="0.1" placeholder="e.g. 2.5">
-                    <button id="set-target-btn" onclick="saveGlobalGoal()">Set Target</button>
-                </div>
+        <!-- 🎯 Daily Goal -->
+        <section class="settings-card">
+            <h3>🎯 Daily Goal</h3>
+            <p>Target intake in Liters</p>
+            <div class="goal-input-row">
+                <input type="number" id="goal-val" step="0.1" placeholder="--">
+                <button id="set-target-btn" onclick="saveGlobalGoal()">Set Target</button>
             </div>
         </section>
 

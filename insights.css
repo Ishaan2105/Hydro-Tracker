@@ -977,12 +977,111 @@ input[type="time"] {
     padding-left: 6px;
     padding-right: 6px;
 }
-.meals-accordion-arrow {
-    font-size: 1.15rem;
-    color: var(--accent, #0284c7);
-    transition: transform 0.25s ease;
-    display: inline-block;
-    line-height: 1;
+
+
+/* ── PERSONALIZED GOAL CALCULATOR & 4 VERTICAL FIELDS (INSIGHTS PAGE) ── */
+.vertical-fields-container {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin-top: 10px;
+}
+
+.calc-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.4);
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.calc-field-label {
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: var(--text-primary, #0c4a6e);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.calc-input-unit-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.calc-input-unit-row input {
+    flex: 1;
+    margin: 0 !important;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.4));
+    background: var(--glass-bg, rgba(255, 255, 255, 0.7));
+    color: var(--text-primary, #333);
+    font-size: 1rem;
+    outline: none;
+}
+
+.calc-input-unit-row select,
+.calc-select-full {
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.4));
+    background: var(--glass-bg, rgba(255, 255, 255, 0.85));
+    color: var(--text-primary, #0c4a6e);
+    font-size: 0.92rem;
+    font-weight: 700;
+    outline: none;
+    cursor: pointer;
+}
+
+.calc-select-full {
+    width: 100%;
+}
+
+.unit-badge {
+    background: var(--accent-subtle, rgba(21, 101, 192, 0.12));
+    color: var(--accent, #1565c0);
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 0.9rem;
+    border: 1px solid rgba(21, 101, 192, 0.2);
+    min-width: 50px;
+    text-align: center;
+}
+
+.calc-input-dual-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.dual-input-item {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dual-input-item input {
+    flex: 1;
+    margin: 0 !important;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.4));
+    background: var(--glass-bg, rgba(255, 255, 255, 0.7));
+    color: var(--text-primary, #333);
+    font-size: 1rem;
+    outline: none;
+}
+
+.calc-result-box {
+    background: linear-gradient(135deg, rgba(2, 132, 199, 0.12), rgba(56, 189, 248, 0.18)) !important;
+    border: 1.5px solid var(--accent, #0284c7) !important;
+    padding: 20px;
 }
 
 

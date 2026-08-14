@@ -68,31 +68,62 @@ window.addEventListener('DOMContentLoaded', () => {
     loadCloudData();
 });
 
+function onHeightUnitChange() {
+    const unit = document.getElementById('calc-height-unit')?.value || 'cm';
+    const singleWrap = document.getElementById('height-single-wrap');
+    const ftInWrap = document.getElementById('height-ft-in-wrap');
+    const singleLabel = document.getElementById('height-single-unit-label');
+
+    if (unit === 'ft_in') {
+        if (singleWrap) singleWrap.style.display = 'none';
+        if (ftInWrap) ftInWrap.style.display = 'flex';
+    } else {
+        if (singleWrap) singleWrap.style.display = 'flex';
+        if (ftInWrap) ftInWrap.style.display = 'none';
+        if (singleLabel) singleLabel.innerText = unit;
+
+        const singleInput = document.getElementById('calc-height-single');
+        if (singleInput) {
+            if (unit === 'cm') singleInput.placeholder = 'e.g. 175';
+            else if (unit === 'ft') singleInput.placeholder = 'e.g. 5.75';
+            else if (unit === 'in') singleInput.placeholder = 'e.g. 69';
+        }
+    }
+    calculateHydration();
+}
+
 function calculateHydration() {
-    const ageInput    = document.getElementById('age');
-    const weightInput = document.getElementById('weight');
-    const heightInput = document.getElementById('height');
-    const resultBox   = document.getElementById('calc-result');
+    const age = parseInt(document.getElementById('calc-age')?.value || '25', 10);
+    const weightVal = parseFloat(document.getElementById('calc-weight')?.value) || 70;
+    const weightUnit = document.getElementById('calc-weight-unit')?.value || 'kg';
+    const heightUnit = document.getElementById('calc-height-unit')?.value || 'cm';
+    const gender = document.getElementById('calc-gender')?.value || 'male';
+
     const displayLiters = document.getElementById('suggested-liters');
-    const breakdown   = document.getElementById('calc-breakdown');
+    const breakdown = document.getElementById('calc-breakdown');
 
-    if (!weightInput || !heightInput) return;
-
-    const age    = parseInt(ageInput ? ageInput.value : '', 10);
-    const weight = parseFloat(weightInput.value);
-    const height = parseFloat(heightInput.value);
-
-    const errors = [];
-    if (!age    || age < 1    || age > 120)    errors.push('age (1–120 yrs)');
-    if (!weight || weight < 5  || weight > 300) errors.push('weight (5–300 kg)');
-    if (!height || height < 30 || height > 250) errors.push('height (30–250 cm)');
-
-    if (errors.length > 0) {
-        showToast('❌ Enter valid: ' + errors.join(', ') + '.');
-        return;
+    // 1. Weight to kg
+    let weightKg = weightVal;
+    if (weightUnit === 'lbs') {
+        weightKg = weightVal * 0.453592;
     }
 
-    // ── Formula (EFSA / WHO dietary reference values) ──
+    // 2. Height to cm based on conversion unit type
+    let heightCm = 175;
+    if (heightUnit === 'cm') {
+        heightCm = parseFloat(document.getElementById('calc-height-single')?.value) || 175;
+    } else if (heightUnit === 'ft_in') {
+        const ft = parseFloat(document.getElementById('calc-height-ft')?.value) || 5;
+        const inch = parseFloat(document.getElementById('calc-height-in')?.value) || 9;
+        heightCm = (ft * 30.48) + (inch * 2.54);
+    } else if (heightUnit === 'ft') {
+        const ft = parseFloat(document.getElementById('calc-height-single')?.value) || 5.75;
+        heightCm = ft * 30.48;
+    } else if (heightUnit === 'in') {
+        const inch = parseFloat(document.getElementById('calc-height-single')?.value) || 69;
+        heightCm = inch * 2.54;
+    }
+
     // Step 1: Age-adjusted ml/kg rate
     let mlPerKg;
     if      (age <= 3)  mlPerKg = 100;
@@ -105,29 +136,37 @@ function calculateHydration() {
     else                mlPerKg = 27;
 
     // Step 2: Weight base
-    const base = weight * mlPerKg;
+    let base = weightKg * mlPerKg;
 
-    // Step 3: Height correction (+6ml per cm above 160cm)
-    const heightBonus = Math.max(0, (height - 160) * 6);
+    // Step 3: Gender adjustment (Male: +250ml, Female: 0)
+    let genderOffset = (gender === 'male') ? 250 : 0;
+    base += genderOffset;
 
-    // Step 4: Total, rounded to nearest 50ml, clamped 1–6L
+    // Step 4: Height correction (+6ml per cm above 160cm)
+    const heightBonus = Math.max(0, (heightCm - 160) * 6);
+
+    // Total, rounded to nearest 50ml, clamped 1–6L
     let totalMl = Math.round((base + heightBonus) / 50) * 50;
     totalMl = Math.max(1000, Math.min(totalMl, 6000));
 
-    const totalL  = (totalMl / 1000).toFixed(1);
-    const baseL   = (base / 1000).toFixed(2);
-    const bonusL  = (heightBonus / 1000).toFixed(2);
-    const diffCm  = Math.round(height - 160);
-    const diffStr = diffCm >= 0 ? '+' + diffCm : '' + diffCm;
+    const totalL = (totalMl / 1000).toFixed(2);
 
-    if (resultBox)     resultBox.style.display = 'block';
-    if (displayLiters) displayLiters.innerText = totalL + ' L';
-    if (breakdown) breakdown.innerHTML =
-        `🧔 ${weight}kg × ${mlPerKg}ml/kg = <strong>${baseL}L</strong> &nbsp;|&nbsp; ` +
-        `📏 Height ${diffStr}cm → <strong>+${bonusL}L</strong>`;
+    if (displayLiters) {
+        displayLiters.innerHTML = `${totalL} L <small style="font-size:1rem; opacity:0.7;">(${totalMl} ml)</small>`;
+    }
+
+    if (breakdown) {
+        const heightDisplay = heightUnit === 'ft_in' 
+            ? `${document.getElementById('calc-height-ft')?.value || 5}ft ${document.getElementById('calc-height-in')?.value || 9}in`
+            : `${Math.round(heightCm)}cm`;
+        const genderText = gender === 'male' ? 'Male 👨' : 'Female 👩';
+        breakdown.innerHTML = `Based on ${age} yrs, ${Math.round(weightKg)}kg weight, ${heightDisplay} height & ${genderText} baseline.`;
+    }
 
     // Store for applyGoal
-    data.tempGoal = totalMl;
+    if (window.data) {
+        window.data.tempGoal = totalMl;
+    }
 }
 
 
