@@ -400,12 +400,8 @@ function loadDateStats() {
     }
 
     /* ============================================================
-       4. SUCCESS RATE %
+       4. SUCCESS RATE % (Calculated based on 30-Day Activity Heatmap)
     ============================================================ */
-    const successEl = document.getElementById('success-pct');
-    if (successEl) {
-        successEl.innerText = dailyPct + "%";
-    }
 
     /* ============================================================
        5. ANTI-WRINKLE SHIELD
@@ -950,6 +946,7 @@ function renderHeatmapGrid() {
 
     gridContainer.innerHTML = '';
     const today = new Date();
+    let metCount = 0;
 
     for (let i = 29; i >= 0; i--) {
         const d = new Date();
@@ -959,9 +956,14 @@ function renderHeatmapGrid() {
         const { vol, goal, pct } = getVolumeForDate(dateStr);
 
         let statusClass = 'dot-empty';
-        if (pct >= 100) statusClass = 'dot-met';
-        else if (pct >= 50) statusClass = 'dot-partial';
-        else if (pct > 0) statusClass = 'dot-low';
+        if (pct >= 100) {
+            statusClass = 'dot-met';
+            metCount++;
+        } else if (pct >= 50) {
+            statusClass = 'dot-partial';
+        } else if (pct > 0) {
+            statusClass = 'dot-low';
+        }
 
         const isSelected = dateStr === selectedDate;
         const dayNum = d.getDate();
@@ -976,6 +978,13 @@ function renderHeatmapGrid() {
         `;
         tile.onclick = () => selectSpecificDate(dateStr);
         gridContainer.appendChild(tile);
+    }
+
+    // ── Update 30-Day Goal Achievement Success Rate ──
+    const heatmapSuccessRate = Math.round((metCount / 30) * 100);
+    const successEl = document.getElementById('success-pct');
+    if (successEl) {
+        successEl.innerText = `${heatmapSuccessRate}%`;
     }
 }
 
