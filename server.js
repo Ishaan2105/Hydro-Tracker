@@ -767,28 +767,6 @@ app.get('/history', (req, res) => res.sendFile(path.join(__dirname, 'history.htm
 app.get('/insights', (req, res) => res.sendFile(path.join(__dirname, 'insights.html')));
 app.get('/settings', (req, res) => res.sendFile(path.join(__dirname, 'settings.html')));
 
-// Robust fallback handler for non-API routes (Express 4 & 5 compatible)
-app.use((req, res, next) => {
-    if (req.path.startsWith('/api')) {
-        return res.status(404).json({ error: "API endpoint not found" });
-    }
-    const cleanPath = req.path.replace(/^\//, '');
-    if (cleanPath && fs.existsSync(path.join(__dirname, cleanPath))) {
-        return res.sendFile(path.join(__dirname, cleanPath));
-    }
-    if (cleanPath && fs.existsSync(path.join(__dirname, cleanPath + '.html'))) {
-        return res.sendFile(path.join(__dirname, cleanPath + '.html'));
-    }
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`🚀 HydroTracker Server live on port ${PORT}`);
-    startServerPushCron();
-});
-
 // --- 6. BUDDY & CO-OP DUEL ROUTES ---
 
 function verifyUserToken(tokenStr) {
@@ -1220,6 +1198,27 @@ app.get('/api/user/buddy/status', async (req, res) => {
         console.error("Buddy status error:", err);
         res.status(500).json({ error: "Failed to fetch buddy status." });
     }
+});
+
+// Robust fallback handler for non-API routes (Express 4 & 5 compatible)
+app.use((req, res, next) => {
+    if (req.path.startsWith('/api')) {
+        return res.status(404).json({ error: "API endpoint not found" });
+    }
+    const cleanPath = req.path.replace(/^\//, '');
+    if (cleanPath && fs.existsSync(path.join(__dirname, cleanPath))) {
+        return res.sendFile(path.join(__dirname, cleanPath));
+    }
+    if (cleanPath && fs.existsSync(path.join(__dirname, cleanPath + '.html'))) {
+        return res.sendFile(path.join(__dirname, cleanPath + '.html'));
+    }
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+    console.log(`🚀 HydroTracker Server live on port ${PORT}`);
+    startServerPushCron();
 });
 
 
