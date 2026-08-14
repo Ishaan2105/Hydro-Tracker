@@ -993,6 +993,36 @@ app.get('/api/user/buddy/email-respond', async (req, res) => {
                 `);
             }
 
+            // Check if sender (inviter) has withdrawn/cancelled this invitation
+            if (!sender.buddy || sender.buddy.username.toLowerCase() !== target.username.toLowerCase() || sender.buddy.status !== 'pending') {
+                await target.save();
+                return res.send(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Invitation Withdrawn 🚫</title>
+                        <meta name="viewport" content="width=device-width, initial-scale=1">
+                        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;800&display=swap" rel="stylesheet">
+                        <style>
+                            body { font-family:'Outfit',sans-serif; text-align:center; padding:40px 20px; background:#fff1f2; color:#be123c; margin:0; }
+                            .card { max-width:480px; margin:40px auto; background:#fff; padding:36px 28px; border-radius:24px; box-shadow:0 12px 36px rgba(244,63,94,0.15); border:1px solid #fecdd3; }
+                            .btn-open { display:inline-block; padding:14px 32px; background:linear-gradient(135deg,#f43f5e,#be123c); color:#fff; text-decoration:none; font-weight:800; border-radius:30px; font-size:0.95rem; box-shadow:0 6px 20px rgba(244,63,94,0.3); }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="card">
+                            <div style="font-size:3.5rem; margin-bottom:12px;">🚫</div>
+                            <h2 style="color:#f43f5e; margin-bottom:12px; font-size:1.6rem;">Invitation Withdrawn</h2>
+                            <p style="font-size:1rem; line-height:1.6; color:#475569; margin-bottom:24px;">
+                                <strong>${sender.username}</strong> has withdrawn this Hydration Duo invitation.
+                            </p>
+                            <a href="/leaderboard.html" class="btn-open">Go to Leaderboard 🏆</a>
+                        </div>
+                    </body>
+                    </html>
+                `);
+            }
+
             target.buddy = { username: sender.username, status: 'accepted' };
             sender.buddy = { username: target.username, status: 'accepted' };
             
@@ -1200,6 +1230,36 @@ app.post('/api/user/buddy/remove', async (req, res) => {
         res.json({ message: "Buddy unlinked." });
     } catch (err) {
         res.status(500).json({ error: "Failed to remove buddy." });
+    }
+});
+
+app.post('/api/user/buddy/cancel', async (req, res) => {
+    try {
+        const decoded = verifyUserToken(req);
+        if (!decoded) return res.status(401).json({ error: "Unauthorized" });
+
+        const me = await User.findById(decoded.id);
+        if (!me) return res.status(404).json({ error: "User not found" });
+
+        if (me.buddy && me.buddy.username) {
+            const targetName = me.buddy.username;
+            const targetUser = await User.findOne({ username: new RegExp(`^${targetName}$`, 'i') });
+            
+            if (targetUser && targetUser.incomingBuddyRequests) {
+                targetUser.incomingBuddyRequests = targetUser.incomingBuddyRequests.filter(r => r.username.toLowerCase() !== me.username.toLowerCase());
+                targetUser.markModified('incomingBuddyRequests');
+                await targetUser.save();
+            }
+        }
+
+        me.buddy = null;
+        me.markModified('buddy');
+        await me.save();
+
+        res.json({ message: "🚫 Hydration Duo invitation withdrawn." });
+    } catch (err) {
+        console.error("Cancel buddy invite error:", err);
+        res.status(500).json({ error: "Failed to cancel invitation." });
     }
 });
 

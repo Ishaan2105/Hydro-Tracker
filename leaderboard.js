@@ -971,6 +971,27 @@ async function unlinkBuddy() {
     }
 }
 
+async function cancelBuddyInvite() {
+    token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+        const res = await fetch(`${API_URL}/api/user/buddy/cancel`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ token })
+        });
+        const json = await res.json();
+        showToast(json.message || "Invitation withdrawn.");
+        fetchBuddyStatus();
+    } catch (e) {
+        showToast("⚠️ Error withdrawing invitation.");
+    }
+}
+
 /* ── BUDDY AUTOCOMPLETE SUGGESTIONS ── */
 let _buddySearchDebounce = null;
 
