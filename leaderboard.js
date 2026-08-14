@@ -1073,7 +1073,6 @@ function handleBuddySearchInput(inputEl) {
                     inputEl.value = uname;
                     dropdown.style.display = 'none';
                     dropdown.innerHTML = '';
-                    sendBuddyInvite();
                 };
 
                 dropdown.appendChild(item);
