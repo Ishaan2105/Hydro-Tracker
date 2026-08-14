@@ -178,19 +178,13 @@
             </div>
         </section>
 
-        <!-- 📅 DATE SELECTION & TIMELINE -->
+        <!-- 📅 TIMELINE SECTION -->
+        <input type="date" id="calendar-picker" onchange="onDateInputChange()" style="display:none;">
         <div class="history-flex-container">
-            <section class="calendar-section">
-                <h3>Select Date 🗓️</h3>
-                <div class="calendar-card">
-                    <input type="date" id="calendar-picker" onchange="onDateInputChange()">
-                </div>
-            </section>
-
             <section class="timeline-section">
                 <h3>Daily Log Timeline 🕒</h3>
                 <div class="timeline-container" id="daily-timeline">
-                    <p style="opacity:0.6; padding: 20px;">Select a date to see logs...</p>
+                    <p style="opacity:0.6; padding: 20px;">Select a date from the heatmap above to see logs...</p>
                 </div>
             </section>
         </div>
