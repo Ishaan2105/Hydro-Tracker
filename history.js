@@ -975,6 +975,7 @@ function renderHeatmapGrid() {
             <span class="heatmap-pct-val">${pct}%</span>
         `;
         tile.onclick = () => selectSpecificDate(dateStr);
+        gridContainer.appendChild(tile);
     }
 }
 
