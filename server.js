@@ -1211,6 +1211,7 @@ app.post('/api/user/buddy/respond', async (req, res) => {
 
 app.post('/api/user/buddy/nudge', async (req, res) => {
     try {
+        const { customMessage } = req.body;
         const decoded = verifyUserToken(req);
         if (!decoded) return res.status(401).json({ error: "Unauthorized" });
 
@@ -1227,9 +1228,12 @@ app.post('/api/user/buddy/nudge', async (req, res) => {
         const now = new Date();
         const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
 
+        const trimmedCustom = String(customMessage || "").trim();
+        const nudgeText = trimmedCustom ? trimmedCustom : `💧 ${me.username} sent you a hydration nudge! Time to drink water!`;
+
         buddyUser.pendingNudges.push({
             from: me.username,
-            message: `💧 ${me.username} sent you a hydration nudge! Time to drink water!`,
+            message: nudgeText,
             time: timeStr
         });
         buddyUser.markModified('pendingNudges');
@@ -1237,8 +1241,8 @@ app.post('/api/user/buddy/nudge', async (req, res) => {
 
         if (buddyUser.pushSubscriptions && buddyUser.pushSubscriptions.length > 0) {
             const payload = JSON.stringify({
-                title: "💧 Buddy Hydration Nudge!",
-                body: `Hey! ${me.username} is asking you to drink water now!`,
+                title: `💧 Hydration Nudge from ${me.username}!`,
+                body: trimmedCustom ? trimmedCustom : `Hey! ${me.username} is asking you to drink water now!`,
                 icon: 'icon-192x192.png'
             });
             for (const sub of buddyUser.pushSubscriptions) {

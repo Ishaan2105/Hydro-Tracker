@@ -252,7 +252,7 @@
                     </div>
 
                     <div class="buddy-actions">
-                        <button class="btn-nudge-buddy" onclick="nudgeBuddy()">💧 Send "Nudge" Alert</button>
+                        <button class="btn-nudge-buddy" onclick="openNudgeModal()">💧 Send "Nudge" Alert</button>
                         <button class="btn-unlink-buddy" onclick="unlinkBuddy()">❌ Unlink Buddy</button>
                     </div>
                 </div>
@@ -322,8 +322,30 @@
             <div class="leaderboard-list" id="leaderboard-list">
                 <div class="loading-state">Loading global rankings...</div>
             </div>
-        </section>
-    </main>
+    <!-- 💧 CUSTOM NUDGE MODAL -->
+    <div id="nudge-modal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeNudgeModal()">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>💧 Send Hydration Nudge</h3>
+                <button class="btn-close-modal" onclick="closeNudgeModal()">✖</button>
+            </div>
+            <p class="modal-subtitle">Send a custom alert or nudge message to <strong id="nudge-target-name">your buddy</strong>!</p>
+            
+            <div class="nudge-presets">
+                <span class="nudge-chip" onclick="setNudgePreset('💧 Hey! Time to drink water!')">💧 Water Break</span>
+                <span class="nudge-chip" onclick="setNudgePreset('🚀 We\'re almost at 100%! Drink up!')">🚀 100% Push</span>
+                <span class="nudge-chip" onclick="setNudgePreset('🔥 Don\'t break our Co-Op Streak!')">🔥 Streak Check</span>
+                <span class="nudge-chip" onclick="setNudgePreset('🏆 I just logged water, your turn!')">🏆 Your Turn!</span>
+            </div>
+
+            <textarea id="nudge-custom-text" class="nudge-textarea" placeholder="Type your custom nudge message here..." rows="3"></textarea>
+
+            <div class="modal-actions">
+                <button class="btn-modal-cancel" onclick="closeNudgeModal()">Cancel</button>
+                <button class="btn-modal-send" onclick="submitCustomNudge()">🚀 Send Nudge</button>
+            </div>
+        </div>
+    </div>
 
     <!-- EFFECTS -->
     <div id="waves-bg"></div>

@@ -949,7 +949,35 @@ async function respondBuddyRequest(senderUsername, action) {
     }
 }
 
-async function nudgeBuddy() {
+function openNudgeModal() {
+    const modal = document.getElementById('nudge-modal');
+    const targetEl = document.getElementById('nudge-target-name');
+    const textarea = document.getElementById('nudge-custom-text');
+
+    let buddyName = 'your buddy';
+    const bNameEl = document.getElementById('versus-buddy-name');
+    if (bNameEl && bNameEl.textContent) buddyName = bNameEl.textContent;
+
+    if (targetEl) targetEl.textContent = buddyName;
+    if (textarea) textarea.value = `💧 Hey ${buddyName}! Time to drink water!`;
+
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeNudgeModal() {
+    const modal = document.getElementById('nudge-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+function setNudgePreset(text) {
+    const textarea = document.getElementById('nudge-custom-text');
+    if (textarea) textarea.value = text;
+}
+
+async function submitCustomNudge() {
+    const textarea = document.getElementById('nudge-custom-text');
+    const customMessage = textarea ? textarea.value.trim() : '';
+
     token = localStorage.getItem('token');
     if (!token) return;
 
@@ -960,7 +988,7 @@ async function nudgeBuddy() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ token })
+            body: JSON.stringify({ token, customMessage })
         });
         const json = await res.json();
         if (!res.ok) {
@@ -968,9 +996,14 @@ async function nudgeBuddy() {
             return;
         }
         showToast(json.message);
+        closeNudgeModal();
     } catch (e) {
         showToast("⚠️ Error sending nudge.");
     }
+}
+
+async function nudgeBuddy() {
+    openNudgeModal();
 }
 
 async function unlinkBuddy() {
