@@ -1368,7 +1368,9 @@ app.get('/api/user/buddy/status', async (req, res) => {
             await me.save();
         }
 
-        const myIntake = me.intake || 0;
+        const todayKey = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+
+        const myIntake = (me.lastLogDate === todayKey) ? (me.intake || 0) : 0;
         const myGoal   = me.goal || 2500;
         const myPct    = Math.round((myIntake / myGoal) * 100);
 
@@ -1404,7 +1406,7 @@ app.get('/api/user/buddy/status', async (req, res) => {
             });
         }
 
-        const bIntake = buddyUser.intake || 0;
+        const bIntake = (buddyUser.lastLogDate === todayKey) ? (buddyUser.intake || 0) : 0;
         const bGoal   = buddyUser.goal || 2500;
         const bPct    = Math.round((bIntake / bGoal) * 100);
 
