@@ -410,10 +410,36 @@ app.post('/api/auth/delete-account', async (req, res) => {
             return res.status(400).json({ error: "Incorrect current password." });
         }
 
+        // 🧹 Clean up Duo Partner relationship & pending invites on other accounts
+        const deletedUsernameLower = user.username.toLowerCase();
+        const escapedUser = user.username.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+        const userReg = new RegExp(`^${escapedUser}\\s*$`, 'i');
+
+        if (user.buddy && user.buddy.username) {
+            const bEsc = user.buddy.username.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+            const buddyUser = await User.findOne({ username: new RegExp(`^${bEsc}\\s*$`, 'i') });
+            if (buddyUser && buddyUser.buddy && buddyUser.buddy.username.toLowerCase() === deletedUsernameLower) {
+                buddyUser.buddy = null;
+                buddyUser.markModified('buddy');
+                await buddyUser.save();
+            }
+        }
+
+        await User.updateMany(
+            { "incomingBuddyRequests.username": userReg },
+            { $pull: { incomingBuddyRequests: { username: userReg } } }
+        );
+
+        await User.updateMany(
+            { "outgoingBuddyRequests.username": userReg },
+            { $pull: { outgoingBuddyRequests: { username: userReg } } }
+        );
+
         await User.findByIdAndDelete(decoded.id);
 
         res.json({ message: "Account deleted permanently." });
     } catch (err) {
+        console.error("Delete account error:", err);
         res.status(401).json({ error: "Unauthorized or session expired." });
     }
 });
