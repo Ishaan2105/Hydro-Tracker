@@ -139,6 +139,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
 function checkDuoAcceptedBanner() {
     if (window.location.search.includes('duo_accepted=true')) {
+        switchLeaderboardMode('duo');
         setTimeout(() => {
             if (typeof showToast === 'function') {
                 showToast("🎉 Hydration Duo activated! Welcome to your Co-Op Streak!");
@@ -178,17 +179,20 @@ function switchLeaderboardMode(mode) {
     const tabDuo  = document.getElementById('lb-tab-duo');
     const mainHeading = document.getElementById('lb-main-heading');
     const subHeading  = document.getElementById('lb-sub-heading');
+    const buddySection = document.getElementById('buddy-coop-section');
 
     if (mode === 'duo') {
         if (tabSolo) tabSolo.classList.remove('active');
         if (tabDuo)  tabDuo.classList.add('active');
         if (mainHeading) mainHeading.textContent = "👥 Duo Team Leaderboard";
         if (subHeading)  subHeading.textContent  = "Rankings of active Hydration Duo Teams based on Shared Co-Op Streaks & Combined Intake!";
+        if (buddySection) buddySection.style.display = 'block';
     } else {
         if (tabDuo)  tabDuo.classList.remove('active');
         if (tabSolo) tabSolo.classList.add('active');
         if (mainHeading) mainHeading.textContent = "Global Leaderboard 🏆";
         if (subHeading)  subHeading.textContent  = "Rankings based on daily goal completion, streaks, and hydration consistency!";
+        if (buddySection) buddySection.style.display = 'none';
     }
 
     loadLeaderboard();
