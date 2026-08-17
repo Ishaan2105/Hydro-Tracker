@@ -627,6 +627,17 @@ body {
     outline: none;
 }
 
+.app-brand-logo-img {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    object-fit: cover;
+    display: inline-block;
+    vertical-align: middle;
+    box-shadow: 0 3px 10px rgba(2, 132, 199, 0.3);
+    border: 1.5px solid rgba(255, 255, 255, 0.7);
+}
+
 /* ── 🧜‍♂️ ALL HYDRATION RANKS MODAL STYLING ── */
 .rank-card-clickable {
     transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease, border-color 0.22s ease !important;

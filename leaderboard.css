@@ -469,6 +469,17 @@ header h1 {
     height: 100%;
 }
 
+.app-brand-logo-img {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    object-fit: cover;
+    display: inline-block;
+    vertical-align: middle;
+    box-shadow: 0 3px 10px rgba(2, 132, 199, 0.3);
+    border: 1.5px solid rgba(255, 255, 255, 0.7);
+}
+
 /* ================================================================
    👥 HYDRATION DUO & BUDDY CO-OP DUEL
 ================================================================ */
